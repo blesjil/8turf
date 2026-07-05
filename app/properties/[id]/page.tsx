@@ -22,7 +22,7 @@ export default async function PropertyDetail({ params }: { params: Params }) {
 
   const property = db
     .query<Property, [string, string]>(
-      'SELECT id, name, address FROM properties WHERE id = ? AND user_id = ? AND archived_at IS NULL',
+      'SELECT id, name, address FROM properties WHERE id = ? AND user_id = ?',
     )
     .get(id, session.user.id);
   if (!property) notFound();
