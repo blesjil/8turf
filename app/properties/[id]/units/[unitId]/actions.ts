@@ -169,7 +169,7 @@ export async function assignTenant(
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : '';
-    if (message.includes('UNIQUE') && message.includes('idx_tenants_active_unit')) {
+    if (message.includes('UNIQUE constraint failed') && message.includes('tenants.unit_id')) {
       return { error: { general: 'This unit already has an active tenant.' } };
     }
     return { error: { general: 'Failed to assign tenant. Please try again.' } };
