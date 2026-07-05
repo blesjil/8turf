@@ -1,101 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
-  createNoteSchema,
-  updateNoteSchema,
-  toggleSharingSchema,
   createUserSchema,
   promoteToAdminSchema,
+  createPropertySchema,
+  createUnitSchema,
+  assignTenantSchema,
+  recordPaymentSchema,
 } from '@/lib/validation';
-
-describe('createNoteSchema', () => {
-  it('passes with valid title and content', () => {
-    const result = createNoteSchema.safeParse({
-      title: 'My Note',
-      content_json: '{"type":"doc","content":[]}',
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it('fails with empty title', () => {
-    const result = createNoteSchema.safeParse({
-      title: '',
-      content_json: '{"type":"doc"}',
-    });
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.flatten().fieldErrors.title).toBeDefined();
-    }
-  });
-
-  it('fails with title > 200 chars', () => {
-    const result = createNoteSchema.safeParse({
-      title: 'a'.repeat(201),
-      content_json: '{"type":"doc"}',
-    });
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.flatten().fieldErrors.title).toContain('Title is too long');
-    }
-  });
-
-  it('fails with empty content', () => {
-    const result = createNoteSchema.safeParse({
-      title: 'My Note',
-      content_json: '',
-    });
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.flatten().fieldErrors.content_json).toBeDefined();
-    }
-  });
-});
-
-describe('updateNoteSchema', () => {
-  it('passes with valid UUID, title, and content', () => {
-    const result = updateNoteSchema.safeParse({
-      id: '550e8400-e29b-41d4-a716-446655440000',
-      title: 'Updated Note',
-      content_json: '{"type":"doc","content":[]}',
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it('fails with invalid UUID format', () => {
-    const result = updateNoteSchema.safeParse({
-      id: 'not-a-uuid',
-      title: 'My Note',
-      content_json: '{"type":"doc"}',
-    });
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.flatten().fieldErrors.id).toContain('Invalid note ID');
-    }
-  });
-});
-
-describe('toggleSharingSchema', () => {
-  it('transforms "true" string to boolean true', () => {
-    const result = toggleSharingSchema.safeParse({
-      noteId: 'some-id',
-      enable: 'true',
-    });
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.enable).toBe(true);
-    }
-  });
-
-  it('transforms "false" string to boolean false', () => {
-    const result = toggleSharingSchema.safeParse({
-      noteId: 'some-id',
-      enable: 'false',
-    });
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.enable).toBe(false);
-    }
-  });
-});
 
 describe('createUserSchema', () => {
   it('passes with valid email and name', () => {
@@ -152,5 +63,104 @@ describe('promoteToAdminSchema', () => {
     if (!result.success) {
       expect(result.error.flatten().fieldErrors.userId).toBeDefined();
     }
+  });
+});
+
+describe('createPropertySchema', () => {
+  it('accepts a valid property', () => {
+    const result = createPropertySchema.safeParse({ name: 'Maple House', address: '123 Main St' });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects an empty name', () => {
+    const result = createPropertySchema.safeParse({ name: '', address: '123 Main St' });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('createUnitSchema', () => {
+  it('accepts a valid unit and coerces numeric fields', () => {
+    const result = createUnitSchema.safeParse({
+      propertyId: 'prop-1',
+      unitLabel: 'Unit 2B',
+      bedrooms: '2',
+      bathrooms: '1.5',
+      rentAmount: '150000',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.bedrooms).toBe(2);
+      expect(result.data.rentAmount).toBe(150000);
+    }
+  });
+
+  it('rejects a negative rent amount', () => {
+    const result = createUnitSchema.safeParse({
+      propertyId: 'prop-1',
+      unitLabel: 'Unit 2B',
+      bedrooms: '2',
+      bathrooms: '1',
+      rentAmount: '-100',
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('assignTenantSchema', () => {
+  it('accepts a tenant with an open-ended lease', () => {
+    const result = assignTenantSchema.safeParse({
+      unitId: 'unit-1',
+      name: 'Jane Tenant',
+      email: '',
+      phone: '',
+      rentAmount: '150000',
+      leaseStartDate: '2026-01-01',
+      leaseEndDate: '',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a malformed lease start date', () => {
+    const result = assignTenantSchema.safeParse({
+      unitId: 'unit-1',
+      name: 'Jane Tenant',
+      rentAmount: '150000',
+      leaseStartDate: '01/01/2026',
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('recordPaymentSchema', () => {
+  it('accepts a valid payment', () => {
+    const result = recordPaymentSchema.safeParse({
+      tenantId: 'tenant-1',
+      amount: '75000',
+      period: '2026-03',
+      paidDate: '2026-03-05',
+      method: 'cash',
+      notes: '',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a zero amount', () => {
+    const result = recordPaymentSchema.safeParse({
+      tenantId: 'tenant-1',
+      amount: '0',
+      period: '2026-03',
+      paidDate: '2026-03-05',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a malformed period', () => {
+    const result = recordPaymentSchema.safeParse({
+      tenantId: 'tenant-1',
+      amount: '75000',
+      period: '2026-3',
+      paidDate: '2026-03-05',
+    });
+    expect(result.success).toBe(false);
   });
 });
