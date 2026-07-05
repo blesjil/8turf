@@ -4,7 +4,12 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { updateUnitSchema } from '@/lib/validation';
+import {
+  updateUnitSchema,
+  assignTenantSchema,
+  updateTenantSchema,
+  endTenancySchema,
+} from '@/lib/validation';
 
 export interface UnitActionResult {
   error?: {
@@ -107,4 +112,138 @@ export async function deleteUnit(
 
   db.run('DELETE FROM units WHERE id = ?', [unit.id]);
   redirect(`/properties/${unit.property_id}`);
+}
+
+export interface TenantActionResult {
+  error?: {
+    name?: string[];
+    email?: string[];
+    phone?: string[];
+    rentAmount?: string[];
+    leaseStartDate?: string[];
+    leaseEndDate?: string[];
+    general?: string;
+  };
+}
+
+export async function assignTenant(
+  _prevState: TenantActionResult,
+  formData: FormData,
+): Promise<TenantActionResult> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect('/authenticate');
+
+  const parsed = assignTenantSchema.safeParse({
+    unitId: formData.get('unitId'),
+    name: formData.get('name'),
+    email: formData.get('email'),
+    phone: formData.get('phone'),
+    rentAmount: formData.get('rentAmount'),
+    leaseStartDate: formData.get('leaseStartDate'),
+    leaseEndDate: formData.get('leaseEndDate'),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors };
+  }
+
+  const unit = await findAuthorizedUnit(parsed.data.unitId, session.user.id);
+  if (!unit) {
+    return { error: { general: 'Unit not found or access denied.' } };
+  }
+
+  const id = crypto.randomUUID();
+  try {
+    db.run(
+      `INSERT INTO tenants (id, unit_id, name, email, phone, rent_amount, lease_start_date, lease_end_date)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        unit.id,
+        parsed.data.name,
+        parsed.data.email || null,
+        parsed.data.phone || null,
+        parsed.data.rentAmount,
+        parsed.data.leaseStartDate,
+        parsed.data.leaseEndDate || null,
+      ],
+    );
+  } catch {
+    return { error: { general: 'This unit already has an active tenant.' } };
+  }
+
+  redirect(`/properties/${unit.property_id}/units/${unit.id}`);
+}
+
+async function findAuthorizedTenant(tenantId: string, userId: string) {
+  return db
+    .query<{ id: string; unit_id: string; property_id: string }, [string, string]>(
+      `SELECT t.id, t.unit_id, u.property_id FROM tenants t
+       JOIN units u ON u.id = t.unit_id
+       JOIN properties p ON p.id = u.property_id
+       WHERE t.id = ? AND p.user_id = ?`,
+    )
+    .get(tenantId, userId);
+}
+
+export async function updateTenant(
+  _prevState: TenantActionResult,
+  formData: FormData,
+): Promise<TenantActionResult> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect('/authenticate');
+
+  const parsed = updateTenantSchema.safeParse({
+    id: formData.get('id'),
+    name: formData.get('name'),
+    email: formData.get('email'),
+    phone: formData.get('phone'),
+    rentAmount: formData.get('rentAmount'),
+    leaseStartDate: formData.get('leaseStartDate'),
+    leaseEndDate: formData.get('leaseEndDate'),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors };
+  }
+
+  const tenant = await findAuthorizedTenant(parsed.data.id, session.user.id);
+  if (!tenant) {
+    return { error: { general: 'Tenant not found or access denied.' } };
+  }
+
+  db.run(
+    `UPDATE tenants SET name = ?, email = ?, phone = ?, rent_amount = ?, lease_start_date = ?, lease_end_date = ?
+     WHERE id = ?`,
+    [
+      parsed.data.name,
+      parsed.data.email || null,
+      parsed.data.phone || null,
+      parsed.data.rentAmount,
+      parsed.data.leaseStartDate,
+      parsed.data.leaseEndDate || null,
+      tenant.id,
+    ],
+  );
+
+  redirect(`/properties/${tenant.property_id}/units/${tenant.unit_id}`);
+}
+
+export async function endTenancy(formData: FormData): Promise<void> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect('/authenticate');
+
+  const parsed = endTenancySchema.safeParse({
+    id: formData.get('id'),
+    leaseEndDate: formData.get('leaseEndDate'),
+  });
+  if (!parsed.success) return;
+
+  const tenant = await findAuthorizedTenant(parsed.data.id, session.user.id);
+  if (!tenant) return;
+
+  db.run('UPDATE tenants SET is_active = 0, lease_end_date = ? WHERE id = ?', [
+    parsed.data.leaseEndDate,
+    tenant.id,
+  ]);
+
+  redirect(`/properties/${tenant.property_id}/units/${tenant.unit_id}`);
 }

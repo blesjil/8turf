@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { formatCents } from '@/lib/money';
 import { UnitActions } from './unit-actions';
+import { TenantCard, type Tenant } from '@/components/tenant-card';
 
 type Params = Promise<{ id: string; unitId: string }>;
 
@@ -33,6 +34,21 @@ export default async function UnitDetail({ params }: { params: Params }) {
     .get(unitId, id, session.user.id);
   if (!unit) notFound();
 
+  const activeTenant =
+    db
+      .query<Tenant, [string]>(
+        `SELECT id, name, email, phone, rent_amount, lease_start_date, lease_end_date, is_active
+       FROM tenants WHERE unit_id = ? AND is_active = 1`,
+      )
+      .get(unit.id) ?? null;
+
+  const tenantHistory = db
+    .query<Tenant, [string]>(
+      `SELECT id, name, email, phone, rent_amount, lease_start_date, lease_end_date, is_active
+       FROM tenants WHERE unit_id = ? ORDER BY lease_start_date DESC`,
+    )
+    .all(unit.id);
+
   return (
     <div className='p-8 max-w-3xl mx-auto'>
       <Link
@@ -52,6 +68,25 @@ export default async function UnitDetail({ params }: { params: Params }) {
         </div>
         <UnitActions propertyId={unit.property_id} unitId={unit.id} />
       </div>
+
+      <div className='mb-8'>
+        <h2 className='text-xl font-semibold mb-3'>Current Tenant</h2>
+        <TenantCard unitId={unit.id} tenant={activeTenant} />
+      </div>
+
+      {tenantHistory.length > 0 && (
+        <div className='mb-8'>
+          <h2 className='text-xl font-semibold mb-3'>Tenancy History</h2>
+          <ul className='space-y-2'>
+            {tenantHistory.map((t) => (
+              <li key={t.id} className='text-sm text-foreground/60 border-b border-border/50 pb-2'>
+                {t.name} &middot; {t.lease_start_date} to {t.lease_end_date || 'ongoing'}
+                {t.is_active === 1 && <span className='ml-2 text-green-600'>(current)</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
