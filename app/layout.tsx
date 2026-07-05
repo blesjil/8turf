@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'NextNotes',
-  description: 'A simple note-taking app',
+  title: '8turf Apartments',
+  description: 'Manage rental properties, units, tenants, and payments',
 };
 
 export default async function RootLayout({
