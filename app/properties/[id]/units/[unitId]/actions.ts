@@ -9,6 +9,8 @@ import {
   assignTenantSchema,
   updateTenantSchema,
   endTenancySchema,
+  recordPaymentSchema,
+  updatePaymentSchema,
 } from '@/lib/validation';
 
 export interface UnitActionResult {
@@ -250,4 +252,126 @@ export async function endTenancy(formData: FormData): Promise<void> {
   ]);
 
   redirect(`/properties/${tenant.property_id}/units/${tenant.unit_id}`);
+}
+
+export interface PaymentActionResult {
+  error?: {
+    amount?: string[];
+    period?: string[];
+    paidDate?: string[];
+    method?: string[];
+    notes?: string[];
+    general?: string;
+  };
+}
+
+export async function recordPayment(
+  _prevState: PaymentActionResult,
+  formData: FormData,
+): Promise<PaymentActionResult> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect('/authenticate');
+
+  const parsed = recordPaymentSchema.safeParse({
+    tenantId: formData.get('tenantId'),
+    amount: formData.get('amount'),
+    period: formData.get('period'),
+    paidDate: formData.get('paidDate'),
+    method: formData.get('method'),
+    notes: formData.get('notes') ?? '',
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors };
+  }
+
+  const tenant = await findAuthorizedTenant(parsed.data.tenantId, session.user.id);
+  if (!tenant) {
+    return { error: { general: 'Tenant not found or access denied.' } };
+  }
+
+  const id = crypto.randomUUID();
+  db.run(
+    `INSERT INTO rent_payments (id, tenant_id, unit_id, amount, period, paid_date, method, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      tenant.id,
+      tenant.unit_id,
+      parsed.data.amount,
+      parsed.data.period,
+      parsed.data.paidDate,
+      parsed.data.method || null,
+      parsed.data.notes || null,
+    ],
+  );
+
+  redirect(`/properties/${tenant.property_id}/units/${tenant.unit_id}`);
+}
+
+async function findAuthorizedPayment(paymentId: string, userId: string) {
+  return db
+    .query<
+      { id: string; tenant_id: string; unit_id: string; property_id: string },
+      [string, string]
+    >(
+      `SELECT rp.id, rp.tenant_id, rp.unit_id, u.property_id FROM rent_payments rp
+       JOIN tenants t ON t.id = rp.tenant_id
+       JOIN units u ON u.id = t.unit_id
+       JOIN properties p ON p.id = u.property_id
+       WHERE rp.id = ? AND p.user_id = ?`,
+    )
+    .get(paymentId, userId);
+}
+
+export async function updatePayment(
+  _prevState: PaymentActionResult,
+  formData: FormData,
+): Promise<PaymentActionResult> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect('/authenticate');
+
+  const parsed = updatePaymentSchema.safeParse({
+    id: formData.get('id'),
+    amount: formData.get('amount'),
+    period: formData.get('period'),
+    paidDate: formData.get('paidDate'),
+    method: formData.get('method'),
+    notes: formData.get('notes') ?? '',
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors };
+  }
+
+  const payment = await findAuthorizedPayment(parsed.data.id, session.user.id);
+  if (!payment) {
+    return { error: { general: 'Payment not found or access denied.' } };
+  }
+
+  db.run(
+    'UPDATE rent_payments SET amount = ?, period = ?, paid_date = ?, method = ?, notes = ? WHERE id = ?',
+    [
+      parsed.data.amount,
+      parsed.data.period,
+      parsed.data.paidDate,
+      parsed.data.method || null,
+      parsed.data.notes || null,
+      payment.id,
+    ],
+  );
+
+  redirect(`/properties/${payment.property_id}/units/${payment.unit_id}`);
+}
+
+export async function deletePayment(formData: FormData): Promise<void> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect('/authenticate');
+
+  const id = formData.get('id');
+  if (typeof id !== 'string') return;
+
+  const payment = await findAuthorizedPayment(id, session.user.id);
+  if (!payment) return;
+
+  db.run('DELETE FROM rent_payments WHERE id = ?', [payment.id]);
+  redirect(`/properties/${payment.property_id}/units/${payment.unit_id}`);
 }

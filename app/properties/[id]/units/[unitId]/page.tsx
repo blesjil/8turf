@@ -6,6 +6,9 @@ import { db } from '@/lib/db';
 import { formatCents } from '@/lib/money';
 import { UnitActions } from './unit-actions';
 import { TenantCard, type Tenant } from '@/components/tenant-card';
+import { PaymentLedger, type Payment } from '@/components/payment-ledger';
+import { PaymentStatusBadge } from '@/components/payment-status-badge';
+import { computePaymentStatus, isLeaseActiveForPeriod } from '@/lib/payment-status';
 
 type Params = Promise<{ id: string; unitId: string }>;
 
@@ -49,6 +52,31 @@ export default async function UnitDetail({ params }: { params: Params }) {
     )
     .all(unit.id);
 
+  const currentPeriod = new Date().toISOString().slice(0, 7);
+
+  const payments = activeTenant
+    ? db
+        .query<Payment, [string]>(
+          `SELECT id, amount, period, paid_date, method, notes FROM rent_payments
+           WHERE tenant_id = ? ORDER BY period DESC, paid_date DESC`,
+        )
+        .all(activeTenant.id)
+    : [];
+
+  const currentPeriodTotal = payments
+    .filter((p) => p.period === currentPeriod)
+    .reduce((sum, p) => sum + p.amount, 0);
+
+  const currentStatus =
+    activeTenant &&
+    isLeaseActiveForPeriod(
+      activeTenant.lease_start_date,
+      activeTenant.lease_end_date,
+      currentPeriod,
+    )
+      ? computePaymentStatus(currentPeriodTotal, activeTenant.rent_amount)
+      : null;
+
   return (
     <div className='p-8 max-w-3xl mx-auto'>
       <Link
@@ -85,6 +113,20 @@ export default async function UnitDetail({ params }: { params: Params }) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {activeTenant && (
+        <div className='mb-4 flex items-center gap-2'>
+          <span className='text-sm text-foreground/60'>This month ({currentPeriod}):</span>
+          {currentStatus && <PaymentStatusBadge status={currentStatus} />}
+        </div>
+      )}
+
+      {activeTenant && (
+        <div>
+          <h2 className='text-xl font-semibold mb-3'>Payment Ledger</h2>
+          <PaymentLedger tenantId={activeTenant.id} payments={payments} />
         </div>
       )}
     </div>
