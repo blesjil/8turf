@@ -85,33 +85,102 @@ db.run(`
   )
 `);
 
-// Create notes table
+// Create properties table
 db.run(`
-  CREATE TABLE IF NOT EXISTS notes (
+  CREATE TABLE IF NOT EXISTS properties (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
-    title TEXT NOT NULL,
-    content_json TEXT NOT NULL,
-    is_public INTEGER NOT NULL DEFAULT 0,
-    public_slug TEXT UNIQUE,
+    name TEXT NOT NULL,
+    address TEXT NOT NULL,
+    archived_at TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES user(id)
   )
 `);
 
-// Create indexes
-db.run(`CREATE INDEX IF NOT EXISTS idx_notes_user_id ON notes(user_id)`);
-db.run(`CREATE INDEX IF NOT EXISTS idx_notes_public_slug ON notes(public_slug)`);
-db.run(`CREATE INDEX IF NOT EXISTS idx_notes_is_public ON notes(is_public)`);
-
-// Auto-update updated_at column on notes update
+// Create units table
 db.run(`
-  CREATE TRIGGER IF NOT EXISTS update_notes_timestamp
-  AFTER UPDATE ON notes
-  BEGIN
-    UPDATE notes SET updated_at = datetime('now') WHERE id = NEW.id;
-  END
+  CREATE TABLE IF NOT EXISTS units (
+    id TEXT PRIMARY KEY,
+    property_id TEXT NOT NULL,
+    unit_label TEXT NOT NULL,
+    bedrooms INTEGER NOT NULL DEFAULT 0 CHECK (bedrooms >= 0),
+    bathrooms REAL NOT NULL DEFAULT 1 CHECK (bathrooms >= 0),
+    rent_amount INTEGER NOT NULL CHECK (rent_amount >= 0),
+    archived_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (property_id) REFERENCES properties(id)
+  )
+`);
+
+// Create tenants table
+db.run(`
+  CREATE TABLE IF NOT EXISTS tenants (
+    id TEXT PRIMARY KEY,
+    unit_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    email TEXT,
+    phone TEXT,
+    rent_amount INTEGER NOT NULL CHECK (rent_amount >= 0),
+    lease_start_date TEXT NOT NULL,
+    lease_end_date TEXT,
+    is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (unit_id) REFERENCES units(id)
+  )
+`);
+
+// Create rent_payments table
+db.run(`
+  CREATE TABLE IF NOT EXISTS rent_payments (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    unit_id TEXT NOT NULL,
+    amount INTEGER NOT NULL CHECK (amount > 0),
+    period TEXT NOT NULL CHECK (period GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]'),
+    paid_date TEXT NOT NULL,
+    method TEXT,
+    notes TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+    FOREIGN KEY (unit_id) REFERENCES units(id)
+  )
+`);
+
+// Create indexes
+db.run(`CREATE INDEX IF NOT EXISTS idx_properties_user_id ON properties(user_id)`);
+db.run(`CREATE INDEX IF NOT EXISTS idx_units_property_id ON units(property_id)`);
+db.run(`CREATE INDEX IF NOT EXISTS idx_tenants_unit_id ON tenants(unit_id)`);
+db.run(
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_tenants_active_unit ON tenants(unit_id) WHERE is_active = 1`,
+);
+db.run(`CREATE INDEX IF NOT EXISTS idx_rent_payments_tenant_id ON rent_payments(tenant_id)`);
+db.run(`CREATE INDEX IF NOT EXISTS idx_rent_payments_unit_id ON rent_payments(unit_id)`);
+db.run(
+  `CREATE INDEX IF NOT EXISTS idx_rent_payments_tenant_period ON rent_payments(tenant_id, period)`,
+);
+db.run(`CREATE INDEX IF NOT EXISTS idx_rent_payments_period ON rent_payments(period)`);
+
+// Auto-update updated_at columns
+db.run(`
+  CREATE TRIGGER IF NOT EXISTS update_properties_timestamp AFTER UPDATE ON properties
+  BEGIN UPDATE properties SET updated_at = datetime('now') WHERE id = NEW.id; END
+`);
+db.run(`
+  CREATE TRIGGER IF NOT EXISTS update_units_timestamp AFTER UPDATE ON units
+  BEGIN UPDATE units SET updated_at = datetime('now') WHERE id = NEW.id; END
+`);
+db.run(`
+  CREATE TRIGGER IF NOT EXISTS update_tenants_timestamp AFTER UPDATE ON tenants
+  BEGIN UPDATE tenants SET updated_at = datetime('now') WHERE id = NEW.id; END
+`);
+db.run(`
+  CREATE TRIGGER IF NOT EXISTS update_rent_payments_timestamp AFTER UPDATE ON rent_payments
+  BEGIN UPDATE rent_payments SET updated_at = datetime('now') WHERE id = NEW.id; END
 `);
 
 export { db };
