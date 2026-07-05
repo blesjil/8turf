@@ -1,0 +1,28 @@
+import { redirect, notFound } from 'next/navigation';
+import { headers } from 'next/headers';
+import { auth } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { EditPropertyForm } from './edit-property-form';
+
+type Params = Promise<{ id: string }>;
+
+export default async function EditPropertyPage({ params }: { params: Params }) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect('/authenticate');
+
+  const { id } = await params;
+
+  const property = db
+    .query<{ id: string; name: string; address: string }, [string, string]>(
+      'SELECT id, name, address FROM properties WHERE id = ? AND user_id = ?',
+    )
+    .get(id, session.user.id);
+  if (!property) notFound();
+
+  return (
+    <div className='p-8 max-w-lg mx-auto'>
+      <h1 className='text-2xl font-bold mb-6'>Edit Property</h1>
+      <EditPropertyForm id={property.id} name={property.name} address={property.address} />
+    </div>
+  );
+}
