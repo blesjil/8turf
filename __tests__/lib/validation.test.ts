@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { createNoteSchema, updateNoteSchema, toggleSharingSchema } from '@/lib/validation';
+import {
+  createNoteSchema,
+  updateNoteSchema,
+  toggleSharingSchema,
+  createUserSchema,
+  promoteToAdminSchema,
+} from '@/lib/validation';
 
 describe('createNoteSchema', () => {
   it('passes with valid title and content', () => {
@@ -87,6 +93,64 @@ describe('toggleSharingSchema', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.enable).toBe(false);
+    }
+  });
+});
+
+describe('createUserSchema', () => {
+  it('passes with valid email and name', () => {
+    const result = createUserSchema.safeParse({
+      email: 'new-user@example.com',
+      name: 'New User',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('fails with invalid email', () => {
+    const result = createUserSchema.safeParse({
+      email: 'not-an-email',
+      name: 'New User',
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.email).toContain('Invalid email address');
+    }
+  });
+
+  it('fails with empty name', () => {
+    const result = createUserSchema.safeParse({
+      email: 'new-user@example.com',
+      name: '',
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.name).toBeDefined();
+    }
+  });
+
+  it('fails with name > 200 chars', () => {
+    const result = createUserSchema.safeParse({
+      email: 'new-user@example.com',
+      name: 'a'.repeat(201),
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.name).toContain('Name is too long');
+    }
+  });
+});
+
+describe('promoteToAdminSchema', () => {
+  it('passes with a non-empty user id', () => {
+    const result = promoteToAdminSchema.safeParse({ userId: 'user-123' });
+    expect(result.success).toBe(true);
+  });
+
+  it('fails with an empty user id', () => {
+    const result = promoteToAdminSchema.safeParse({ userId: '' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.userId).toBeDefined();
     }
   });
 });

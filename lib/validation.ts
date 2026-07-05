@@ -15,3 +15,12 @@ export const toggleSharingSchema = z.object({
   noteId: z.string(),
   enable: z.enum(['true', 'false']).transform((v) => v === 'true'),
 });
+
+export const createUserSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  name: z.string().min(1, 'Name is required').max(200, 'Name is too long'),
+});
+
+export const promoteToAdminSchema = z.object({
+  userId: z.string().min(1, 'User id is required'),
+});

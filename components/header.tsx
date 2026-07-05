@@ -8,6 +8,7 @@ interface HeaderProps {
     id: string;
     name: string;
     email: string;
+    role?: string | null;
   };
 }
 
@@ -18,20 +19,27 @@ export function Header({ user }: HeaderProps) {
         NextNotes
       </Link>
       {user && (
-        <button
-          onClick={() =>
-            signOut({
-              fetchOptions: {
-                onSuccess: () => {
-                  window.location.href = '/';
+        <div className='flex items-center gap-4'>
+          {user.role === 'admin' && (
+            <Link href='/admin/users' className='text-sm text-foreground/60 hover:text-foreground'>
+              Manage Users
+            </Link>
+          )}
+          <button
+            onClick={() =>
+              signOut({
+                fetchOptions: {
+                  onSuccess: () => {
+                    window.location.href = '/';
+                  },
                 },
-              },
-            })
-          }
-          className='text-sm text-foreground/60 hover:text-foreground cursor-pointer'
-        >
-          Logout
-        </button>
+              })
+            }
+            className='text-sm text-foreground/60 hover:text-foreground cursor-pointer'
+          >
+            Logout
+          </button>
+        </div>
       )}
     </header>
   );

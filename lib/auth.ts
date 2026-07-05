@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { nextCookies } from 'better-auth/next-js';
+import { admin } from 'better-auth/plugins';
 
 import { db } from './db';
 
@@ -8,6 +9,13 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   emailAndPassword: {
     enabled: true,
+    disableSignUp: true,
   },
-  plugins: [nextCookies()],
+  plugins: [
+    admin({
+      defaultRole: 'user',
+      adminRoles: ['admin'],
+    }),
+    nextCookies(),
+  ],
 });

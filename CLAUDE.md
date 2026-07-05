@@ -29,9 +29,9 @@ This is a Next.js 16 application using the App Router pattern with:
 
 ### Key Dependencies
 
-- `@tiptap/*` - Rich text editor components
 - `better-auth` - Authentication library
 - `zod` - Schema validation
+- `bun:sqlite` - Database access (rental properties, units, tenants, payment ledger)
 
 ### Project Structure
 

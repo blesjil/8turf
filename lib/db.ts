@@ -7,6 +7,20 @@ const db = new Database(dbPath);
 db.run('PRAGMA journal_mode = WAL;');
 db.run('PRAGMA foreign_keys = ON;');
 
+function columnExists(table: string, column: string): boolean {
+  return db
+    .query<{ name: string }, []>(`PRAGMA table_info(${table})`)
+    .all()
+    .some((c) => c.name === column);
+}
+
+function addColumnIfMissing(table: string, ddl: string): void {
+  const column = ddl.trim().split(/\s+/)[0];
+  if (!columnExists(table, column)) {
+    db.run(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
+  }
+}
+
 // Create better-auth tables
 db.run(`
   CREATE TABLE IF NOT EXISTS user (
@@ -33,6 +47,13 @@ db.run(`
     FOREIGN KEY (userId) REFERENCES user(id)
   )
 `);
+
+// Admin plugin columns (idempotent — safe to re-run on every module load)
+addColumnIfMissing('user', "role TEXT DEFAULT 'user'");
+addColumnIfMissing('user', 'banned INTEGER');
+addColumnIfMissing('user', 'banReason TEXT');
+addColumnIfMissing('user', 'banExpires TEXT');
+addColumnIfMissing('session', 'impersonatedBy TEXT');
 
 db.run(`
   CREATE TABLE IF NOT EXISTS account (
