@@ -1,10 +1,11 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { formatCents } from '@/lib/money';
 import {
   endTenancy,
   assignTenant,
+  updateTenant,
   type TenantActionResult,
 } from '@/app/properties/[id]/units/[unitId]/actions';
 
@@ -24,6 +25,11 @@ export function TenantCard({ unitId, tenant }: { unitId: string; tenant: Tenant 
     assignTenant,
     {},
   );
+  const [updateState, updateAction, updatePending] = useActionState<TenantActionResult, FormData>(
+    updateTenant,
+    {},
+  );
+  const [isEditing, setIsEditing] = useState(false);
 
   if (!tenant) {
     return (
@@ -123,6 +129,119 @@ export function TenantCard({ unitId, tenant }: { unitId: string; tenant: Tenant 
     );
   }
 
+  if (isEditing) {
+    return (
+      <div className='border border-border rounded-lg p-4'>
+        <h3 className='font-semibold mb-3'>Edit Tenant</h3>
+        <form action={updateAction} className='space-y-3'>
+          <input type='hidden' name='id' value={tenant.id} />
+          {updateState.error?.general && (
+            <p className='text-sm text-red-600'>{updateState.error.general}</p>
+          )}
+          <div className='grid grid-cols-2 gap-3'>
+            <div>
+              <input
+                name='name'
+                placeholder='Tenant name'
+                defaultValue={tenant.name}
+                required
+                className='w-full px-3 py-2 border border-border rounded-lg'
+              />
+              {updateState.error?.name && (
+                <p className='mt-1 text-sm text-red-600'>{updateState.error.name[0]}</p>
+              )}
+            </div>
+            <div>
+              <input
+                name='email'
+                type='email'
+                placeholder='Email (optional)'
+                defaultValue={tenant.email ?? ''}
+                className='w-full px-3 py-2 border border-border rounded-lg'
+              />
+              {updateState.error?.email && (
+                <p className='mt-1 text-sm text-red-600'>{updateState.error.email[0]}</p>
+              )}
+            </div>
+            <div>
+              <input
+                name='phone'
+                placeholder='Phone (optional)'
+                defaultValue={tenant.phone ?? ''}
+                className='w-full px-3 py-2 border border-border rounded-lg'
+              />
+              {updateState.error?.phone && (
+                <p className='mt-1 text-sm text-red-600'>{updateState.error.phone[0]}</p>
+              )}
+            </div>
+            <div>
+              <input
+                name='rentAmountDollars'
+                type='number'
+                step='0.01'
+                min='0'
+                placeholder='Rent $/mo'
+                defaultValue={(tenant.rent_amount / 100).toFixed(2)}
+                required
+                onChange={(e) => {
+                  const cents = Math.round(parseFloat(e.currentTarget.value || '0') * 100);
+                  const hidden = e.currentTarget.form?.elements.namedItem(
+                    'rentAmount',
+                  ) as HTMLInputElement | null;
+                  if (hidden) hidden.value = String(cents);
+                }}
+                className='w-full px-3 py-2 border border-border rounded-lg'
+              />
+              <input type='hidden' name='rentAmount' defaultValue={tenant.rent_amount} />
+              {updateState.error?.rentAmount && (
+                <p className='mt-1 text-sm text-red-600'>{updateState.error.rentAmount[0]}</p>
+              )}
+            </div>
+            <div>
+              <input
+                name='leaseStartDate'
+                type='date'
+                defaultValue={tenant.lease_start_date}
+                required
+                className='w-full px-3 py-2 border border-border rounded-lg'
+              />
+              {updateState.error?.leaseStartDate && (
+                <p className='mt-1 text-sm text-red-600'>{updateState.error.leaseStartDate[0]}</p>
+              )}
+            </div>
+            <div>
+              <input
+                name='leaseEndDate'
+                type='date'
+                defaultValue={tenant.lease_end_date ?? ''}
+                className='w-full px-3 py-2 border border-border rounded-lg'
+              />
+              {updateState.error?.leaseEndDate && (
+                <p className='mt-1 text-sm text-red-600'>{updateState.error.leaseEndDate[0]}</p>
+              )}
+            </div>
+          </div>
+          <div className='flex gap-2'>
+            <button
+              type='submit'
+              disabled={updatePending}
+              className='bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50'
+            >
+              {updatePending ? 'Saving...' : 'Save Changes'}
+            </button>
+            <button
+              type='button'
+              onClick={() => setIsEditing(false)}
+              className='px-4 py-2 border border-border rounded-lg hover:bg-black/5'
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div className='border border-border rounded-lg p-4'>
       <div className='flex items-start justify-between'>
@@ -136,17 +255,29 @@ export function TenantCard({ unitId, tenant }: { unitId: string; tenant: Tenant 
             {tenant.lease_end_date || 'ongoing'}
           </p>
         </div>
-        <form
-          action={async (formData) => {
-            formData.set('id', tenant.id);
-            formData.set('leaseEndDate', new Date().toISOString().slice(0, 10));
-            await endTenancy(formData);
-          }}
-        >
-          <button type='submit' className='text-sm text-red-600 hover:text-red-800 cursor-pointer'>
-            End Tenancy
+        <div className='flex items-center gap-3'>
+          <button
+            type='button'
+            onClick={() => setIsEditing(true)}
+            className='text-sm text-blue-600 hover:text-blue-800 cursor-pointer'
+          >
+            Edit
           </button>
-        </form>
+          <form
+            action={async (formData) => {
+              formData.set('id', tenant.id);
+              formData.set('leaseEndDate', new Date().toISOString().slice(0, 10));
+              await endTenancy(formData);
+            }}
+          >
+            <button
+              type='submit'
+              className='text-sm text-red-600 hover:text-red-800 cursor-pointer'
+            >
+              End Tenancy
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

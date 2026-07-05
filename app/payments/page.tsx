@@ -39,7 +39,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
        FROM tenants t
        JOIN units u ON u.id = t.unit_id
        JOIN properties p ON p.id = u.property_id
-       WHERE p.user_id = ? AND p.archived_at IS NULL AND u.archived_at IS NULL AND t.is_active = 1
+       WHERE p.user_id = ? AND p.archived_at IS NULL AND u.archived_at IS NULL
        ORDER BY p.name, u.unit_label`,
     )
     .all(session.user.id);

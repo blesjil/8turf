@@ -54,16 +54,18 @@ export default async function UnitDetail({ params }: { params: Params }) {
 
   const currentPeriod = new Date().toISOString().slice(0, 7);
 
-  const payments = activeTenant
-    ? db
-        .query<Payment, [string]>(
-          `SELECT id, amount, period, paid_date, method, notes FROM rent_payments
-           WHERE tenant_id = ? ORDER BY period DESC, paid_date DESC`,
-        )
-        .all(activeTenant.id)
-    : [];
+  const paymentsByTenant = new Map<string, Payment[]>();
+  for (const t of tenantHistory) {
+    const tenantPayments = db
+      .query<Payment, [string]>(
+        `SELECT id, amount, period, paid_date, method, notes FROM rent_payments
+         WHERE tenant_id = ? ORDER BY period DESC, paid_date DESC`,
+      )
+      .all(t.id);
+    paymentsByTenant.set(t.id, tenantPayments);
+  }
 
-  const currentPeriodTotal = payments
+  const currentPeriodTotal = ((activeTenant && paymentsByTenant.get(activeTenant.id)) || [])
     .filter((p) => p.period === currentPeriod)
     .reduce((sum, p) => sum + p.amount, 0);
 
@@ -123,12 +125,15 @@ export default async function UnitDetail({ params }: { params: Params }) {
         </div>
       )}
 
-      {activeTenant && (
-        <div>
-          <h2 className='text-xl font-semibold mb-3'>Payment Ledger</h2>
-          <PaymentLedger tenantId={activeTenant.id} payments={payments} />
+      {tenantHistory.map((t) => (
+        <div key={t.id} className='mb-8'>
+          <h2 className='text-xl font-semibold mb-3'>
+            Payment Ledger &mdash; {t.name}
+            {t.is_active === 1 && <span className='ml-2 text-green-600 text-sm'>(current)</span>}
+          </h2>
+          <PaymentLedger tenantId={t.id} payments={paymentsByTenant.get(t.id) ?? []} />
         </div>
-      )}
+      ))}
     </div>
   );
 }
