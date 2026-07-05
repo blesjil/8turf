@@ -35,51 +35,81 @@ export function TenantCard({ unitId, tenant }: { unitId: string; tenant: Tenant 
             <p className='text-sm text-red-600'>{assignState.error.general}</p>
           )}
           <div className='grid grid-cols-2 gap-3'>
-            <input
-              name='name'
-              placeholder='Tenant name'
-              required
-              className='px-3 py-2 border border-border rounded-lg'
-            />
-            <input
-              name='email'
-              type='email'
-              placeholder='Email (optional)'
-              className='px-3 py-2 border border-border rounded-lg'
-            />
-            <input
-              name='phone'
-              placeholder='Phone (optional)'
-              className='px-3 py-2 border border-border rounded-lg'
-            />
-            <input
-              name='rentAmountDollars'
-              type='number'
-              step='0.01'
-              min='0'
-              placeholder='Rent $/mo'
-              required
-              onChange={(e) => {
-                const cents = Math.round(parseFloat(e.currentTarget.value || '0') * 100);
-                const hidden = e.currentTarget.form?.elements.namedItem(
-                  'rentAmount',
-                ) as HTMLInputElement | null;
-                if (hidden) hidden.value = String(cents);
-              }}
-              className='px-3 py-2 border border-border rounded-lg'
-            />
-            <input type='hidden' name='rentAmount' />
-            <input
-              name='leaseStartDate'
-              type='date'
-              required
-              className='px-3 py-2 border border-border rounded-lg'
-            />
-            <input
-              name='leaseEndDate'
-              type='date'
-              className='px-3 py-2 border border-border rounded-lg'
-            />
+            <div>
+              <input
+                name='name'
+                placeholder='Tenant name'
+                required
+                className='w-full px-3 py-2 border border-border rounded-lg'
+              />
+              {assignState.error?.name && (
+                <p className='mt-1 text-sm text-red-600'>{assignState.error.name[0]}</p>
+              )}
+            </div>
+            <div>
+              <input
+                name='email'
+                type='email'
+                placeholder='Email (optional)'
+                className='w-full px-3 py-2 border border-border rounded-lg'
+              />
+              {assignState.error?.email && (
+                <p className='mt-1 text-sm text-red-600'>{assignState.error.email[0]}</p>
+              )}
+            </div>
+            <div>
+              <input
+                name='phone'
+                placeholder='Phone (optional)'
+                className='w-full px-3 py-2 border border-border rounded-lg'
+              />
+              {assignState.error?.phone && (
+                <p className='mt-1 text-sm text-red-600'>{assignState.error.phone[0]}</p>
+              )}
+            </div>
+            <div>
+              <input
+                name='rentAmountDollars'
+                type='number'
+                step='0.01'
+                min='0'
+                placeholder='Rent $/mo'
+                required
+                onChange={(e) => {
+                  const cents = Math.round(parseFloat(e.currentTarget.value || '0') * 100);
+                  const hidden = e.currentTarget.form?.elements.namedItem(
+                    'rentAmount',
+                  ) as HTMLInputElement | null;
+                  if (hidden) hidden.value = String(cents);
+                }}
+                className='w-full px-3 py-2 border border-border rounded-lg'
+              />
+              <input type='hidden' name='rentAmount' />
+              {assignState.error?.rentAmount && (
+                <p className='mt-1 text-sm text-red-600'>{assignState.error.rentAmount[0]}</p>
+              )}
+            </div>
+            <div>
+              <input
+                name='leaseStartDate'
+                type='date'
+                required
+                className='w-full px-3 py-2 border border-border rounded-lg'
+              />
+              {assignState.error?.leaseStartDate && (
+                <p className='mt-1 text-sm text-red-600'>{assignState.error.leaseStartDate[0]}</p>
+              )}
+            </div>
+            <div>
+              <input
+                name='leaseEndDate'
+                type='date'
+                className='w-full px-3 py-2 border border-border rounded-lg'
+              />
+              {assignState.error?.leaseEndDate && (
+                <p className='mt-1 text-sm text-red-600'>{assignState.error.leaseEndDate[0]}</p>
+              )}
+            </div>
           </div>
           <button
             type='submit'

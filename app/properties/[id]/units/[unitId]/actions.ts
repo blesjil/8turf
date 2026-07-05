@@ -167,8 +167,12 @@ export async function assignTenant(
         parsed.data.leaseEndDate || null,
       ],
     );
-  } catch {
-    return { error: { general: 'This unit already has an active tenant.' } };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '';
+    if (message.includes('UNIQUE') && message.includes('idx_tenants_active_unit')) {
+      return { error: { general: 'This unit already has an active tenant.' } };
+    }
+    return { error: { general: 'Failed to assign tenant. Please try again.' } };
   }
 
   redirect(`/properties/${unit.property_id}/units/${unit.id}`);
