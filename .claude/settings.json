@@ -1,4 +1,24 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(sqlite3 data/app.db \"DELETE FROM account WHERE userId='BdieGPQwulA57HCW29lLAWgb7Jj80YjI'; DELETE FROM user WHERE id='BdieGPQwulA57HCW29lLAWgb7Jj80YjI'; SELECT id,email,role FROM user;\")",
+      "Bash(sqlite3 /Users/blesjil/Documents/Jill/apps/8turf/data/app.db \"PRAGMA table_info\\(rent_payments\\);\" \"PRAGMA table_info\\(expenses\\);\")",
+      "Bash(sqlite3 /Users/blesjil/Documents/Jill/apps/8turf/data/app.db \"SELECT name FROM sqlite_master WHERE tbl_name='expenses';\")",
+      "Bash(sqlite3 /Users/blesjil/Documents/Jill/apps/8turf/data/app.db \"SELECT category, amount, remarks FROM expenses WHERE category='repaint';\" \"SELECT payment_type, amount, notes FROM rent_payments WHERE payment_type='deposit';\")",
+      "Bash(sqlite3 /Users/blesjil/Documents/Jill/apps/8turf/data/app.db \"DELETE FROM rent_payments WHERE payment_type='deposit' AND notes='Security deposit for lease'; DELETE FROM expenses WHERE category='repaint' AND remarks='Repainted living room walls';\")",
+      "Bash(sqlite3 /Users/blesjil/Documents/Jill/apps/8turf/data/app.db \"SELECT COUNT\\(*\\) FROM rent_payments;\" \"SELECT COUNT\\(*\\) FROM expenses;\")",
+      "Bash(supabase init *)",
+      "Bash(python3 -)",
+      "Bash(supabase start *)",
+      "Bash(docker exec *)",
+      "Bash(bun add *)",
+      "Bash(sqlite3 data/app.db \"SELECT count\\(*\\) FROM tenants WHERE is_active = 1;\")",
+      "Bash(bun test *)",
+      "Bash(bun dev *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(docker exec supabase_db_8turf psql -U postgres -c ' *)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {

@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { query, queryOne } from '@/lib/db';
 import { createUnitSchema } from '@/lib/validation';
 
 export interface UnitActionResult {
@@ -34,19 +34,18 @@ export async function createUnit(
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  const property = db
-    .query<{ id: string }, [string, string]>(
-      'SELECT id FROM properties WHERE id = ? AND user_id = ?',
-    )
-    .get(parsed.data.propertyId, session.user.id);
+  const property = await queryOne<{ id: string }>(
+    'SELECT id FROM properties WHERE id = $1 AND user_id = $2',
+    [parsed.data.propertyId, session.user.id],
+  );
   if (!property) {
     return { error: { general: 'Property not found or access denied.' } };
   }
 
   const id = crypto.randomUUID();
-  db.run(
+  await query(
     `INSERT INTO units (id, property_id, unit_label, bedrooms, bathrooms, rent_amount)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+     VALUES ($1, $2, $3, $4, $5, $6)`,
     [
       id,
       property.id,

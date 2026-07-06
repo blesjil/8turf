@@ -3,8 +3,9 @@ export function dollarsToCents(input: string): number {
 }
 
 export function formatCents(cents: number): string {
-  return new Intl.NumberFormat('en-US', {
+  const formatted = new Intl.NumberFormat('en-PH', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'PHP',
   }).format(cents / 100);
+  return formatted.replace(/^(\D+)/, '$1 ');
 }

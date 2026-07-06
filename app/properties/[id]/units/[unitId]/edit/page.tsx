@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { queryOne } from '@/lib/db';
 import { EditUnitForm } from './edit-unit-form';
 
 type Params = Promise<{ id: string; unitId: string }>;
@@ -20,14 +20,13 @@ export default async function EditUnitPage({ params }: { params: Params }) {
 
   const { id, unitId } = await params;
 
-  const unit = db
-    .query<Unit, [string, string, string]>(
-      `SELECT u.id, u.unit_label, u.bedrooms, u.bathrooms, u.rent_amount
-       FROM units u
-       JOIN properties p ON p.id = u.property_id
-       WHERE u.id = ? AND u.property_id = ? AND p.user_id = ?`,
-    )
-    .get(unitId, id, session.user.id);
+  const unit = await queryOne<Unit>(
+    `SELECT u.id, u.unit_label, u.bedrooms, u.bathrooms, u.rent_amount
+     FROM units u
+     JOIN properties p ON p.id = u.property_id
+     WHERE u.id = $1 AND u.property_id = $2 AND p.user_id = $3`,
+    [unitId, id, session.user.id],
+  );
   if (!unit) notFound();
 
   return (

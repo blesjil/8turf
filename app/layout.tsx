@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: '8turf Apartments',
+  title: '8Turf',
   description: 'Manage rental properties, units, tenants, and payments',
 };
 

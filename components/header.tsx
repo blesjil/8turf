@@ -16,7 +16,7 @@ export function Header({ user }: HeaderProps) {
   return (
     <header className='sticky top-0 bg-background border-b border-border px-6 py-4 flex items-center justify-between'>
       <Link href='/dashboard' className='text-xl font-bold'>
-        8turf Apartments
+        8Turf
       </Link>
       {user && (
         <div className='flex items-center gap-4'>

@@ -79,6 +79,10 @@ function AuthForm() {
           {isPending ? 'Loading...' : 'Sign In'}
         </button>
       </form>
+
+      <p className='mt-4 text-sm text-center text-foreground/60'>
+        Forgot your password? Ask an admin to reset it from Manage Users.
+      </p>
     </>
   );
 }

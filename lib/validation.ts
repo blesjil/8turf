@@ -9,6 +9,16 @@ export const promoteToAdminSchema = z.object({
   userId: z.string().min(1, 'User id is required'),
 });
 
+export const resetUserPasswordSchema = z.object({
+  userId: z.string().min(1, 'User id is required'),
+  newPassword: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(200, 'Password is too long')
+    .optional()
+    .or(z.literal('')),
+});
+
 export const createPropertySchema = z.object({
   name: z.string().min(1, 'Name is required').max(200, 'Name is too long'),
   address: z.string().min(1, 'Address is required').max(500, 'Address is too long'),
@@ -68,6 +78,7 @@ export const endTenancySchema = z.object({
 });
 
 const periodField = z.string().regex(/^\d{4}-\d{2}$/, 'Must be a valid month (YYYY-MM)');
+const paymentTypeField = z.enum(['deposit', 'advance', 'reservation', 'rental']);
 
 export const recordPaymentSchema = z.object({
   tenantId: z.string().min(1, 'Tenant id is required'),
@@ -77,10 +88,36 @@ export const recordPaymentSchema = z.object({
     .positive('Must be greater than zero'),
   period: periodField,
   paidDate: dateField,
+  paymentType: paymentTypeField,
   method: z.enum(['cash', 'bank_transfer', 'check', 'other']).optional().or(z.literal('')),
   notes: z.string().max(1000, 'Notes are too long').optional().or(z.literal('')),
 });
 
 export const updatePaymentSchema = recordPaymentSchema.omit({ tenantId: true }).extend({
   id: z.string().min(1, 'Payment id is required'),
+});
+
+const expenseCategoryField = z.enum(['repair', 'cleaning', 'tax', 'other', 'repaint']);
+const expenseBaseSchema = z.object({
+  category: expenseCategoryField,
+  amount: z.coerce
+    .number()
+    .int('Must be a whole number of cents')
+    .positive('Must be greater than zero'),
+  expenseDate: dateField,
+  remarks: z.string().max(1000, 'Remarks are too long').optional().or(z.literal('')),
+});
+
+export const recordPropertyExpenseSchema = expenseBaseSchema.extend({
+  propertyId: z.string().min(1, 'Property id is required'),
+});
+export const updatePropertyExpenseSchema = expenseBaseSchema.extend({
+  id: z.string().min(1, 'Expense id is required'),
+});
+
+export const recordUnitExpenseSchema = expenseBaseSchema.extend({
+  unitId: z.string().min(1, 'Unit id is required'),
+});
+export const updateUnitExpenseSchema = expenseBaseSchema.extend({
+  id: z.string().min(1, 'Expense id is required'),
 });

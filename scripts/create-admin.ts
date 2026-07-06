@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth';
+import { pool } from '@/lib/db';
 import { generateTempPassword } from '@/lib/generate-password';
 
 const email = process.argv[2];
@@ -20,3 +21,5 @@ const result = await auth.api.createUser({
 
 console.log(`Admin user created: ${result.user.email} (id: ${result.user.id})`);
 console.log(`Temporary password (relay this to the admin, then have them change it): ${password}`);
+
+await pool.end();

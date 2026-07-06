@@ -31,7 +31,7 @@ This is a Next.js 16 application using the App Router pattern with:
 
 - `better-auth` - Authentication library
 - `zod` - Schema validation
-- `bun:sqlite` - Database access (rental properties, units, tenants, payment ledger)
+- Supabase Postgres via `pg` Pool (`lib/db.ts`) - rental properties, units, tenants, payment ledger, expenses. Local stack: `supabase start` (DB on port 54342); schema in `supabase/migrations/`
 
 ### Project Structure
 

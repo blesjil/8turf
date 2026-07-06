@@ -1,9 +1,10 @@
 import { notFound, redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { query } from '@/lib/db';
 import { CreateUserForm } from './create-user-form';
 import { PromoteButton } from './promote-button';
+import { ResetPasswordButton } from './reset-password-button';
 
 interface UserRow {
   id: string;
@@ -22,9 +23,9 @@ export default async function AdminUsersPage() {
     notFound();
   }
 
-  const users = db
-    .query<UserRow, []>('SELECT id, name, email, role, createdAt FROM user ORDER BY createdAt DESC')
-    .all();
+  const users = await query<UserRow>(
+    'SELECT id, name, email, role, "createdAt" FROM "user" ORDER BY "createdAt" DESC',
+  );
 
   return (
     <div className='max-w-3xl mx-auto p-8 space-y-8'>
@@ -48,7 +49,10 @@ export default async function AdminUsersPage() {
               <td className='py-2 pr-4'>{user.email}</td>
               <td className='py-2 pr-4'>{user.role ?? 'user'}</td>
               <td className='py-2 pr-4'>
-                {user.role !== 'admin' && <PromoteButton userId={user.id} />}
+                <div className='flex items-center gap-3'>
+                  {user.role !== 'admin' && <PromoteButton userId={user.id} />}
+                  <ResetPasswordButton userId={user.id} />
+                </div>
               </td>
             </tr>
           ))}

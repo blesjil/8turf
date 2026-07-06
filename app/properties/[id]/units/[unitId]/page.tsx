@@ -2,13 +2,15 @@ import { redirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { query, queryOne } from '@/lib/db';
 import { formatCents } from '@/lib/money';
 import { UnitActions } from './unit-actions';
 import { TenantCard, type Tenant } from '@/components/tenant-card';
 import { PaymentLedger, type Payment } from '@/components/payment-ledger';
 import { PaymentStatusBadge } from '@/components/payment-status-badge';
 import { computePaymentStatus, isLeaseActiveForPeriod } from '@/lib/payment-status';
+import { ExpenseList, type Expense } from '@/components/expense-list';
+import { recordUnitExpense, updateUnitExpense, deleteUnitExpense } from './actions';
 
 type Params = Promise<{ id: string; unitId: string }>;
 
@@ -27,41 +29,44 @@ export default async function UnitDetail({ params }: { params: Params }) {
 
   const { id, unitId } = await params;
 
-  const unit = db
-    .query<Unit, [string, string, string]>(
-      `SELECT u.id, u.property_id, u.unit_label, u.bedrooms, u.bathrooms, u.rent_amount
-       FROM units u
-       JOIN properties p ON p.id = u.property_id
-       WHERE u.id = ? AND u.property_id = ? AND p.user_id = ?`,
-    )
-    .get(unitId, id, session.user.id);
+  const unit = await queryOne<Unit>(
+    `SELECT u.id, u.property_id, u.unit_label, u.bedrooms, u.bathrooms, u.rent_amount
+     FROM units u
+     JOIN properties p ON p.id = u.property_id
+     WHERE u.id = $1 AND u.property_id = $2 AND p.user_id = $3`,
+    [unitId, id, session.user.id],
+  );
   if (!unit) notFound();
 
-  const activeTenant =
-    db
-      .query<Tenant, [string]>(
-        `SELECT id, name, email, phone, rent_amount, lease_start_date, lease_end_date, is_active
-       FROM tenants WHERE unit_id = ? AND is_active = 1`,
-      )
-      .get(unit.id) ?? null;
+  const activeTenant = await queryOne<Tenant>(
+    `SELECT id, name, email, phone, rent_amount, lease_start_date, lease_end_date, is_active
+     FROM tenants WHERE unit_id = $1 AND is_active`,
+    [unit.id],
+  );
 
-  const tenantHistory = db
-    .query<Tenant, [string]>(
-      `SELECT id, name, email, phone, rent_amount, lease_start_date, lease_end_date, is_active
-       FROM tenants WHERE unit_id = ? ORDER BY lease_start_date DESC`,
-    )
-    .all(unit.id);
+  const tenantHistory = await query<Tenant>(
+    `SELECT id, name, email, phone, rent_amount, lease_start_date, lease_end_date, is_active
+     FROM tenants WHERE unit_id = $1 ORDER BY lease_start_date DESC`,
+    [unit.id],
+  );
+
+  const pastTenants = tenantHistory.filter((t) => !t.is_active);
+
+  const expenses = await query<Expense>(
+    `SELECT id, category, amount, expense_date, remarks FROM expenses
+     WHERE unit_id = $1 ORDER BY expense_date DESC`,
+    [unit.id],
+  );
 
   const currentPeriod = new Date().toISOString().slice(0, 7);
 
   const paymentsByTenant = new Map<string, Payment[]>();
   for (const t of tenantHistory) {
-    const tenantPayments = db
-      .query<Payment, [string]>(
-        `SELECT id, amount, period, paid_date, method, notes FROM rent_payments
-         WHERE tenant_id = ? ORDER BY period DESC, paid_date DESC`,
-      )
-      .all(t.id);
+    const tenantPayments = await query<Payment>(
+      `SELECT id, amount, period, paid_date, payment_type, method, notes FROM rent_payments
+       WHERE tenant_id = $1 ORDER BY period DESC, paid_date DESC`,
+      [t.id],
+    );
     paymentsByTenant.set(t.id, tenantPayments);
   }
 
@@ -96,7 +101,11 @@ export default async function UnitDetail({ params }: { params: Params }) {
             asking
           </p>
         </div>
-        <UnitActions propertyId={unit.property_id} unitId={unit.id} />
+        <UnitActions
+          propertyId={unit.property_id}
+          unitId={unit.id}
+          isAdmin={session.user.role === 'admin'}
+        />
       </div>
 
       <div className='mb-8'>
@@ -104,36 +113,52 @@ export default async function UnitDetail({ params }: { params: Params }) {
         <TenantCard unitId={unit.id} tenant={activeTenant} />
       </div>
 
-      {tenantHistory.length > 0 && (
+      {activeTenant && (
+        <div className='mb-8'>
+          <div className='mb-4 flex items-center gap-2'>
+            <span className='text-sm text-foreground/60'>This month ({currentPeriod}):</span>
+            {currentStatus && <PaymentStatusBadge status={currentStatus} />}
+          </div>
+          <h2 className='text-xl font-semibold mb-3'>Payment Ledger</h2>
+          <PaymentLedger
+            tenantId={activeTenant.id}
+            payments={paymentsByTenant.get(activeTenant.id) ?? []}
+          />
+        </div>
+      )}
+
+      {pastTenants.length > 0 && (
         <div className='mb-8'>
           <h2 className='text-xl font-semibold mb-3'>Tenancy History</h2>
-          <ul className='space-y-2'>
-            {tenantHistory.map((t) => (
-              <li key={t.id} className='text-sm text-foreground/60 border-b border-border/50 pb-2'>
-                {t.name} &middot; {t.lease_start_date} to {t.lease_end_date || 'ongoing'}
-                {t.is_active === 1 && <span className='ml-2 text-green-600'>(current)</span>}
+          <ul className='space-y-6'>
+            {pastTenants.map((t) => (
+              <li key={t.id}>
+                <p className='text-sm text-foreground/60 border-b border-border/50 pb-2 mb-3'>
+                  <strong className='text-foreground'>{t.name}</strong> &middot;{' '}
+                  {t.lease_start_date} to {t.lease_end_date || 'ongoing'}
+                </p>
+                <PaymentLedger
+                  tenantId={t.id}
+                  payments={paymentsByTenant.get(t.id) ?? []}
+                  readOnly
+                />
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      {activeTenant && (
-        <div className='mb-4 flex items-center gap-2'>
-          <span className='text-sm text-foreground/60'>This month ({currentPeriod}):</span>
-          {currentStatus && <PaymentStatusBadge status={currentStatus} />}
-        </div>
-      )}
-
-      {tenantHistory.map((t) => (
-        <div key={t.id} className='mb-8'>
-          <h2 className='text-xl font-semibold mb-3'>
-            Payment Ledger &mdash; {t.name}
-            {t.is_active === 1 && <span className='ml-2 text-green-600 text-sm'>(current)</span>}
-          </h2>
-          <PaymentLedger tenantId={t.id} payments={paymentsByTenant.get(t.id) ?? []} />
-        </div>
-      ))}
+      <div className='mb-8'>
+        <h2 className='text-xl font-semibold mb-3'>Unit Expenses</h2>
+        <ExpenseList
+          parentIdField='unitId'
+          parentId={unit.id}
+          expenses={expenses}
+          recordAction={recordUnitExpense}
+          updateAction={updateUnitExpense}
+          deleteAction={deleteUnitExpense}
+        />
+      </div>
     </div>
   );
 }

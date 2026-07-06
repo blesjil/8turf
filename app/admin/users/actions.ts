@@ -5,7 +5,7 @@ import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { APIError } from 'better-auth/api';
 import { auth } from '@/lib/auth';
-import { createUserSchema, promoteToAdminSchema } from '@/lib/validation';
+import { createUserSchema, promoteToAdminSchema, resetUserPasswordSchema } from '@/lib/validation';
 import { generateTempPassword } from '@/lib/generate-password';
 
 async function requireAdminSession() {
@@ -59,6 +59,46 @@ export async function createUser(
 
   revalidatePath('/admin/users');
   return { success: true, tempPassword };
+}
+
+export interface ResetPasswordResult {
+  success: boolean;
+  tempPassword?: string;
+  error?: string;
+}
+
+export async function resetUserPassword(
+  _prevState: ResetPasswordResult,
+  formData: FormData,
+): Promise<ResetPasswordResult> {
+  await requireAdminSession();
+
+  const parsed = resetUserPasswordSchema.safeParse({
+    userId: formData.get('userId'),
+    newPassword: formData.get('newPassword'),
+  });
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.flatten().fieldErrors.newPassword?.[0] ?? 'Invalid input.',
+    };
+  }
+
+  const newPassword = parsed.data.newPassword || generateTempPassword();
+
+  try {
+    await auth.api.setUserPassword({
+      body: { userId: parsed.data.userId, newPassword },
+      headers: await headers(),
+    });
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof APIError ? err.message : 'Failed to reset password.',
+    };
+  }
+
+  return { success: true, tempPassword: newPassword };
 }
 
 export interface PromoteResult {

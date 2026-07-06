@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { queryOne } from '@/lib/db';
 import { NewUnitForm } from './new-unit-form';
 
 type Params = Promise<{ id: string }>;
@@ -12,11 +12,10 @@ export default async function NewUnitPage({ params }: { params: Params }) {
 
   const { id } = await params;
 
-  const property = db
-    .query<{ id: string }, [string, string]>(
-      'SELECT id FROM properties WHERE id = ? AND user_id = ?',
-    )
-    .get(id, session.user.id);
+  const property = await queryOne<{ id: string }>(
+    'SELECT id FROM properties WHERE id = $1 AND user_id = $2',
+    [id, session.user.id],
+  );
   if (!property) notFound();
 
   return (

@@ -17,7 +17,7 @@ export interface Tenant {
   rent_amount: number;
   lease_start_date: string;
   lease_end_date: string | null;
-  is_active: number;
+  is_active: boolean;
 }
 
 export function TenantCard({ unitId, tenant }: { unitId: string; tenant: Tenant | null }) {
@@ -79,7 +79,7 @@ export function TenantCard({ unitId, tenant }: { unitId: string; tenant: Tenant 
                 type='number'
                 step='0.01'
                 min='0'
-                placeholder='Rent $/mo'
+                placeholder='Rent ₱/mo'
                 required
                 onChange={(e) => {
                   const cents = Math.round(parseFloat(e.currentTarget.value || '0') * 100);
@@ -180,7 +180,7 @@ export function TenantCard({ unitId, tenant }: { unitId: string; tenant: Tenant 
                 type='number'
                 step='0.01'
                 min='0'
-                placeholder='Rent $/mo'
+                placeholder='Rent ₱/mo'
                 defaultValue={(tenant.rent_amount / 100).toFixed(2)}
                 required
                 onChange={(e) => {

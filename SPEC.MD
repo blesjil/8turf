@@ -22,7 +22,7 @@ This is a full pivot from the app's original note-taking purpose. There is no te
 - Next.js (App Router) + Bun runtime
 - TypeScript
 - TailwindCSS
-- SQLite via Bun's SQLite client (`bun:sqlite`) with raw SQL
+- Supabase Postgres (run locally via the Supabase CLI + Docker), accessed with raw SQL through a `pg` connection pool
 
 ## 2. Architecture
 
@@ -33,8 +33,8 @@ This is a full pivot from the app's original note-taking purpose. There is no te
   - Client components only where interactivity is required (forms, month picker, tenancy/payment dialogs)
   - Next.js Server Actions (`'use server'` functions in per-route `actions.ts` files) for all mutations — this app has no dedicated `/api/*` JSON routes for its domain data (matches the pattern already established for notes)
 - **Runtime:** Bun (for dev & production)
-- **Database:** Single SQLite file (`data/app.db`) accessed via Bun's SQLite client
-- **Auth:** better-auth integrated into Next.js (middleware + server helpers) — unchanged
+- **Database:** Supabase Postgres. Locally this is the Supabase Docker stack started with `supabase start` (project id `8turf`, DB on port 54342 — ports are shifted from the defaults so other local Supabase projects can run alongside). Only the Postgres piece is used: no supabase-js, no RLS, no GoTrue — auth is better-auth and all queries are raw server-side SQL through a shared `pg` Pool. Connection string comes from the `DATABASE_URL` env var
+- **Auth:** better-auth integrated into Next.js (middleware + server helpers), pointed at the same `pg` Pool
 
 ### 2.2 Application Layers
 
@@ -47,8 +47,8 @@ This is a full pivot from the app's original note-taking purpose. There is no te
 - No repository/DAO layer — raw SQL is written directly in server actions and server components, consistent with the app's existing convention
 
 **Data access layer**
-- Raw SQL queries executed via Bun's SQLite client
-- `lib/db.ts` owns schema creation and the singleton connection
+- Raw SQL queries executed via `pg` (`query`/`queryOne`/`execute` helpers from `lib/db.ts`)
+- `lib/db.ts` owns the singleton `pg` Pool; the schema lives in `supabase/migrations/*.sql` and is applied by the Supabase CLI (`supabase start` / `supabase db reset`), not at app startup
 - `lib/payment-status.ts` holds pure functions for deriving payment status and lease coverage, used by both the unit detail page and the cross-property `/payments` view
 
 ## 3. Functional Requirements
@@ -132,164 +132,187 @@ There is no unauthenticated/public area for rental data — the previous public 
 **UX**
 - Simple, minimal UI; clear empty states ("no properties yet", "no tenant assigned"); clear error messaging when a delete is blocked by existing history
 
-## 5. Data Model & Database Schema (SQLite)
+## 5. Data Model & Database Schema (Postgres)
+
+The schema is defined declaratively in `supabase/migrations/0001_init.sql` and applied by the Supabase CLI. Conventions: ids are `text` primary keys (better-auth generates text ids), money is integer cents, and date-like business fields are `text` ISO strings (`YYYY-MM-DD` / `YYYY-MM`) to keep comparison and rendering logic simple. Only `created_at`/`updated_at` are real `timestamptz` columns.
 
 ### 5.1 Tables
 
 #### better-auth Core Tables
 
-Unchanged from the prior version — `user`, `session`, `account`, `verification`. See existing `lib/db.ts` for their definitions; they are not modified by this pivot.
+`user`, `session`, `account`, `verification` — standard better-auth Postgres schema with the admin-plugin columns (`role`, `banned`, `banReason`, `banExpires` on `user`; `impersonatedBy` on `session`). Column names are camelCase and `user` is a reserved word in Postgres, so hand-written SQL must quote them: `SELECT "createdAt" FROM "user"`. See the migration file for full definitions.
 
 #### properties
 
 ```sql
-CREATE TABLE IF NOT EXISTS properties (
-  id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
-  name TEXT NOT NULL,
-  address TEXT NOT NULL,
-  archived_at TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY (user_id) REFERENCES user(id)
+create table properties (
+  id text primary key,
+  user_id text not null references "user" (id),
+  name text not null,
+  address text not null,
+  archived_at text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 ```
 
 | Field | Type | Description |
 |-------|------|-------------|
-| id | TEXT | Unique identifier (primary key) |
-| user_id | TEXT | Owning landlord (foreign key to `user`) |
-| name | TEXT | Property name |
-| address | TEXT | Property address |
-| archived_at | TEXT | Timestamp when archived, or NULL if active |
-| created_at | TEXT | Creation timestamp |
-| updated_at | TEXT | Last update timestamp |
+| id | text | Unique identifier (primary key) |
+| user_id | text | Owning landlord (foreign key to `user`) |
+| name | text | Property name |
+| address | text | Property address |
+| archived_at | text | Timestamp when archived, or NULL if active |
+| created_at | timestamptz | Creation timestamp |
+| updated_at | timestamptz | Last update timestamp (maintained by trigger) |
 
 #### units
 
 ```sql
-CREATE TABLE IF NOT EXISTS units (
-  id TEXT PRIMARY KEY,
-  property_id TEXT NOT NULL,
-  unit_label TEXT NOT NULL,
-  bedrooms INTEGER NOT NULL DEFAULT 0 CHECK (bedrooms >= 0),
-  bathrooms REAL NOT NULL DEFAULT 1 CHECK (bathrooms >= 0),
-  rent_amount INTEGER NOT NULL CHECK (rent_amount >= 0),
-  archived_at TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY (property_id) REFERENCES properties(id)
+create table units (
+  id text primary key,
+  property_id text not null references properties (id),
+  unit_label text not null,
+  bedrooms integer not null default 0 check (bedrooms >= 0),
+  bathrooms real not null default 1 check (bathrooms >= 0),
+  rent_amount integer not null check (rent_amount >= 0),
+  archived_at text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 ```
 
 | Field | Type | Description |
 |-------|------|-------------|
-| id | TEXT | Unique identifier (primary key) |
-| property_id | TEXT | Owning property (foreign key to `properties`) |
-| unit_label | TEXT | e.g. "Unit 2B", "Room 1" |
-| bedrooms | INTEGER | Number of bedrooms |
-| bathrooms | REAL | Number of bathrooms (supports e.g. 1.5) |
-| rent_amount | INTEGER | Asking rent in cents; default/prefill for new tenants, not the source of truth once a tenant is assigned |
-| archived_at | TEXT | Timestamp when archived, or NULL if active |
-| created_at | TEXT | Creation timestamp |
-| updated_at | TEXT | Last update timestamp |
+| id | text | Unique identifier (primary key) |
+| property_id | text | Owning property (foreign key to `properties`) |
+| unit_label | text | e.g. "Unit 2B", "Room 1" |
+| bedrooms | integer | Number of bedrooms |
+| bathrooms | real | Number of bathrooms (supports e.g. 1.5) |
+| rent_amount | integer | Asking rent in cents; default/prefill for new tenants, not the source of truth once a tenant is assigned |
+| archived_at | text | Timestamp when archived, or NULL if active |
 
 #### tenants
 
 ```sql
-CREATE TABLE IF NOT EXISTS tenants (
-  id TEXT PRIMARY KEY,
-  unit_id TEXT NOT NULL,
-  name TEXT NOT NULL,
-  email TEXT,
-  phone TEXT,
-  rent_amount INTEGER NOT NULL CHECK (rent_amount >= 0),
-  lease_start_date TEXT NOT NULL,
-  lease_end_date TEXT,
-  is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY (unit_id) REFERENCES units(id)
+create table tenants (
+  id text primary key,
+  unit_id text not null references units (id),
+  name text not null,
+  email text,
+  phone text,
+  rent_amount integer not null check (rent_amount >= 0),
+  lease_start_date text not null,
+  lease_end_date text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 -- Enforce at most one active tenant per unit
-CREATE UNIQUE INDEX IF NOT EXISTS idx_tenants_active_unit ON tenants(unit_id) WHERE is_active = 1;
+create unique index idx_tenants_active_unit on tenants (unit_id) where is_active;
 ```
 
 | Field | Type | Description |
 |-------|------|-------------|
-| id | TEXT | Unique identifier (primary key) |
-| unit_id | TEXT | Occupied unit (foreign key to `units`) — permanent, never reassigned |
-| name | TEXT | Tenant name |
-| email | TEXT | Tenant email (optional) |
-| phone | TEXT | Tenant phone (optional) |
-| rent_amount | INTEGER | Rent owed in cents — source of truth for payment status math |
-| lease_start_date | TEXT | Lease start date (`YYYY-MM-DD`) |
-| lease_end_date | TEXT | Lease end date, or NULL if ongoing |
-| is_active | INTEGER | 1 if currently occupying the unit, 0 if moved out |
-| created_at | TEXT | Creation timestamp |
-| updated_at | TEXT | Last update timestamp |
+| id | text | Unique identifier (primary key) |
+| unit_id | text | Occupied unit (foreign key to `units`) — permanent, never reassigned |
+| name | text | Tenant name |
+| email | text | Tenant email (optional) |
+| phone | text | Tenant phone (optional) |
+| rent_amount | integer | Rent owed in cents — source of truth for payment status math |
+| lease_start_date | text | Lease start date (`YYYY-MM-DD`) |
+| lease_end_date | text | Lease end date, or NULL if ongoing |
+| is_active | boolean | true if currently occupying the unit, false if moved out |
 
-**Moving a tenant:** there is no "move tenant to another unit" action. Moving means `endTenancy` on the current unit (sets `is_active = 0`, `lease_end_date`) followed by a brand new tenant row on the destination unit via `assignTenant`.
+**Moving a tenant:** there is no "move tenant to another unit" action. Moving means `endTenancy` on the current unit (sets `is_active = false`, `lease_end_date`) followed by a brand new tenant row on the destination unit via `assignTenant`.
 
 #### rent_payments
 
 ```sql
-CREATE TABLE IF NOT EXISTS rent_payments (
-  id TEXT PRIMARY KEY,
-  tenant_id TEXT NOT NULL,
-  unit_id TEXT NOT NULL,
-  amount INTEGER NOT NULL CHECK (amount > 0),
-  period TEXT NOT NULL CHECK (period GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]'),
-  paid_date TEXT NOT NULL,
-  method TEXT,
-  notes TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-  FOREIGN KEY (unit_id) REFERENCES units(id)
+create table rent_payments (
+  id text primary key,
+  tenant_id text not null references tenants (id),
+  unit_id text not null references units (id),
+  amount integer not null check (amount > 0),
+  period text not null check (period ~ '^[0-9]{4}-[0-9]{2}$'),
+  paid_date text not null,
+  method text,
+  notes text,
+  payment_type text not null default 'rental'
+    check (payment_type in ('deposit', 'advance', 'reservation', 'rental')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 ```
 
 | Field | Type | Description |
 |-------|------|-------------|
-| id | TEXT | Unique identifier (primary key) |
-| tenant_id | TEXT | Paying tenant (foreign key to `tenants`) — the authorization boundary |
-| unit_id | TEXT | Denormalized for query convenience; always derived server-side from `tenant_id`, never trusted from client input |
-| amount | INTEGER | Payment amount in cents, must be > 0 |
-| period | TEXT | Calendar month this payment applies toward, `YYYY-MM` |
-| paid_date | TEXT | Date the payment was made (`YYYY-MM-DD`) |
-| method | TEXT | Optional: cash / bank_transfer / check / other |
-| notes | TEXT | Optional free-text notes |
-| created_at | TEXT | Creation timestamp |
-| updated_at | TEXT | Last update timestamp |
+| id | text | Unique identifier (primary key) |
+| tenant_id | text | Paying tenant (foreign key to `tenants`) — the authorization boundary |
+| unit_id | text | Denormalized for query convenience; always derived server-side from `tenant_id`, never trusted from client input |
+| amount | integer | Payment amount in cents, must be > 0 |
+| period | text | Calendar month this payment applies toward, `YYYY-MM` |
+| paid_date | text | Date the payment was made (`YYYY-MM-DD`) |
+| method | text | Optional: cash / bank_transfer / check / other |
+| payment_type | text | deposit / advance / reservation / rental (default `rental`) |
+| notes | text | Optional free-text notes |
 
-No table in this schema uses `ON DELETE CASCADE`. All foreign keys are implicit `RESTRICT` — deleting a row with existing children is a constraint violation. This is intentional: payment history must never be silently destroyed by deleting an ancestor. See §3.2–3.3 for the archive-instead-of-delete policy this implies, and §11 for the authorization implication of `rent_payments.unit_id` being denormalized.
+#### expenses
+
+```sql
+create table expenses (
+  id text primary key,
+  property_id text not null references properties (id),
+  unit_id text references units (id),
+  category text not null check (category in ('repair', 'cleaning', 'tax', 'other', 'repaint')),
+  amount integer not null check (amount > 0),
+  expense_date text not null,
+  remarks text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | text | Unique identifier (primary key) |
+| property_id | text | Owning property (foreign key to `properties`) |
+| unit_id | text | Owning unit, or NULL for a property-level expense |
+| category | text | repair / cleaning / tax / other / repaint |
+| amount | integer | Expense amount in cents, must be > 0 |
+| expense_date | text | Date of the expense (`YYYY-MM-DD`) |
+| remarks | text | Optional free-text remarks |
+
+No table in this schema uses `ON DELETE CASCADE`. All foreign keys are the default `NO ACTION` — deleting a row with existing children is a constraint violation. This is intentional: payment history must never be silently destroyed by deleting an ancestor. See §3.2–3.3 for the archive-instead-of-delete policy this implies, and §11 for the authorization implication of `rent_payments.unit_id` being denormalized.
 
 ### 5.2 Indexes & Triggers
 
 ```sql
-CREATE INDEX IF NOT EXISTS idx_properties_user_id ON properties(user_id);
-CREATE INDEX IF NOT EXISTS idx_units_property_id ON units(property_id);
-CREATE INDEX IF NOT EXISTS idx_tenants_unit_id ON tenants(unit_id);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_tenants_active_unit ON tenants(unit_id) WHERE is_active = 1;
-CREATE INDEX IF NOT EXISTS idx_rent_payments_tenant_id ON rent_payments(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_rent_payments_unit_id ON rent_payments(unit_id);
-CREATE INDEX IF NOT EXISTS idx_rent_payments_tenant_period ON rent_payments(tenant_id, period);
-CREATE INDEX IF NOT EXISTS idx_rent_payments_period ON rent_payments(period);
+create index idx_properties_user_id on properties (user_id);
+create index idx_units_property_id on units (property_id);
+create index idx_tenants_unit_id on tenants (unit_id);
+create unique index idx_tenants_active_unit on tenants (unit_id) where is_active;
+create index idx_rent_payments_tenant_id on rent_payments (tenant_id);
+create index idx_rent_payments_unit_id on rent_payments (unit_id);
+create index idx_rent_payments_tenant_period on rent_payments (tenant_id, period);
+create index idx_rent_payments_period on rent_payments (period);
+create index idx_expenses_property_id on expenses (property_id);
+create index idx_expenses_unit_id on expenses (unit_id);
 
--- Auto-update updated_at, same pattern as the prior update_notes_timestamp trigger
-CREATE TRIGGER IF NOT EXISTS update_properties_timestamp AFTER UPDATE ON properties
-BEGIN UPDATE properties SET updated_at = datetime('now') WHERE id = NEW.id; END;
+-- Auto-update updated_at: one shared plpgsql function, one trigger per table
+create function set_updated_at() returns trigger
+language plpgsql as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
 
-CREATE TRIGGER IF NOT EXISTS update_units_timestamp AFTER UPDATE ON units
-BEGIN UPDATE units SET updated_at = datetime('now') WHERE id = NEW.id; END;
-
-CREATE TRIGGER IF NOT EXISTS update_tenants_timestamp AFTER UPDATE ON tenants
-BEGIN UPDATE tenants SET updated_at = datetime('now') WHERE id = NEW.id; END;
-
-CREATE TRIGGER IF NOT EXISTS update_rent_payments_timestamp AFTER UPDATE ON rent_payments
-BEGIN UPDATE rent_payments SET updated_at = datetime('now') WHERE id = NEW.id; END;
+create trigger update_properties_timestamp
+  before update on properties
+  for each row execute function set_updated_at();
+-- ...same trigger on units, tenants, rent_payments, expenses
 ```
 
 ## 6. Backend: DB & Server Action Layer
@@ -298,10 +321,11 @@ BEGIN UPDATE rent_payments SET updated_at = datetime('now') WHERE id = NEW.id; E
 
 **File:** `lib/db.ts`
 
-- Bun `bun:sqlite` `Database` singleton, path from `DB_PATH` env var (default `data/app.db`)
-- WAL journal mode + `foreign_keys = ON` pragma
-- Schema defined inline via `CREATE TABLE IF NOT EXISTS` at module load — no separate migration files, consistent with the prior version
-- The old `notes` table, its indexes, and its trigger are removed; the four tables in §5.1 (plus their indexes/triggers) are added
+- Singleton `pg` `Pool`, connection string from the `DATABASE_URL` env var (default: the local Supabase DB `postgresql://postgres:postgres@127.0.0.1:54342/postgres`); the pool is stashed on `globalThis` to survive Next.js dev-server module reloads
+- Type parsers registered so `timestamptz`/`timestamp`/`date` columns come back as plain strings, matching the app's string-based date handling
+- Exports three helpers used everywhere: `query<T>(sql, params)` → rows, `queryOne<T>(sql, params)` → first row or null, `execute(sql, params)` → affected-row count
+- The same pool is passed to better-auth (`lib/auth.ts`: `database: pool`)
+- Schema is **not** created at app startup — it lives in `supabase/migrations/` and is applied with `supabase start` / `supabase db reset`. Placeholders are Postgres-style `$1..$n`, aggregates that must come back as numbers are cast (`COUNT(*)::int`, `SUM(amount)::int`), and camelCase aliases are double-quoted since Postgres lowercases unquoted identifiers
 
 ### 6.2 Payment Status Helpers
 
@@ -419,6 +443,8 @@ WHERE rp.id = ? AND p.user_id = ?
 
 Skipping this join anywhere is the primary risk of one landlord seeing or modifying another landlord's data. `rent_payments.unit_id` is denormalized purely for query convenience and must never be treated as an authorization boundary or accepted as client input — always derive it server-side from the already-authorized `tenant_id`.
 
+(The join snippets above use `?` for brevity; actual code uses Postgres `$1..$n` placeholders, and any query touching better-auth tables quotes them: `"user"`, `"createdAt"`.)
+
 **Data integrity**
 - No `ON DELETE CASCADE` anywhere — deleting a property/unit with existing children is rejected at the database level; the UI must offer archiving instead
 
@@ -435,7 +461,15 @@ Skipping this join anywhere is the primary risk of one landlord seeing or modify
 9. Rebrand: update `app/page.tsx`, `app/layout.tsx` metadata, `components/header.tsx` copy, remove the DOMPurify-only `serverExternalPackages` entry in `next.config.ts`.
 10. Testing pass: Vitest coverage for all new Zod schemas and `lib/payment-status.ts`; manually verify cross-user ownership boundaries (attempt cross-landlord access, confirm it's rejected).
 11. Polish: empty states, archive/unarchive UI, clear error messaging when a delete is blocked by existing history.
+12. **(Done)** Database migration to Supabase Postgres: `supabase init` with project-specific ports, translate the schema into `supabase/migrations/0001_init.sql`, rewrite `lib/db.ts` as a `pg` Pool with `query`/`queryOne`/`execute` helpers, point better-auth at the pool, convert every query to `$n` placeholders (booleans instead of 0/1, `now()` instead of `datetime('now')`, `substr` instead of `strftime`, `= ANY($n)` instead of `IN (...)`, quoted `"user"`/camelCase identifiers, `::int` casts on aggregates), and import the existing SQLite data via `scripts/migrate-sqlite-to-postgres.ts`.
 
 ### Setup note
 
-Since public sign-up is disabled, running the app for the first time (or against a fresh `data/app.db`) requires bootstrapping an admin account: `bun run create-admin <email> <name>`.
+First-time local setup:
+
+1. Docker Desktop must be running
+2. `supabase start` — boots the local Supabase stack (project `8turf`; DB on 54342, Studio on 54343) and applies `supabase/migrations/`
+3. `.env.local` needs `BETTER_AUTH_SECRET` and `DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54342/postgres`
+4. Since public sign-up is disabled, a fresh database requires bootstrapping an admin account: `bun run scripts/create-admin.ts <email> <name>`
+
+Data from the previous SQLite version was imported once via `bun run scripts/migrate-sqlite-to-postgres.ts` (reads `data/app.db`, which is kept as a backup).

@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { query, queryOne } from '@/lib/db';
 import {
   updateUnitSchema,
   assignTenantSchema,
@@ -11,6 +11,8 @@ import {
   endTenancySchema,
   recordPaymentSchema,
   updatePaymentSchema,
+  recordUnitExpenseSchema,
+  updateUnitExpenseSchema,
 } from '@/lib/validation';
 
 export interface UnitActionResult {
@@ -24,13 +26,12 @@ export interface UnitActionResult {
 }
 
 async function findAuthorizedUnit(unitId: string, userId: string) {
-  return db
-    .query<{ id: string; property_id: string }, [string, string]>(
-      `SELECT u.id, u.property_id FROM units u
-       JOIN properties p ON p.id = u.property_id
-       WHERE u.id = ? AND p.user_id = ?`,
-    )
-    .get(unitId, userId);
+  return queryOne<{ id: string; property_id: string }>(
+    `SELECT u.id, u.property_id FROM units u
+     JOIN properties p ON p.id = u.property_id
+     WHERE u.id = $1 AND p.user_id = $2`,
+    [unitId, userId],
+  );
 }
 
 export async function updateUnit(
@@ -56,8 +57,8 @@ export async function updateUnit(
     return { error: { general: 'Unit not found or access denied.' } };
   }
 
-  db.run(
-    'UPDATE units SET unit_label = ?, bedrooms = ?, bathrooms = ?, rent_amount = ? WHERE id = ?',
+  await query(
+    'UPDATE units SET unit_label = $1, bedrooms = $2, bathrooms = $3, rent_amount = $4 WHERE id = $5',
     [
       parsed.data.unitLabel,
       parsed.data.bedrooms,
@@ -73,6 +74,7 @@ export async function updateUnit(
 export async function archiveUnit(formData: FormData): Promise<void> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect('/authenticate');
+  if (session.user.role !== 'admin') redirect('/dashboard');
 
   const id = formData.get('id');
   if (typeof id !== 'string') return;
@@ -80,7 +82,7 @@ export async function archiveUnit(formData: FormData): Promise<void> {
   const unit = await findAuthorizedUnit(id, session.user.id);
   if (!unit) return;
 
-  db.run("UPDATE units SET archived_at = datetime('now') WHERE id = ?", [unit.id]);
+  await query('UPDATE units SET archived_at = now() WHERE id = $1', [unit.id]);
   redirect(`/properties/${unit.property_id}`);
 }
 
@@ -105,14 +107,15 @@ export async function deleteUnit(
     return { error: 'Unit not found or access denied.' };
   }
 
-  const tenantCount = db
-    .query<{ count: number }, [string]>('SELECT COUNT(*) as count FROM tenants WHERE unit_id = ?')
-    .get(unit.id);
+  const tenantCount = await queryOne<{ count: number }>(
+    'SELECT COUNT(*)::int as count FROM tenants WHERE unit_id = $1',
+    [unit.id],
+  );
   if (tenantCount && tenantCount.count > 0) {
     return { error: 'This unit has tenant history — archive it instead of deleting.' };
   }
 
-  db.run('DELETE FROM units WHERE id = ?', [unit.id]);
+  await query('DELETE FROM units WHERE id = $1', [unit.id]);
   redirect(`/properties/${unit.property_id}`);
 }
 
@@ -155,9 +158,9 @@ export async function assignTenant(
 
   const id = crypto.randomUUID();
   try {
-    db.run(
+    await query(
       `INSERT INTO tenants (id, unit_id, name, email, phone, rent_amount, lease_start_date, lease_end_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [
         id,
         unit.id,
@@ -170,8 +173,9 @@ export async function assignTenant(
       ],
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : '';
-    if (message.includes('UNIQUE constraint failed') && message.includes('tenants.unit_id')) {
+    const isUniqueViolation =
+      err instanceof Error && 'code' in err && (err as { code?: string }).code === '23505';
+    if (isUniqueViolation) {
       return { error: { general: 'This unit already has an active tenant.' } };
     }
     return { error: { general: 'Failed to assign tenant. Please try again.' } };
@@ -181,14 +185,13 @@ export async function assignTenant(
 }
 
 async function findAuthorizedTenant(tenantId: string, userId: string) {
-  return db
-    .query<{ id: string; unit_id: string; property_id: string }, [string, string]>(
-      `SELECT t.id, t.unit_id, u.property_id FROM tenants t
-       JOIN units u ON u.id = t.unit_id
-       JOIN properties p ON p.id = u.property_id
-       WHERE t.id = ? AND p.user_id = ?`,
-    )
-    .get(tenantId, userId);
+  return queryOne<{ id: string; unit_id: string; property_id: string; is_active: boolean }>(
+    `SELECT t.id, t.unit_id, u.property_id, t.is_active FROM tenants t
+     JOIN units u ON u.id = t.unit_id
+     JOIN properties p ON p.id = u.property_id
+     WHERE t.id = $1 AND p.user_id = $2`,
+    [tenantId, userId],
+  );
 }
 
 export async function updateTenant(
@@ -216,9 +219,9 @@ export async function updateTenant(
     return { error: { general: 'Tenant not found or access denied.' } };
   }
 
-  db.run(
-    `UPDATE tenants SET name = ?, email = ?, phone = ?, rent_amount = ?, lease_start_date = ?, lease_end_date = ?
-     WHERE id = ?`,
+  await query(
+    `UPDATE tenants SET name = $1, email = $2, phone = $3, rent_amount = $4, lease_start_date = $5, lease_end_date = $6
+     WHERE id = $7`,
     [
       parsed.data.name,
       parsed.data.email || null,
@@ -246,7 +249,7 @@ export async function endTenancy(formData: FormData): Promise<void> {
   const tenant = await findAuthorizedTenant(parsed.data.id, session.user.id);
   if (!tenant) return;
 
-  db.run('UPDATE tenants SET is_active = 0, lease_end_date = ? WHERE id = ?', [
+  await query('UPDATE tenants SET is_active = false, lease_end_date = $1 WHERE id = $2', [
     parsed.data.leaseEndDate,
     tenant.id,
   ]);
@@ -259,6 +262,7 @@ export interface PaymentActionResult {
     amount?: string[];
     period?: string[];
     paidDate?: string[];
+    paymentType?: string[];
     method?: string[];
     notes?: string[];
     general?: string;
@@ -277,6 +281,7 @@ export async function recordPayment(
     amount: formData.get('amount'),
     period: formData.get('period'),
     paidDate: formData.get('paidDate'),
+    paymentType: formData.get('paymentType'),
     method: formData.get('method'),
     notes: formData.get('notes') ?? '',
   });
@@ -288,11 +293,14 @@ export async function recordPayment(
   if (!tenant) {
     return { error: { general: 'Tenant not found or access denied.' } };
   }
+  if (!tenant.is_active) {
+    return { error: { general: 'Cannot record a payment for an ended tenancy.' } };
+  }
 
   const id = crypto.randomUUID();
-  db.run(
-    `INSERT INTO rent_payments (id, tenant_id, unit_id, amount, period, paid_date, method, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  await query(
+    `INSERT INTO rent_payments (id, tenant_id, unit_id, amount, period, paid_date, payment_type, method, notes)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [
       id,
       tenant.id,
@@ -300,6 +308,7 @@ export async function recordPayment(
       parsed.data.amount,
       parsed.data.period,
       parsed.data.paidDate,
+      parsed.data.paymentType,
       parsed.data.method || null,
       parsed.data.notes || null,
     ],
@@ -309,18 +318,21 @@ export async function recordPayment(
 }
 
 async function findAuthorizedPayment(paymentId: string, userId: string) {
-  return db
-    .query<
-      { id: string; tenant_id: string; unit_id: string; property_id: string },
-      [string, string]
-    >(
-      `SELECT rp.id, rp.tenant_id, rp.unit_id, u.property_id FROM rent_payments rp
-       JOIN tenants t ON t.id = rp.tenant_id
-       JOIN units u ON u.id = t.unit_id
-       JOIN properties p ON p.id = u.property_id
-       WHERE rp.id = ? AND p.user_id = ?`,
-    )
-    .get(paymentId, userId);
+  return queryOne<{
+    id: string;
+    tenant_id: string;
+    unit_id: string;
+    property_id: string;
+    tenant_is_active: boolean;
+  }>(
+    `SELECT rp.id, rp.tenant_id, rp.unit_id, u.property_id, t.is_active as tenant_is_active
+     FROM rent_payments rp
+     JOIN tenants t ON t.id = rp.tenant_id
+     JOIN units u ON u.id = t.unit_id
+     JOIN properties p ON p.id = u.property_id
+     WHERE rp.id = $1 AND p.user_id = $2`,
+    [paymentId, userId],
+  );
 }
 
 export async function updatePayment(
@@ -335,6 +347,7 @@ export async function updatePayment(
     amount: formData.get('amount'),
     period: formData.get('period'),
     paidDate: formData.get('paidDate'),
+    paymentType: formData.get('paymentType'),
     method: formData.get('method'),
     notes: formData.get('notes') ?? '',
   });
@@ -346,13 +359,17 @@ export async function updatePayment(
   if (!payment) {
     return { error: { general: 'Payment not found or access denied.' } };
   }
+  if (!payment.tenant_is_active) {
+    return { error: { general: 'Cannot edit a payment from an ended tenancy.' } };
+  }
 
-  db.run(
-    'UPDATE rent_payments SET amount = ?, period = ?, paid_date = ?, method = ?, notes = ? WHERE id = ?',
+  await query(
+    'UPDATE rent_payments SET amount = $1, period = $2, paid_date = $3, payment_type = $4, method = $5, notes = $6 WHERE id = $7',
     [
       parsed.data.amount,
       parsed.data.period,
       parsed.data.paidDate,
+      parsed.data.paymentType,
       parsed.data.method || null,
       parsed.data.notes || null,
       payment.id,
@@ -371,7 +388,120 @@ export async function deletePayment(formData: FormData): Promise<void> {
 
   const payment = await findAuthorizedPayment(id, session.user.id);
   if (!payment) return;
+  if (!payment.tenant_is_active) return;
 
-  db.run('DELETE FROM rent_payments WHERE id = ?', [payment.id]);
+  await query('DELETE FROM rent_payments WHERE id = $1', [payment.id]);
   redirect(`/properties/${payment.property_id}/units/${payment.unit_id}`);
+}
+
+export interface ExpenseActionResult {
+  error?: {
+    category?: string[];
+    amount?: string[];
+    expenseDate?: string[];
+    remarks?: string[];
+    general?: string;
+  };
+}
+
+async function findAuthorizedExpense(expenseId: string, userId: string) {
+  return queryOne<{ id: string; unit_id: string; property_id: string }>(
+    `SELECT e.id, e.unit_id, e.property_id FROM expenses e
+     JOIN units u ON u.id = e.unit_id
+     JOIN properties p ON p.id = u.property_id
+     WHERE e.id = $1 AND p.user_id = $2`,
+    [expenseId, userId],
+  );
+}
+
+export async function recordUnitExpense(
+  _prevState: ExpenseActionResult,
+  formData: FormData,
+): Promise<ExpenseActionResult> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect('/authenticate');
+
+  const parsed = recordUnitExpenseSchema.safeParse({
+    unitId: formData.get('unitId'),
+    category: formData.get('category'),
+    amount: formData.get('amount'),
+    expenseDate: formData.get('expenseDate'),
+    remarks: formData.get('remarks') ?? '',
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors };
+  }
+
+  const unit = await findAuthorizedUnit(parsed.data.unitId, session.user.id);
+  if (!unit) {
+    return { error: { general: 'Unit not found or access denied.' } };
+  }
+
+  const id = crypto.randomUUID();
+  await query(
+    `INSERT INTO expenses (id, property_id, unit_id, category, amount, expense_date, remarks)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [
+      id,
+      unit.property_id,
+      unit.id,
+      parsed.data.category,
+      parsed.data.amount,
+      parsed.data.expenseDate,
+      parsed.data.remarks || null,
+    ],
+  );
+
+  redirect(`/properties/${unit.property_id}/units/${unit.id}`);
+}
+
+export async function updateUnitExpense(
+  _prevState: ExpenseActionResult,
+  formData: FormData,
+): Promise<ExpenseActionResult> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect('/authenticate');
+
+  const parsed = updateUnitExpenseSchema.safeParse({
+    id: formData.get('id'),
+    category: formData.get('category'),
+    amount: formData.get('amount'),
+    expenseDate: formData.get('expenseDate'),
+    remarks: formData.get('remarks') ?? '',
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors };
+  }
+
+  const expense = await findAuthorizedExpense(parsed.data.id, session.user.id);
+  if (!expense) {
+    return { error: { general: 'Expense not found or access denied.' } };
+  }
+
+  await query(
+    'UPDATE expenses SET category = $1, amount = $2, expense_date = $3, remarks = $4 WHERE id = $5',
+    [
+      parsed.data.category,
+      parsed.data.amount,
+      parsed.data.expenseDate,
+      parsed.data.remarks || null,
+      expense.id,
+    ],
+  );
+
+  redirect(`/properties/${expense.property_id}/units/${expense.unit_id}`);
+}
+
+export async function deleteUnitExpense(formData: FormData): Promise<void> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect('/authenticate');
+
+  const id = formData.get('id');
+  if (typeof id !== 'string') return;
+
+  const expense = await findAuthorizedExpense(id, session.user.id);
+  if (!expense) return;
+
+  await query('DELETE FROM expenses WHERE id = $1', [expense.id]);
+  redirect(`/properties/${expense.property_id}/units/${expense.unit_id}`);
 }

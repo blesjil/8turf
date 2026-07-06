@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { queryOne } from '@/lib/db';
 import { EditPropertyForm } from './edit-property-form';
 
 type Params = Promise<{ id: string }>;
@@ -12,11 +12,10 @@ export default async function EditPropertyPage({ params }: { params: Params }) {
 
   const { id } = await params;
 
-  const property = db
-    .query<{ id: string; name: string; address: string }, [string, string]>(
-      'SELECT id, name, address FROM properties WHERE id = ? AND user_id = ?',
-    )
-    .get(id, session.user.id);
+  const property = await queryOne<{ id: string; name: string; address: string }>(
+    'SELECT id, name, address FROM properties WHERE id = $1 AND user_id = $2',
+    [id, session.user.id],
+  );
   if (!property) notFound();
 
   return (
