@@ -16,11 +16,11 @@ describe('dollarsToCents', () => {
 });
 
 describe('formatCents', () => {
-  it('formats cents as a dollar string with two decimals', () => {
-    expect(formatCents(150000)).toBe('$1,500.00');
+  it('formats cents as a peso string with two decimals', () => {
+    expect(formatCents(150000)).toBe('₱ 1,500.00');
   });
 
   it('formats zero', () => {
-    expect(formatCents(0)).toBe('$0.00');
+    expect(formatCents(0)).toBe('₱ 0.00');
   });
 });

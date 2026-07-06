@@ -111,7 +111,7 @@ export default async function UnitDetail({ params }: { params: Params }) {
 
       <div className='mb-10'>
         <h2 className='mb-4 text-xl font-semibold tracking-tight'>Current Tenant</h2>
-        <TenantCard unitId={unit.id} tenant={activeTenant} />
+        <TenantCard unitId={unit.id} tenant={activeTenant} askingRent={unit.rent_amount} />
       </div>
 
       {activeTenant && (

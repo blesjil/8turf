@@ -138,6 +138,7 @@ describe('recordPaymentSchema', () => {
       amount: '75000',
       period: '2026-03',
       paidDate: '2026-03-05',
+      paymentType: 'rental',
       method: 'cash',
       notes: '',
     });

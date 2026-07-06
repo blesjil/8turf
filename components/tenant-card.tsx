@@ -34,10 +34,13 @@ function FieldError({ messages }: { messages?: string[] }) {
 function TenantFormFields({
   state,
   tenant,
+  defaultRentAmount,
 }: {
   state: TenantActionResult;
   tenant?: Tenant | null;
+  defaultRentAmount?: number;
 }) {
+  const prefillRent = tenant?.rent_amount ?? defaultRentAmount;
   return (
     <div className='grid gap-4 sm:grid-cols-2'>
       <div>
@@ -71,7 +74,7 @@ function TenantFormFields({
           type='number'
           step='0.01'
           min='0'
-          defaultValue={tenant ? (tenant.rent_amount / 100).toFixed(2) : undefined}
+          defaultValue={prefillRent != null ? (prefillRent / 100).toFixed(2) : undefined}
           required
           onChange={(e) => {
             const cents = Math.round(parseFloat(e.currentTarget.value || '0') * 100);
@@ -81,7 +84,7 @@ function TenantFormFields({
             if (hidden) hidden.value = String(cents);
           }}
         />
-        <input type='hidden' name='rentAmount' defaultValue={tenant?.rent_amount} />
+        <input type='hidden' name='rentAmount' defaultValue={prefillRent} />
         <FieldError messages={state.error?.rentAmount} />
       </div>
       <div>
@@ -100,7 +103,15 @@ function TenantFormFields({
   );
 }
 
-export function TenantCard({ unitId, tenant }: { unitId: string; tenant: Tenant | null }) {
+export function TenantCard({
+  unitId,
+  tenant,
+  askingRent,
+}: {
+  unitId: string;
+  tenant: Tenant | null;
+  askingRent?: number;
+}) {
   const [assignState, assignAction, assignPending] = useActionState<TenantActionResult, FormData>(
     assignTenant,
     {},
@@ -123,7 +134,7 @@ export function TenantCard({ unitId, tenant }: { unitId: string; tenant: Tenant 
             {assignState.error?.general && (
               <p className='text-sm text-destructive'>{assignState.error.general}</p>
             )}
-            <TenantFormFields state={assignState} />
+            <TenantFormFields state={assignState} defaultRentAmount={askingRent} />
             <Button type='submit' disabled={assignPending}>
               {assignPending ? 'Assigning…' : 'Assign tenant'}
             </Button>

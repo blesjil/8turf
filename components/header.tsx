@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -79,14 +80,16 @@ export function Header({ user }: HeaderProps) {
               <span className='truncate'>{user.name}</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='w-56'>
-              <DropdownMenuLabel>
-                <div className='grid gap-0.5'>
-                  <span className='truncate font-medium'>{user.name}</span>
-                  <span className='truncate text-xs font-normal text-muted-foreground'>
-                    {user.email}
-                  </span>
-                </div>
-              </DropdownMenuLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>
+                  <div className='grid gap-0.5'>
+                    <span className='truncate font-medium'>{user.name}</span>
+                    <span className='truncate text-xs font-normal text-muted-foreground'>
+                      {user.email}
+                    </span>
+                  </div>
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem render={<Link href='/dashboard' />}>Properties</DropdownMenuItem>
               <DropdownMenuItem render={<Link href='/payments' />}>Payments</DropdownMenuItem>
