@@ -8,6 +8,15 @@ import { computePaymentStatus, isLeaseActiveForPeriod } from '@/lib/payment-stat
 import { PaymentStatusBadge } from '@/components/payment-status-badge';
 import { MonthPicker } from '@/components/month-picker';
 import { PaymentsTabs } from '@/components/payments-tabs';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 type SearchParams = Promise<{ month?: string }>;
 
@@ -21,6 +30,17 @@ interface Row {
   rentAmount: number;
   leaseStartDate: string;
   leaseEndDate: string | null;
+}
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <Card className='gap-1 py-4'>
+      <CardHeader className='gap-1'>
+        <CardDescription>{label}</CardDescription>
+        <CardTitle className='font-mono text-2xl tabular-nums'>{value}</CardTitle>
+      </CardHeader>
+    </Card>
+  );
 }
 
 export default async function PaymentsPage({ searchParams }: { searchParams: SearchParams }) {
@@ -59,59 +79,83 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
     for (const t of totals) paidByTenant.set(t.tenant_id, t.total);
   }
 
-  return (
-    <div className='p-8 max-w-5xl mx-auto'>
-      <Link href='/dashboard' className='text-blue-600 hover:underline mb-4 inline-block'>
-        &larr; Back to Properties
-      </Link>
+  const totalDue = relevantRows.reduce((sum, r) => sum + r.rentAmount, 0);
+  const totalCollected = relevantRows.reduce(
+    (sum, r) => sum + Math.min(paidByTenant.get(r.tenantId) ?? 0, r.rentAmount),
+    0,
+  );
+  const outstanding = Math.max(totalDue - totalCollected, 0);
 
+  return (
+    <div className='mx-auto max-w-6xl p-6 sm:p-8'>
       <PaymentsTabs active='payments' isAdmin={session.user.role === 'admin'} />
 
-      <div className='flex items-center justify-between mb-6'>
-        <h1 className='text-2xl font-bold'>Payments Overview</h1>
+      <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>
+        <h1 className='text-2xl font-semibold tracking-tight'>Payments Overview</h1>
         <MonthPicker value={period} />
       </div>
 
       {relevantRows.length === 0 ? (
-        <p className='text-foreground/60'>No active leases for this month.</p>
+        <Card className='py-8 text-center'>
+          <CardHeader className='items-center'>
+            <CardTitle>No active leases</CardTitle>
+            <CardDescription>No units have an active lease for this month.</CardDescription>
+          </CardHeader>
+        </Card>
       ) : (
-        <table className='w-full text-sm border-collapse'>
-          <thead>
-            <tr className='text-left border-b border-border'>
-              <th className='py-2 pr-4'>Property</th>
-              <th className='py-2 pr-4'>Unit</th>
-              <th className='py-2 pr-4'>Tenant</th>
-              <th className='py-2 pr-4'>Rent</th>
-              <th className='py-2 pr-4'>Paid</th>
-              <th className='py-2 pr-4'>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {relevantRows.map((r) => {
-              const paid = paidByTenant.get(r.tenantId) ?? 0;
-              const status = computePaymentStatus(paid, r.rentAmount);
-              return (
-                <tr key={r.tenantId} className='border-b border-border/50'>
-                  <td className='py-2 pr-4'>{r.propertyName}</td>
-                  <td className='py-2 pr-4'>
-                    <Link
-                      href={`/properties/${r.propertyId}/units/${r.unitId}`}
-                      className='text-blue-600 hover:underline'
-                    >
-                      {r.unitLabel}
-                    </Link>
-                  </td>
-                  <td className='py-2 pr-4'>{r.tenantName}</td>
-                  <td className='py-2 pr-4'>{formatCents(r.rentAmount)}</td>
-                  <td className='py-2 pr-4'>{formatCents(paid)}</td>
-                  <td className='py-2 pr-4'>
-                    <PaymentStatusBadge status={status} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <>
+          <div className='mb-6 grid gap-4 sm:grid-cols-3'>
+            <StatCard label='Active leases' value={String(relevantRows.length)} />
+            <StatCard label='Rent collected' value={formatCents(totalCollected)} />
+            <StatCard label='Outstanding' value={formatCents(outstanding)} />
+          </div>
+
+          <Card className='py-0'>
+            <div className='overflow-x-auto'>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Property</TableHead>
+                    <TableHead>Unit</TableHead>
+                    <TableHead>Tenant</TableHead>
+                    <TableHead className='text-right'>Rent</TableHead>
+                    <TableHead className='text-right'>Paid</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {relevantRows.map((r) => {
+                    const paid = paidByTenant.get(r.tenantId) ?? 0;
+                    const status = computePaymentStatus(paid, r.rentAmount);
+                    return (
+                      <TableRow key={r.tenantId}>
+                        <TableCell>{r.propertyName}</TableCell>
+                        <TableCell>
+                          <Link
+                            href={`/properties/${r.propertyId}/units/${r.unitId}`}
+                            className='font-mono font-medium text-primary hover:underline'
+                          >
+                            {r.unitLabel}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{r.tenantName}</TableCell>
+                        <TableCell className='text-right font-mono tabular-nums'>
+                          {formatCents(r.rentAmount)}
+                        </TableCell>
+                        <TableCell className='text-right font-mono tabular-nums'>
+                          {formatCents(paid)}
+                        </TableCell>
+                        <TableCell>
+                          <PaymentStatusBadge status={status} />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        </>
       )}
     </div>
   );

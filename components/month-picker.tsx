@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { MONTH_NAMES, yearOptions } from '@/lib/format-date';
+import { NativeSelect } from '@/components/ui/native-select';
 
 export function MonthPicker({
   value,
@@ -19,10 +20,11 @@ export function MonthPicker({
 
   return (
     <div className='flex gap-2'>
-      <select
+      <NativeSelect
+        aria-label='Month'
         value={month}
         onChange={(e) => navigate(year, e.target.value)}
-        className='px-3 py-2 border border-border rounded-lg'
+        className='w-auto'
       >
         {MONTH_NAMES.map((name, i) => {
           const value = String(i + 1).padStart(2, '0');
@@ -32,18 +34,19 @@ export function MonthPicker({
             </option>
           );
         })}
-      </select>
-      <select
+      </NativeSelect>
+      <NativeSelect
+        aria-label='Year'
         value={year}
         onChange={(e) => navigate(e.target.value, month)}
-        className='px-3 py-2 border border-border rounded-lg'
+        className='w-auto'
       >
         {yearOptions().map((y) => (
           <option key={y} value={y}>
             {y}
           </option>
         ))}
-      </select>
+      </NativeSelect>
     </div>
   );
 }

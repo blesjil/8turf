@@ -86,20 +86,20 @@ export default async function UnitDetail({ params }: { params: Params }) {
       : null;
 
   return (
-    <div className='p-8 max-w-3xl mx-auto'>
+    <div className='mx-auto max-w-4xl p-6 sm:p-8'>
       <Link
         href={`/properties/${unit.property_id}`}
-        className='text-blue-600 hover:underline mb-4 inline-block'
+        className='mb-4 inline-block text-sm font-medium text-primary hover:underline'
       >
         &larr; Back to Property
       </Link>
 
-      <div className='flex items-start justify-between mb-6'>
+      <div className='mb-8 flex flex-wrap items-start justify-between gap-3'>
         <div>
-          <h1 className='text-3xl font-bold'>{unit.unit_label}</h1>
-          <p className='text-foreground/60'>
-            {unit.bedrooms} bd / {unit.bathrooms} ba &middot; {formatCents(unit.rent_amount)}/mo
-            asking
+          <h1 className='font-mono text-3xl font-semibold tracking-tight'>{unit.unit_label}</h1>
+          <p className='text-muted-foreground'>
+            {unit.bedrooms} bd / {unit.bathrooms} ba ·{' '}
+            <span className='font-mono'>{formatCents(unit.rent_amount)}</span>/mo asking
           </p>
         </div>
         <UnitActions
@@ -109,20 +109,22 @@ export default async function UnitDetail({ params }: { params: Params }) {
         />
       </div>
 
-      <div className='mb-8'>
-        <h2 className='text-xl font-semibold mb-3'>Current Tenant</h2>
+      <div className='mb-10'>
+        <h2 className='mb-4 text-xl font-semibold tracking-tight'>Current Tenant</h2>
         <TenantCard unitId={unit.id} tenant={activeTenant} />
       </div>
 
       {activeTenant && (
-        <div className='mb-8'>
-          <div className='mb-4 flex items-center gap-2'>
-            <span className='text-sm text-foreground/60'>
-              This month ({formatPeriod(currentPeriod)}):
-            </span>
-            {currentStatus && <PaymentStatusBadge status={currentStatus} />}
+        <div className='mb-10'>
+          <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
+            <h2 className='text-xl font-semibold tracking-tight'>Payment Ledger</h2>
+            {currentStatus && (
+              <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                <span>This month ({formatPeriod(currentPeriod)}):</span>
+                <PaymentStatusBadge status={currentStatus} />
+              </div>
+            )}
           </div>
-          <h2 className='text-xl font-semibold mb-3'>Payment Ledger</h2>
           <PaymentLedger
             tenantId={activeTenant.id}
             payments={paymentsByTenant.get(activeTenant.id) ?? []}
@@ -131,13 +133,13 @@ export default async function UnitDetail({ params }: { params: Params }) {
       )}
 
       {pastTenants.length > 0 && (
-        <div className='mb-8'>
-          <h2 className='text-xl font-semibold mb-3'>Tenancy History</h2>
+        <div className='mb-10'>
+          <h2 className='mb-4 text-xl font-semibold tracking-tight'>Tenancy History</h2>
           <ul className='space-y-6'>
             {pastTenants.map((t) => (
               <li key={t.id}>
-                <p className='text-sm text-foreground/60 border-b border-border/50 pb-2 mb-3'>
-                  <strong className='text-foreground'>{t.name}</strong> &middot;{' '}
+                <p className='mb-3 border-b border-border pb-2 text-sm text-muted-foreground'>
+                  <strong className='text-foreground'>{t.name}</strong> ·{' '}
                   {formatDate(t.lease_start_date)} to{' '}
                   {t.lease_end_date ? formatDate(t.lease_end_date) : 'ongoing'}
                 </p>
@@ -152,8 +154,8 @@ export default async function UnitDetail({ params }: { params: Params }) {
         </div>
       )}
 
-      <div className='mb-8'>
-        <h2 className='text-xl font-semibold mb-3'>Unit Expenses</h2>
+      <div>
+        <h2 className='mb-4 text-xl font-semibold tracking-tight'>Unit Expenses</h2>
         <ExpenseList
           parentIdField='unitId'
           parentId={unit.id}

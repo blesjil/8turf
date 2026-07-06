@@ -1,0 +1,66 @@
+- generic [active] [ref=f3e1]:
+    - banner [ref=f3e2]:
+        - link "8Turf" [ref=f3e3] [cursor=pointer]:
+            - /url: /dashboard
+        - generic [ref=f3e4]:
+            - link "Manage Users" [ref=f3e5] [cursor=pointer]:
+                - /url: /admin/users
+            - button "Logout" [ref=f3e6] [cursor=pointer]
+    - generic [ref=f3e7]:
+        - link "← Back to Properties" [ref=f3e8] [cursor=pointer]:
+            - /url: /dashboard
+        - generic [ref=f3e9]:
+            - generic [ref=f3e10]:
+                - heading "QA Test Property" [level=1] [ref=f3e11]
+                - paragraph [ref=f3e12]: 123 Test St
+            - generic [ref=f3e13]:
+                - link "Edit" [ref=f3e14] [cursor=pointer]:
+                    - /url: /properties/375ae223-7a42-4878-b1be-20419546e660/edit
+                - button "Archive" [ref=f3e16] [cursor=pointer]
+                - button "Delete" [ref=f3e18] [cursor=pointer]
+        - generic [ref=f3e19]:
+            - heading "Units" [level=2] [ref=f3e20]
+            - link "Add Unit" [ref=f3e21] [cursor=pointer]:
+                - /url: /properties/375ae223-7a42-4878-b1be-20419546e660/units/new
+        - paragraph [ref=f3e22]: No units yet. Add the first one.
+        - generic [ref=f3e23]:
+            - heading "Property Expenses" [level=2] [ref=f3e24]
+            - generic [ref=f3e25]:
+                - generic [ref=f3e26]:
+                    - generic [ref=f3e27]:
+                        - generic [ref=f3e28]: Date
+                        - button "Select date" [ref=f3e29] [cursor=pointer]
+                    - generic [ref=f3e30]:
+                        - generic [ref=f3e31]: Category
+                        - combobox [ref=f3e32]:
+                            - option "Repair" [selected]
+                            - option "Cleaning"
+                            - option "Tax"
+                            - option "Other"
+                            - option "Re-Paint"
+                    - generic [ref=f3e33]:
+                        - generic [ref=f3e34]: Amount (₱)
+                        - spinbutton [ref=f3e35]
+                    - generic [ref=f3e36]:
+                        - generic [ref=f3e37]: Remarks
+                        - textbox "e.g. AC repair needed" [ref=f3e38]
+                    - button "Add Expense" [ref=f3e39]
+                - table [ref=f3e40]:
+                    - rowgroup [ref=f3e41]:
+                        - row "Date Category Amount Remarks" [ref=f3e42]:
+                            - columnheader "Date" [ref=f3e43]
+                            - columnheader "Category" [ref=f3e44]
+                            - columnheader "Amount" [ref=f3e45]
+                            - columnheader "Remarks" [ref=f3e46]
+                            - columnheader [ref=f3e47]
+                    - rowgroup [ref=f3e48]:
+                        - row "July 3, 2026 Repair ₱ 150.00 — Edit Delete" [ref=f3e49]:
+                            - cell "July 3, 2026" [ref=f3e50]
+                            - cell "Repair" [ref=f3e51]
+                            - cell "₱ 150.00" [ref=f3e52]
+                            - cell "—" [ref=f3e53]
+                            - cell "Edit Delete" [ref=f3e54]:
+                                - generic [ref=f3e55]:
+                                    - button "Edit" [ref=f3e56] [cursor=pointer]
+                                    - button "Delete" [ref=f3e58] [cursor=pointer]
+    - alert [ref=f3e59]

@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import * as Popover from '@radix-ui/react-popover';
 import { MONTH_NAMES, yearOptions, formatPeriod } from '@/lib/format-date';
+import { Button } from '@/components/ui/button';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 export function MonthPickerField({
   name,
@@ -22,55 +25,58 @@ export function MonthPickerField({
   const value = year && month ? `${year}-${month}` : '';
 
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen}>
       <input type='hidden' name={name} value={value} required={required} />
-      <Popover.Trigger
-        type='button'
-        className={
-          className ??
-          'px-3 py-2 border border-border rounded-lg bg-background text-foreground text-left w-full cursor-pointer'
+      <PopoverTrigger
+        render={
+          <Button
+            type='button'
+            variant='outline'
+            className={cn(
+              'w-full justify-start font-normal',
+              !value && 'text-muted-foreground',
+              className,
+            )}
+          />
         }
       >
         {value ? formatPeriod(value) : 'Select month'}
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content
-          sideOffset={4}
-          className='z-50 flex gap-2 rounded-lg border border-border bg-background p-2 shadow-lg'
+      </PopoverTrigger>
+      <PopoverContent className='flex w-auto gap-2 p-2'>
+        <NativeSelect
+          aria-label='Month'
+          value={month}
+          onChange={(e) => setMonth(e.target.value)}
+          className='w-auto'
         >
-          <select
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-            className='px-2 py-1 border border-border rounded-lg bg-background text-foreground'
-          >
-            <option value='' disabled>
-              Month
-            </option>
-            {MONTH_NAMES.map((name, i) => {
-              const v = String(i + 1).padStart(2, '0');
-              return (
-                <option key={v} value={v}>
-                  {name}
-                </option>
-              );
-            })}
-          </select>
-          <select
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            className='px-2 py-1 border border-border rounded-lg bg-background text-foreground'
-          >
-            <option value='' disabled>
-              Year
-            </option>
-            {yearOptions().map((y) => (
-              <option key={y} value={y}>
-                {y}
+          <option value='' disabled>
+            Month
+          </option>
+          {MONTH_NAMES.map((name, i) => {
+            const v = String(i + 1).padStart(2, '0');
+            return (
+              <option key={v} value={v}>
+                {name}
               </option>
-            ))}
-          </select>
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+            );
+          })}
+        </NativeSelect>
+        <NativeSelect
+          aria-label='Year'
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          className='w-auto'
+        >
+          <option value='' disabled>
+            Year
+          </option>
+          {yearOptions().map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </NativeSelect>
+      </PopoverContent>
+    </Popover>
   );
 }

@@ -1,0 +1,49 @@
+- generic [ref=f1e1]:
+    - banner [ref=f1e2]:
+        - link "8Turf" [ref=f1e3] [cursor=pointer]:
+            - /url: /dashboard
+        - generic [ref=f1e4]:
+            - link "Manage Users" [ref=f1e5] [cursor=pointer]:
+                - /url: /admin/users
+            - button "Logout" [ref=f1e6] [cursor=pointer]
+    - alert [ref=f1e15]
+    - generic [ref=f1e26]:
+        - link "← Back to Properties" [ref=f1e27] [cursor=pointer]:
+            - /url: /dashboard
+        - generic [ref=f1e28]:
+            - generic [ref=f1e29]:
+                - heading "QA Test Property" [level=1] [ref=f1e30]
+                - paragraph [ref=f1e31]: 123 Test St
+            - generic [ref=f1e32]:
+                - link "Edit" [ref=f1e33] [cursor=pointer]:
+                    - /url: /properties/375ae223-7a42-4878-b1be-20419546e660/edit
+                - button "Archive" [ref=f1e35] [cursor=pointer]
+                - button "Delete" [ref=f1e37] [cursor=pointer]
+        - generic [ref=f1e38]:
+            - heading "Units" [level=2] [ref=f1e39]
+            - link "Add Unit" [ref=f1e40] [cursor=pointer]:
+                - /url: /properties/375ae223-7a42-4878-b1be-20419546e660/units/new
+        - paragraph [ref=f1e41]: No units yet. Add the first one.
+        - generic [ref=f1e42]:
+            - heading "Property Expenses" [level=2] [ref=f1e43]
+            - generic [ref=f1e44]:
+                - generic [ref=f1e45]:
+                    - generic [ref=f1e46]:
+                        - generic [ref=f1e47]: Date
+                        - button "July 3, 2026" [active] [ref=f1e247] [cursor=pointer]
+                    - generic [ref=f1e49]:
+                        - generic [ref=f1e50]: Category
+                        - combobox [ref=f1e51]:
+                            - option "Repair" [selected]
+                            - option "Cleaning"
+                            - option "Tax"
+                            - option "Other"
+                            - option "Re-Paint"
+                    - generic [ref=f1e52]:
+                        - generic [ref=f1e53]: Amount (₱)
+                        - spinbutton [ref=f1e54]
+                    - generic [ref=f1e55]:
+                        - generic [ref=f1e56]: Remarks
+                        - textbox "e.g. AC repair needed" [ref=f1e57]
+                    - button "Add Expense" [ref=f1e58]
+                - paragraph [ref=f1e59]: No expenses recorded yet.

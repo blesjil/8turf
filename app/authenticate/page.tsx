@@ -2,6 +2,19 @@
 
 import { useActionState } from 'react';
 import { signIn } from '@/lib/auth-client';
+import { Alert, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { BrandMark } from '@/components/header';
 
 type FormState = {
   error: string;
@@ -32,65 +45,52 @@ function AuthForm() {
   );
 
   return (
-    <>
-      <h1 className='text-2xl font-bold text-center mb-8'>Sign In</h1>
-
-      <form action={submitAction} className='space-y-4'>
-        <div>
-          <label htmlFor='email' className='block text-sm font-medium mb-1'>
-            Email
-          </label>
-          <input
-            id='email'
-            name='email'
-            type='email'
-            required
-            autoComplete='email'
-            className='w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-          />
-        </div>
-
-        <div>
-          <label htmlFor='password' className='block text-sm font-medium mb-1'>
-            Password
-          </label>
-          <input
-            id='password'
-            name='password'
-            type='password'
-            required
-            minLength={8}
-            autoComplete='current-password'
-            className='w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-          />
-        </div>
-
-        {state.error && (
-          <p role='alert' className='text-red-600 text-sm'>
-            {state.error}
+    <Card className='w-full'>
+      <CardHeader className='items-center text-center'>
+        <BrandMark className='mb-2 size-10 rounded-xl text-lg' />
+        <CardTitle className='text-xl'>Sign in to 8turf</CardTitle>
+        <CardDescription>Manage your properties, tenants, and payments.</CardDescription>
+      </CardHeader>
+      <form action={submitAction}>
+        <CardContent className='space-y-4'>
+          {state.error && (
+            <Alert variant='destructive' role='alert'>
+              <AlertTitle>{state.error}</AlertTitle>
+            </Alert>
+          )}
+          <div className='space-y-2'>
+            <Label htmlFor='email'>Email</Label>
+            <Input id='email' name='email' type='email' required autoComplete='email' />
+          </div>
+          <div className='space-y-2'>
+            <Label htmlFor='password'>Password</Label>
+            <Input
+              id='password'
+              name='password'
+              type='password'
+              required
+              minLength={8}
+              autoComplete='current-password'
+            />
+          </div>
+        </CardContent>
+        <CardFooter className='mt-6 flex-col gap-3'>
+          <Button type='submit' disabled={isPending} className='w-full'>
+            {isPending ? 'Signing in…' : 'Sign in'}
+          </Button>
+          <p className='text-center text-xs text-muted-foreground'>
+            Forgot your password? Ask an admin to reset it from Manage Users.
           </p>
-        )}
-
-        <button
-          type='submit'
-          disabled={isPending}
-          className='w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
-        >
-          {isPending ? 'Loading...' : 'Sign In'}
-        </button>
+        </CardFooter>
       </form>
-
-      <p className='mt-4 text-sm text-center text-foreground/60'>
-        Forgot your password? Ask an admin to reset it from Manage Users.
-      </p>
-    </>
+    </Card>
   );
 }
 
 export default function Authenticate() {
   return (
-    <div className='flex min-h-screen items-center justify-center p-8'>
-      <main className='max-w-md w-full'>
+    <div className='flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-6'>
+      <main className='w-full max-w-sm'>
         <AuthForm />
       </main>
     </div>

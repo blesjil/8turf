@@ -1,0 +1,136 @@
+- generic [ref=f1e1]:
+    - banner [ref=f1e2]:
+        - link "8Turf" [ref=f1e3] [cursor=pointer]:
+            - /url: /dashboard
+        - generic [ref=f1e4]:
+            - link "Manage Users" [ref=f1e5] [cursor=pointer]:
+                - /url: /admin/users
+            - button "Logout" [ref=f1e6] [cursor=pointer]
+    - alert [ref=f1e15]
+    - generic [ref=f1e26]:
+        - link "← Back to Properties" [ref=f1e27] [cursor=pointer]:
+            - /url: /dashboard
+        - generic [ref=f1e28]:
+            - generic [ref=f1e29]:
+                - heading "QA Test Property" [level=1] [ref=f1e30]
+                - paragraph [ref=f1e31]: 123 Test St
+            - generic [ref=f1e32]:
+                - link "Edit" [ref=f1e33] [cursor=pointer]:
+                    - /url: /properties/375ae223-7a42-4878-b1be-20419546e660/edit
+                - button "Archive" [ref=f1e35] [cursor=pointer]
+                - button "Delete" [ref=f1e37] [cursor=pointer]
+        - generic [ref=f1e38]:
+            - heading "Units" [level=2] [ref=f1e39]
+            - link "Add Unit" [ref=f1e40] [cursor=pointer]:
+                - /url: /properties/375ae223-7a42-4878-b1be-20419546e660/units/new
+        - paragraph [ref=f1e41]: No units yet. Add the first one.
+        - generic [ref=f1e42]:
+            - heading "Property Expenses" [level=2] [ref=f1e43]
+            - generic [ref=f1e44]:
+                - generic [ref=f1e45]:
+                    - generic [ref=f1e46]:
+                        - generic [ref=f1e47]: Date
+                        - button "July 20, 2026" [expanded] [ref=f1e154] [cursor=pointer]
+                    - generic [ref=f1e49]:
+                        - generic [ref=f1e50]: Category
+                        - combobox [ref=f1e51]:
+                            - option "Repair" [selected]
+                            - option "Cleaning"
+                            - option "Tax"
+                            - option "Other"
+                            - option "Re-Paint"
+                    - generic [ref=f1e52]:
+                        - generic [ref=f1e53]: Amount (₱)
+                        - spinbutton [ref=f1e54]
+                    - generic [ref=f1e55]:
+                        - generic [ref=f1e56]: Remarks
+                        - textbox "e.g. AC repair needed" [ref=f1e57]
+                    - button "Add Expense" [ref=f1e58]
+                - paragraph [ref=f1e59]: No expenses recorded yet.
+    - dialog [ref=f1e156]:
+        - generic [ref=f1e158]:
+            - navigation "Navigation bar" [ref=f1e159]:
+                - button "Go to the Previous Month" [active] [ref=f1e160] [cursor=pointer]:
+                    - img [ref=f1e161]
+                - button "Go to the Next Month" [ref=f1e163] [cursor=pointer]:
+                    - img [ref=f1e164]
+            - generic [ref=f1e166]:
+                - status [ref=f1e168]: July 2026
+                - grid "July 2026" [ref=f1e169]:
+                    - rowgroup [ref=f1e170]:
+                        - row [ref=f1e171]:
+                            - columnheader [ref=f1e172]: Su
+                            - columnheader [ref=f1e173]: Mo
+                            - columnheader [ref=f1e174]: Tu
+                            - columnheader [ref=f1e175]: We
+                            - columnheader [ref=f1e176]: Th
+                            - columnheader [ref=f1e177]: Fr
+                            - columnheader [ref=f1e178]: Sa
+                    - rowgroup [ref=f1e179]:
+                        - row "Wednesday, July 1st, 2026 Thursday, July 2nd, 2026 Friday, July 3rd, 2026 Saturday, July 4th, 2026" [ref=f1e180]:
+                            - gridcell "Wednesday, July 1st, 2026" [ref=f1e181]:
+                                - button "Wednesday, July 1st, 2026" [ref=f1e182] [cursor=pointer]: '1'
+                            - gridcell "Thursday, July 2nd, 2026" [ref=f1e183]:
+                                - button "Thursday, July 2nd, 2026" [ref=f1e184] [cursor=pointer]: '2'
+                            - gridcell "Friday, July 3rd, 2026" [ref=f1e185]:
+                                - button "Friday, July 3rd, 2026" [ref=f1e186] [cursor=pointer]: '3'
+                            - gridcell "Saturday, July 4th, 2026" [ref=f1e187]:
+                                - button "Saturday, July 4th, 2026" [ref=f1e188] [cursor=pointer]: '4'
+                        - row "Sunday, July 5th, 2026 Today, Monday, July 6th, 2026 Tuesday, July 7th, 2026 Wednesday, July 8th, 2026 Thursday, July 9th, 2026 Friday, July 10th, 2026 Saturday, July 11th, 2026" [ref=f1e189]:
+                            - gridcell "Sunday, July 5th, 2026" [ref=f1e190]:
+                                - button "Sunday, July 5th, 2026" [ref=f1e191] [cursor=pointer]: '5'
+                            - gridcell "Today, Monday, July 6th, 2026" [ref=f1e192]:
+                                - button "Today, Monday, July 6th, 2026" [ref=f1e193] [cursor=pointer]: '6'
+                            - gridcell "Tuesday, July 7th, 2026" [ref=f1e194]:
+                                - button "Tuesday, July 7th, 2026" [ref=f1e195] [cursor=pointer]: '7'
+                            - gridcell "Wednesday, July 8th, 2026" [ref=f1e196]:
+                                - button "Wednesday, July 8th, 2026" [ref=f1e197] [cursor=pointer]: '8'
+                            - gridcell "Thursday, July 9th, 2026" [ref=f1e198]:
+                                - button "Thursday, July 9th, 2026" [ref=f1e199] [cursor=pointer]: '9'
+                            - gridcell "Friday, July 10th, 2026" [ref=f1e200]:
+                                - button "Friday, July 10th, 2026" [ref=f1e201] [cursor=pointer]: '10'
+                            - gridcell "Saturday, July 11th, 2026" [ref=f1e202]:
+                                - button "Saturday, July 11th, 2026" [ref=f1e203] [cursor=pointer]: '11'
+                        - row "Sunday, July 12th, 2026 Monday, July 13th, 2026 Tuesday, July 14th, 2026 Wednesday, July 15th, 2026 Thursday, July 16th, 2026 Friday, July 17th, 2026 Saturday, July 18th, 2026" [ref=f1e204]:
+                            - gridcell "Sunday, July 12th, 2026" [ref=f1e205]:
+                                - button "Sunday, July 12th, 2026" [ref=f1e206] [cursor=pointer]: '12'
+                            - gridcell "Monday, July 13th, 2026" [ref=f1e207]:
+                                - button "Monday, July 13th, 2026" [ref=f1e208] [cursor=pointer]: '13'
+                            - gridcell "Tuesday, July 14th, 2026" [ref=f1e209]:
+                                - button "Tuesday, July 14th, 2026" [ref=f1e210] [cursor=pointer]: '14'
+                            - gridcell "Wednesday, July 15th, 2026" [ref=f1e211]:
+                                - button "Wednesday, July 15th, 2026" [ref=f1e212] [cursor=pointer]: '15'
+                            - gridcell "Thursday, July 16th, 2026" [ref=f1e213]:
+                                - button "Thursday, July 16th, 2026" [ref=f1e214] [cursor=pointer]: '16'
+                            - gridcell "Friday, July 17th, 2026" [ref=f1e215]:
+                                - button "Friday, July 17th, 2026" [ref=f1e216] [cursor=pointer]: '17'
+                            - gridcell "Saturday, July 18th, 2026" [ref=f1e217]:
+                                - button "Saturday, July 18th, 2026" [ref=f1e218] [cursor=pointer]: '18'
+                        - row "Sunday, July 19th, 2026 Monday, July 20th, 2026, selected Tuesday, July 21st, 2026 Wednesday, July 22nd, 2026 Thursday, July 23rd, 2026 Friday, July 24th, 2026 Saturday, July 25th, 2026" [ref=f1e219]:
+                            - gridcell "Sunday, July 19th, 2026" [ref=f1e220]:
+                                - button "Sunday, July 19th, 2026" [ref=f1e221] [cursor=pointer]: '19'
+                            - gridcell "Monday, July 20th, 2026, selected" [selected] [ref=f1e222]:
+                                - button "Monday, July 20th, 2026, selected" [ref=f1e223] [cursor=pointer]: '20'
+                            - gridcell "Tuesday, July 21st, 2026" [ref=f1e224]:
+                                - button "Tuesday, July 21st, 2026" [ref=f1e225] [cursor=pointer]: '21'
+                            - gridcell "Wednesday, July 22nd, 2026" [ref=f1e226]:
+                                - button "Wednesday, July 22nd, 2026" [ref=f1e227] [cursor=pointer]: '22'
+                            - gridcell "Thursday, July 23rd, 2026" [ref=f1e228]:
+                                - button "Thursday, July 23rd, 2026" [ref=f1e229] [cursor=pointer]: '23'
+                            - gridcell "Friday, July 24th, 2026" [ref=f1e230]:
+                                - button "Friday, July 24th, 2026" [ref=f1e231] [cursor=pointer]: '24'
+                            - gridcell "Saturday, July 25th, 2026" [ref=f1e232]:
+                                - button "Saturday, July 25th, 2026" [ref=f1e233] [cursor=pointer]: '25'
+                        - row "Sunday, July 26th, 2026 Monday, July 27th, 2026 Tuesday, July 28th, 2026 Wednesday, July 29th, 2026 Thursday, July 30th, 2026 Friday, July 31st, 2026" [ref=f1e234]:
+                            - gridcell "Sunday, July 26th, 2026" [ref=f1e235]:
+                                - button "Sunday, July 26th, 2026" [ref=f1e236] [cursor=pointer]: '26'
+                            - gridcell "Monday, July 27th, 2026" [ref=f1e237]:
+                                - button "Monday, July 27th, 2026" [ref=f1e238] [cursor=pointer]: '27'
+                            - gridcell "Tuesday, July 28th, 2026" [ref=f1e239]:
+                                - button "Tuesday, July 28th, 2026" [ref=f1e240] [cursor=pointer]: '28'
+                            - gridcell "Wednesday, July 29th, 2026" [ref=f1e241]:
+                                - button "Wednesday, July 29th, 2026" [ref=f1e242] [cursor=pointer]: '29'
+                            - gridcell "Thursday, July 30th, 2026" [ref=f1e243]:
+                                - button "Thursday, July 30th, 2026" [ref=f1e244] [cursor=pointer]: '30'
+                            - gridcell "Friday, July 31st, 2026" [ref=f1e245]:
+                                - button "Friday, July 31st, 2026" [ref=f1e246] [cursor=pointer]: '31'

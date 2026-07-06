@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import * as Popover from '@radix-ui/react-popover';
-import { DayPicker } from 'react-day-picker';
-import 'react-day-picker/style.css';
 import { format, parseISO } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 function parseIsoDate(iso?: string): Date | undefined {
   if (!iso) return undefined;
@@ -28,33 +29,34 @@ export function DatePickerField({
   const iso = selected ? format(selected, 'yyyy-MM-dd') : '';
 
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen}>
       <input type='hidden' name={name} value={iso} required={required} />
-      <Popover.Trigger
-        type='button'
-        className={
-          className ??
-          'px-3 py-2 border border-border rounded-lg bg-background text-foreground text-left w-full cursor-pointer'
+      <PopoverTrigger
+        render={
+          <Button
+            type='button'
+            variant='outline'
+            className={cn(
+              'w-full justify-start font-normal',
+              !selected && 'text-muted-foreground',
+              className,
+            )}
+          />
         }
       >
         {selected ? format(selected, 'MMMM d, yyyy') : 'Select date'}
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content
-          sideOffset={4}
-          className='z-50 rounded-lg border border-border bg-background p-2 shadow-lg'
-        >
-          <DayPicker
-            mode='single'
-            selected={selected}
-            defaultMonth={selected}
-            onSelect={(d) => {
-              setSelected(d);
-              setOpen(false);
-            }}
-          />
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+      </PopoverTrigger>
+      <PopoverContent className='w-auto p-0'>
+        <Calendar
+          mode='single'
+          selected={selected}
+          defaultMonth={selected}
+          onSelect={(d) => {
+            setSelected(d);
+            setOpen(false);
+          }}
+        />
+      </PopoverContent>
+    </Popover>
   );
 }

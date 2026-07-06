@@ -2,6 +2,11 @@
 
 import { useActionState } from 'react';
 import { createUser, type CreateUserResult } from './actions';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const initialState: CreateUserResult = { success: false };
 
@@ -10,57 +15,48 @@ export function CreateUserForm() {
 
   return (
     <div className='space-y-4'>
-      <form action={formAction} className='flex flex-wrap gap-3 items-start'>
-        {state.error?.general && (
-          <div className='w-full p-3 bg-red-100 border border-red-300 text-red-800 rounded-lg text-sm'>
-            {state.error.general}
-          </div>
-        )}
-
-        <div>
-          <label htmlFor='name' className='block text-sm font-medium mb-1'>
-            Name
-          </label>
-          <input
-            type='text'
-            id='name'
-            name='name'
-            required
-            className='px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
-          />
-          {state.error?.name && <p className='mt-1 text-sm text-red-600'>{state.error.name[0]}</p>}
-        </div>
-
-        <div>
-          <label htmlFor='email' className='block text-sm font-medium mb-1'>
-            Email
-          </label>
-          <input
-            type='email'
-            id='email'
-            name='email'
-            required
-            className='px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
-          />
-          {state.error?.email && (
-            <p className='mt-1 text-sm text-red-600'>{state.error.email[0]}</p>
+      <Card className='p-4'>
+        <form action={formAction} className='flex flex-wrap items-end gap-3'>
+          {state.error?.general && (
+            <Alert variant='destructive' className='w-full'>
+              <AlertTitle>{state.error.general}</AlertTitle>
+            </Alert>
           )}
-        </div>
 
-        <button
-          type='submit'
-          disabled={isPending}
-          className='mt-6 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
-        >
-          {isPending ? 'Creating...' : 'Create User'}
-        </button>
-      </form>
+          <div>
+            <Label htmlFor='name' className='mb-2'>
+              Name
+            </Label>
+            <Input type='text' id='name' name='name' required className='w-48' />
+            {state.error?.name && (
+              <p className='mt-1 text-sm text-destructive'>{state.error.name[0]}</p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor='email' className='mb-2'>
+              Email
+            </Label>
+            <Input type='email' id='email' name='email' required className='w-64' />
+            {state.error?.email && (
+              <p className='mt-1 text-sm text-destructive'>{state.error.email[0]}</p>
+            )}
+          </div>
+
+          <Button type='submit' disabled={isPending}>
+            {isPending ? 'Creating…' : 'Create user'}
+          </Button>
+        </form>
+      </Card>
 
       {state.success && state.tempPassword && (
-        <div className='p-3 bg-green-100 border border-green-300 text-green-900 rounded-lg text-sm'>
-          User created. Temporary password (shown once — relay it to the new user):{' '}
-          <code className='font-mono bg-white/60 px-1.5 py-0.5 rounded'>{state.tempPassword}</code>
-        </div>
+        <Alert>
+          <AlertTitle>User created</AlertTitle>
+          <AlertDescription>
+            Temporary password (shown once — relay it to the new user):{' '}
+            <code className='rounded bg-muted px-1.5 py-0.5 font-mono'>{state.tempPassword}</code>
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );

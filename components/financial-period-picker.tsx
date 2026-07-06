@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { MonthPicker } from '@/components/month-picker';
+import { NativeSelect } from '@/components/ui/native-select';
 import { yearOptions } from '@/lib/format-date';
 
 export function FinancialPeriodPicker({
@@ -16,8 +17,9 @@ export function FinancialPeriodPicker({
   const router = useRouter();
 
   return (
-    <div className='flex items-center gap-3'>
-      <select
+    <div className='flex items-center gap-2'>
+      <NativeSelect
+        aria-label='Report period'
         value={mode}
         onChange={(e) => {
           const nextMode = e.target.value as 'month' | 'year';
@@ -27,26 +29,27 @@ export function FinancialPeriodPicker({
               : `/financial-report?mode=year&year=${year}`,
           );
         }}
-        className='px-3 py-2 border border-border rounded-lg'
+        className='w-auto'
       >
         <option value='month'>Month</option>
         <option value='year'>Year</option>
-      </select>
+      </NativeSelect>
 
       {mode === 'month' ? (
         <MonthPicker value={month} basePath='/financial-report' />
       ) : (
-        <select
+        <NativeSelect
+          aria-label='Year'
           value={year}
           onChange={(e) => router.push(`/financial-report?mode=year&year=${e.target.value}`)}
-          className='px-3 py-2 border border-border rounded-lg'
+          className='w-auto'
         >
           {yearOptions().map((y) => (
             <option key={y} value={y}>
               {y}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       )}
     </div>
   );

@@ -2,6 +2,19 @@
 
 import { useActionState, useState } from 'react';
 import { resetUserPassword, type ResetPasswordResult } from './actions';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const initialState: ResetPasswordResult = { success: false };
 
@@ -12,66 +25,50 @@ export function ResetPasswordButton({ userId }: { userId: string }) {
 
   return (
     <div className='inline-flex flex-col items-start gap-1'>
-      <button
-        type='button'
-        onClick={() => setOpen(true)}
-        className='px-3 py-1 text-sm border border-border rounded-lg hover:bg-foreground/5'
-      >
-        Reset password
-      </button>
-
-      {open && (
-        <div
-          className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className='w-full max-w-sm rounded-lg border border-border bg-background p-6 shadow-lg'
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p className='text-sm mb-4'>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger render={<Button type='button' variant='ghost' size='sm' />}>
+          Reset password
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset password</DialogTitle>
+            <DialogDescription>
               Reset this user&apos;s password? Their current password will stop working.
-            </p>
-            <form action={formAction} onSubmit={() => setOpen(false)} className='space-y-3'>
-              <input type='hidden' name='userId' value={userId} />
-              <div>
-                <label className='block text-xs mb-1'>New password (optional)</label>
-                <input
-                  type='text'
-                  name='newPassword'
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder='Leave blank to auto-generate'
-                  className='w-full px-3 py-2 text-sm border border-border rounded-lg'
-                />
-              </div>
-              <div className='flex justify-end gap-3'>
-                <button
-                  type='button'
-                  className='text-sm text-foreground/60 hover:text-foreground cursor-pointer'
-                  onClick={() => setOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type='submit'
-                  disabled={isPending}
-                  className='text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 cursor-pointer'
-                >
-                  {isPending ? 'Resetting...' : 'Reset password'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </DialogDescription>
+          </DialogHeader>
+          <form action={formAction} onSubmit={() => setOpen(false)} className='space-y-4'>
+            <input type='hidden' name='userId' value={userId} />
+            <div className='space-y-2'>
+              <Label htmlFor={`new-password-${userId}`}>New password (optional)</Label>
+              <Input
+                type='text'
+                id={`new-password-${userId}`}
+                name='newPassword'
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder='Leave blank to auto-generate'
+              />
+            </div>
+            <DialogFooter>
+              <Button type='button' variant='outline' onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type='submit' disabled={isPending}>
+                {isPending ? 'Resetting…' : 'Reset password'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-      {state.error && <span className='text-sm text-red-600'>{state.error}</span>}
+      {state.error && <span className='text-sm text-destructive'>{state.error}</span>}
       {state.success && state.tempPassword && (
-        <span className='text-sm bg-green-100 border border-green-300 text-green-900 rounded-lg px-2 py-1'>
-          New password (shown once):{' '}
-          <code className='font-mono bg-white/60 px-1.5 py-0.5 rounded'>{state.tempPassword}</code>
-        </span>
+        <Alert className='w-auto'>
+          <AlertTitle>New password (shown once)</AlertTitle>
+          <AlertDescription>
+            <code className='rounded bg-muted px-1.5 py-0.5 font-mono'>{state.tempPassword}</code>
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );

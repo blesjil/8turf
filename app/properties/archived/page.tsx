@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { unarchiveProperty } from '../actions';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ArchivedProperty {
   id: string;
@@ -25,36 +27,44 @@ export default async function ArchivedPropertiesPage() {
   );
 
   return (
-    <div className='p-8 max-w-3xl mx-auto'>
-      <Link href='/dashboard' className='text-blue-600 hover:underline mb-4 inline-block'>
+    <div className='mx-auto max-w-4xl p-6 sm:p-8'>
+      <Link
+        href='/dashboard'
+        className='mb-4 inline-block text-sm font-medium text-primary hover:underline'
+      >
         &larr; Back to Properties
       </Link>
 
-      <h1 className='text-2xl font-bold mb-6'>Archived Properties</h1>
+      <h1 className='mb-6 text-2xl font-semibold tracking-tight'>Archived Properties</h1>
 
       {properties.length === 0 ? (
-        <p className='text-foreground/60'>No archived properties.</p>
+        <Card className='py-8 text-center'>
+          <CardHeader className='items-center'>
+            <CardTitle>No archived properties</CardTitle>
+            <CardDescription>Properties you archive will show up here.</CardDescription>
+          </CardHeader>
+        </Card>
       ) : (
         <ul className='space-y-3'>
           {properties.map((property) => (
-            <li
-              key={property.id}
-              className='flex items-center justify-between p-4 border border-border rounded-lg'
-            >
-              <div>
-                <h2 className='font-semibold'>{property.name}</h2>
-                <p className='text-sm text-foreground/60'>{property.address}</p>
-                <p className='text-xs text-foreground/40 mt-1'>Archived {property.archived_at}</p>
-              </div>
-              <form action={unarchiveProperty}>
-                <input type='hidden' name='id' value={property.id} />
-                <button
-                  type='submit'
-                  className='text-sm text-blue-600 hover:text-blue-800 cursor-pointer'
-                >
-                  Unarchive
-                </button>
-              </form>
+            <li key={property.id}>
+              <Card>
+                <CardContent className='flex items-center justify-between gap-4'>
+                  <div>
+                    <h2 className='font-semibold'>{property.name}</h2>
+                    <p className='text-sm text-muted-foreground'>{property.address}</p>
+                    <p className='mt-1 text-xs text-muted-foreground'>
+                      Archived {property.archived_at}
+                    </p>
+                  </div>
+                  <form action={unarchiveProperty}>
+                    <input type='hidden' name='id' value={property.id} />
+                    <Button type='submit' variant='outline' size='sm'>
+                      Unarchive
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
             </li>
           ))}
         </ul>

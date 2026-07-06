@@ -1,11 +1,21 @@
 import { redirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
-import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { formatCents } from '@/lib/money';
 import { PaymentsTabs } from '@/components/payments-tabs';
 import { FinancialPeriodPicker } from '@/components/financial-period-picker';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 type SearchParams = Promise<{ mode?: string; month?: string; year?: string }>;
 
@@ -119,61 +129,85 @@ export default async function FinancialReportPage({
   const propertyGroups = [...groups.values()];
 
   return (
-    <div className='p-8 max-w-5xl mx-auto'>
-      <Link href='/dashboard' className='text-blue-600 hover:underline mb-4 inline-block'>
-        &larr; Back to Properties
-      </Link>
-
+    <div className='mx-auto max-w-6xl p-6 sm:p-8'>
       <PaymentsTabs active='financial-report' isAdmin />
 
-      <div className='flex items-center justify-between mb-6'>
-        <h1 className='text-2xl font-bold'>Financial Report</h1>
+      <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>
+        <h1 className='text-2xl font-semibold tracking-tight'>Financial Report</h1>
         <FinancialPeriodPicker mode={mode} month={month} year={year} />
       </div>
 
       {propertyGroups.length === 0 ? (
-        <p className='text-foreground/60'>No properties yet.</p>
+        <Card className='py-8 text-center'>
+          <CardHeader className='items-center'>
+            <CardTitle>No properties yet</CardTitle>
+            <CardDescription>Add a property to see its income and expenses here.</CardDescription>
+          </CardHeader>
+        </Card>
       ) : (
         <div className='flex flex-col gap-8'>
           {propertyGroups.map((group) => (
             <div key={group.propertyId}>
-              <h2 className='text-lg font-semibold mb-3'>{group.propertyName}</h2>
-              <table className='w-full text-sm border-collapse'>
-                <thead>
-                  <tr className='text-left border-b border-border'>
-                    <th className='py-2 pr-4'>Unit</th>
-                    <th className='py-2 pr-4'>Income</th>
-                    <th className='py-2 pr-4'>Expenses</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {group.units.map((u) => (
-                    <tr key={u.unitId} className='border-b border-border/50'>
-                      <td className='py-2 pr-4'>{u.unitLabel}</td>
-                      <td className='py-2 pr-4'>{formatCents(u.income)}</td>
-                      <td className='py-2 pr-4'>{formatCents(u.expenses)}</td>
-                    </tr>
-                  ))}
-                  <tr className='border-b border-border/50'>
-                    <td className='py-2 pr-4 text-foreground/60'>Property-level expenses</td>
-                    <td className='py-2 pr-4'></td>
-                    <td className='py-2 pr-4'>{formatCents(group.propertyExpenses)}</td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr className='font-semibold'>
-                    <td className='py-2 pr-4'>Total</td>
-                    <td className='py-2 pr-4'>{formatCents(group.totalIncome)}</td>
-                    <td className='py-2 pr-4'>{formatCents(group.totalExpenses)}</td>
-                  </tr>
-                  <tr className='font-semibold'>
-                    <td className='py-2 pr-4'>Net Income</td>
-                    <td className='py-2 pr-4' colSpan={2}>
-                      {formatCents(group.netIncome)}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+              <div className='mb-3 flex flex-wrap items-baseline justify-between gap-2'>
+                <h2 className='text-lg font-semibold tracking-tight'>{group.propertyName}</h2>
+                <p className='text-sm text-muted-foreground'>
+                  Net income:{' '}
+                  <span
+                    className={cn(
+                      'font-mono font-semibold tabular-nums',
+                      group.netIncome >= 0 ? 'text-success' : 'text-destructive',
+                    )}
+                  >
+                    {formatCents(group.netIncome)}
+                  </span>
+                </p>
+              </div>
+              <Card className='py-0'>
+                <div className='overflow-x-auto'>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Unit</TableHead>
+                        <TableHead className='text-right'>Income</TableHead>
+                        <TableHead className='text-right'>Expenses</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {group.units.map((u) => (
+                        <TableRow key={u.unitId}>
+                          <TableCell className='font-mono'>{u.unitLabel}</TableCell>
+                          <TableCell className='text-right font-mono tabular-nums'>
+                            {formatCents(u.income)}
+                          </TableCell>
+                          <TableCell className='text-right font-mono tabular-nums'>
+                            {formatCents(u.expenses)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow>
+                        <TableCell className='text-muted-foreground'>
+                          Property-level expenses
+                        </TableCell>
+                        <TableCell />
+                        <TableCell className='text-right font-mono tabular-nums'>
+                          {formatCents(group.propertyExpenses)}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell>Total</TableCell>
+                        <TableCell className='text-right font-mono tabular-nums'>
+                          {formatCents(group.totalIncome)}
+                        </TableCell>
+                        <TableCell className='text-right font-mono tabular-nums'>
+                          {formatCents(group.totalExpenses)}
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                </div>
+              </Card>
             </div>
           ))}
         </div>

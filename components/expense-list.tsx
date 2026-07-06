@@ -3,6 +3,19 @@
 import { useActionState, useRef, useState } from 'react';
 import { formatCents } from '@/lib/money';
 import { formatDate } from '@/lib/format-date';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { DatePickerField } from '@/components/ui/date-picker-field';
 import { ConfirmButton } from '@/components/confirm-button';
 
@@ -31,18 +44,61 @@ const CATEGORY_LABELS: Record<Expense['category'], string> = {
   other: 'Other',
 };
 
-function CategorySelect({ defaultValue }: { defaultValue?: string }) {
+function FieldError({ messages }: { messages?: string[] }) {
+  if (!messages?.length) return null;
+  return <p className='mt-1 text-sm text-destructive'>{messages[0]}</p>;
+}
+
+function ExpenseFormFields({ state, expense }: { state: ExpenseActionResult; expense?: Expense }) {
   return (
-    <select
-      name='category'
-      defaultValue={defaultValue ?? 'repair'}
-      className='px-3 py-2 border border-border rounded-lg'
-    >
-      <option value='repair'>Repair</option>
-      <option value='cleaning'>Cleaning</option>
-      <option value='tax'>Tax</option>
-      <option value='other'>Other</option>
-    </select>
+    <>
+      <div>
+        <Label className='mb-2 text-xs'>Date</Label>
+        <DatePickerField name='expenseDate' defaultValue={expense?.expense_date} required />
+        <FieldError messages={state.error?.expenseDate} />
+      </div>
+      <div>
+        <Label className='mb-2 text-xs'>Category</Label>
+        <NativeSelect name='category' defaultValue={expense?.category ?? 'repair'}>
+          <option value='repair'>Repair</option>
+          <option value='cleaning'>Cleaning</option>
+          <option value='tax'>Tax</option>
+          <option value='other'>Other</option>
+        </NativeSelect>
+        <FieldError messages={state.error?.category} />
+      </div>
+      <div>
+        <Label className='mb-2 text-xs'>Amount (₱)</Label>
+        <Input
+          name='amountDollars'
+          type='number'
+          step='0.01'
+          min='0.01'
+          defaultValue={expense ? (expense.amount / 100).toFixed(2) : undefined}
+          required={!expense}
+          className='w-32'
+          onChange={(e) => {
+            const cents = Math.round(parseFloat(e.currentTarget.value || '0') * 100);
+            const hidden = e.currentTarget.form?.elements.namedItem(
+              'amount',
+            ) as HTMLInputElement | null;
+            if (hidden) hidden.value = String(cents);
+          }}
+        />
+        <input type='hidden' name='amount' defaultValue={expense?.amount} />
+        <FieldError messages={state.error?.amount} />
+      </div>
+      <div>
+        <Label className='mb-2 text-xs'>Remarks</Label>
+        <Input
+          name='remarks'
+          defaultValue={expense?.remarks ?? ''}
+          placeholder='e.g. AC repair needed'
+          className='w-48'
+        />
+        <FieldError messages={state.error?.remarks} />
+      </div>
+    </>
   );
 }
 
@@ -65,96 +121,39 @@ function ExpenseRow({ expense, updateAction, deleteAction }: ExpenseRowProps) {
 
   if (isEditing) {
     return (
-      <tr className='border-b border-border/50'>
-        <td colSpan={5} className='py-3'>
-          <form action={formAction} className='flex flex-wrap gap-3 items-end'>
+      <TableRow>
+        <TableCell colSpan={5} className='py-3'>
+          <form action={formAction} className='flex flex-wrap items-end gap-3'>
             <input type='hidden' name='id' value={expense.id} />
             {state.error?.general && (
-              <p className='w-full text-sm text-red-600'>{state.error.general}</p>
+              <p className='w-full text-sm text-destructive'>{state.error.general}</p>
             )}
-            <div>
-              <label className='block text-xs mb-1'>Date</label>
-              <DatePickerField name='expenseDate' defaultValue={expense.expense_date} required />
-              {state.error?.expenseDate && (
-                <p className='mt-1 text-sm text-red-600'>{state.error.expenseDate[0]}</p>
-              )}
-            </div>
-            <div>
-              <label className='block text-xs mb-1'>Category</label>
-              <CategorySelect defaultValue={expense.category} />
-              {state.error?.category && (
-                <p className='mt-1 text-sm text-red-600'>{state.error.category[0]}</p>
-              )}
-            </div>
-            <div>
-              <label className='block text-xs mb-1'>Amount (₱)</label>
-              <input
-                name='amountDollars'
-                type='number'
-                step='0.01'
-                min='0.01'
-                defaultValue={(expense.amount / 100).toFixed(2)}
-                onChange={(e) => {
-                  const cents = Math.round(parseFloat(e.currentTarget.value || '0') * 100);
-                  const hidden = e.currentTarget.form?.elements.namedItem(
-                    'amount',
-                  ) as HTMLInputElement | null;
-                  if (hidden) hidden.value = String(cents);
-                }}
-                className='px-3 py-2 border border-border rounded-lg'
-              />
-              <input type='hidden' name='amount' defaultValue={expense.amount} />
-              {state.error?.amount && (
-                <p className='mt-1 text-sm text-red-600'>{state.error.amount[0]}</p>
-              )}
-            </div>
-            <div>
-              <label className='block text-xs mb-1'>Remarks</label>
-              <input
-                name='remarks'
-                defaultValue={expense.remarks ?? ''}
-                placeholder='e.g. AC repair needed'
-                className='px-3 py-2 border border-border rounded-lg'
-              />
-              {state.error?.remarks && (
-                <p className='mt-1 text-sm text-red-600'>{state.error.remarks[0]}</p>
-              )}
-            </div>
-            <button
-              type='submit'
-              disabled={isPending}
-              className='bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50'
-            >
-              {isPending ? 'Saving...' : 'Save'}
-            </button>
-            <button
-              type='button'
-              onClick={() => setIsEditing(false)}
-              className='px-4 py-2 border border-border rounded-lg hover:bg-black/5'
-            >
+            <ExpenseFormFields state={state} expense={expense} />
+            <Button type='submit' disabled={isPending}>
+              {isPending ? 'Saving…' : 'Save'}
+            </Button>
+            <Button type='button' variant='outline' onClick={() => setIsEditing(false)}>
               Cancel
-            </button>
+            </Button>
           </form>
-        </td>
-      </tr>
+        </TableCell>
+      </TableRow>
     );
   }
 
   return (
-    <tr className='border-b border-border/50'>
-      <td className='py-2 pr-4'>{formatDate(expense.expense_date)}</td>
-      <td className='py-2 pr-4'>{CATEGORY_LABELS[expense.category]}</td>
-      <td className='py-2 pr-4'>{formatCents(expense.amount)}</td>
-      <td className='py-2 pr-4'>{expense.remarks || '—'}</td>
-      <td className='py-2 pr-4'>
-        <div className='flex items-center gap-3'>
-          <button
-            type='button'
-            onClick={() => setIsEditing(true)}
-            className='text-blue-600 hover:text-blue-800 cursor-pointer'
-          >
+    <TableRow>
+      <TableCell>{formatDate(expense.expense_date)}</TableCell>
+      <TableCell>{CATEGORY_LABELS[expense.category]}</TableCell>
+      <TableCell className='text-right font-mono tabular-nums'>
+        {formatCents(expense.amount)}
+      </TableCell>
+      <TableCell className='max-w-48 truncate'>{expense.remarks || '—'}</TableCell>
+      <TableCell>
+        <div className='flex items-center justify-end gap-1'>
+          <Button type='button' variant='ghost' size='sm' onClick={() => setIsEditing(true)}>
             Edit
-          </button>
+          </Button>
           <form
             ref={deleteFormRef}
             action={async (formData) => {
@@ -164,17 +163,18 @@ function ExpenseRow({ expense, updateAction, deleteAction }: ExpenseRowProps) {
           >
             <ConfirmButton
               formRef={deleteFormRef}
+              title='Delete expense'
               message='Delete this expense? This cannot be undone.'
               confirmLabel='Delete'
               tone='danger'
-              triggerClassName='text-red-600 hover:text-red-800 cursor-pointer'
+              triggerClassName='text-destructive hover:text-destructive'
             >
               Delete
             </ConfirmButton>
           </form>
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -206,91 +206,47 @@ export function ExpenseList({
 
   return (
     <div className='space-y-4'>
-      <form action={formAction} className='flex flex-wrap gap-3 items-end'>
-        <input type='hidden' name={parentIdField} value={parentId} />
-        {state.error?.general && (
-          <p className='w-full text-sm text-red-600'>{state.error.general}</p>
-        )}
-        <div>
-          <label className='block text-xs mb-1'>Date</label>
-          <DatePickerField name='expenseDate' required />
-          {state.error?.expenseDate && (
-            <p className='mt-1 text-sm text-red-600'>{state.error.expenseDate[0]}</p>
+      <Card className='p-4'>
+        <form action={formAction} className='flex flex-wrap items-end gap-3'>
+          <input type='hidden' name={parentIdField} value={parentId} />
+          {state.error?.general && (
+            <p className='w-full text-sm text-destructive'>{state.error.general}</p>
           )}
-        </div>
-        <div>
-          <label className='block text-xs mb-1'>Category</label>
-          <CategorySelect />
-          {state.error?.category && (
-            <p className='mt-1 text-sm text-red-600'>{state.error.category[0]}</p>
-          )}
-        </div>
-        <div>
-          <label className='block text-xs mb-1'>Amount (₱)</label>
-          <input
-            name='amountDollars'
-            type='number'
-            step='0.01'
-            min='0.01'
-            required
-            onChange={(e) => {
-              const cents = Math.round(parseFloat(e.currentTarget.value || '0') * 100);
-              const hidden = e.currentTarget.form?.elements.namedItem(
-                'amount',
-              ) as HTMLInputElement | null;
-              if (hidden) hidden.value = String(cents);
-            }}
-            className='px-3 py-2 border border-border rounded-lg'
-          />
-          <input type='hidden' name='amount' />
-          {state.error?.amount && (
-            <p className='mt-1 text-sm text-red-600'>{state.error.amount[0]}</p>
-          )}
-        </div>
-        <div>
-          <label className='block text-xs mb-1'>Remarks</label>
-          <input
-            name='remarks'
-            placeholder='e.g. AC repair needed'
-            className='px-3 py-2 border border-border rounded-lg'
-          />
-          {state.error?.remarks && (
-            <p className='mt-1 text-sm text-red-600'>{state.error.remarks[0]}</p>
-          )}
-        </div>
-        <button
-          type='submit'
-          disabled={isPending}
-          className='bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50'
-        >
-          {isPending ? 'Adding...' : 'Add Expense'}
-        </button>
-      </form>
+          <ExpenseFormFields state={state} />
+          <Button type='submit' disabled={isPending}>
+            {isPending ? 'Adding…' : 'Add expense'}
+          </Button>
+        </form>
+      </Card>
 
       {expenses.length === 0 ? (
-        <p className='text-foreground/60 text-sm'>No expenses recorded yet.</p>
+        <p className='text-sm text-muted-foreground'>No expenses recorded yet.</p>
       ) : (
-        <table className='w-full text-sm border-collapse'>
-          <thead>
-            <tr className='text-left border-b border-border'>
-              <th className='py-2 pr-4'>Date</th>
-              <th className='py-2 pr-4'>Category</th>
-              <th className='py-2 pr-4'>Amount</th>
-              <th className='py-2 pr-4'>Remarks</th>
-              <th className='py-2 pr-4'></th>
-            </tr>
-          </thead>
-          <tbody>
-            {expenses.map((expense) => (
-              <ExpenseRow
-                key={expense.id}
-                expense={expense}
-                updateAction={updateAction}
-                deleteAction={deleteAction}
-              />
-            ))}
-          </tbody>
-        </table>
+        <Card className='py-0'>
+          <div className='overflow-x-auto'>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead className='text-right'>Amount</TableHead>
+                  <TableHead>Remarks</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {expenses.map((expense) => (
+                  <ExpenseRow
+                    key={expense.id}
+                    expense={expense}
+                    updateAction={updateAction}
+                    deleteAction={deleteAction}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
       )}
     </div>
   );

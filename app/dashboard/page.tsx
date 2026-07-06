@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { Button } from '@/components/ui/button';
 import { PropertyList, type PropertyListItem } from '@/components/property-list';
 
 export default async function Dashboard() {
@@ -20,30 +21,22 @@ export default async function Dashboard() {
   );
 
   return (
-    <div className='p-8'>
-      <div className='flex items-center justify-between mb-6'>
-        <h1 className='text-2xl font-bold'>Properties</h1>
-        <div className='flex gap-3'>
-          <Link
-            href='/payments'
-            className='bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700'
-          >
-            Payments Overview
-          </Link>
+    <div className='mx-auto max-w-6xl p-6 sm:p-8'>
+      <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>
+        <div>
+          <h1 className='text-2xl font-semibold tracking-tight'>Properties</h1>
+          <p className='text-sm text-muted-foreground'>
+            {properties.length} {properties.length === 1 ? 'property' : 'properties'} in your
+            portfolio
+          </p>
+        </div>
+        <div className='flex gap-2'>
           {session.user.role === 'admin' && (
-            <Link
-              href='/properties/archived'
-              className='bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700'
-            >
-              Archived Properties
-            </Link>
+            <Button variant='outline' render={<Link href='/properties/archived' />}>
+              Archived
+            </Button>
           )}
-          <Link
-            href='/properties/new'
-            className='bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700'
-          >
-            New Property
-          </Link>
+          <Button render={<Link href='/properties/new' />}>New property</Button>
         </div>
       </div>
 

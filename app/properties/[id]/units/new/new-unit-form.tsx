@@ -2,42 +2,36 @@
 
 import { useActionState } from 'react';
 import { createUnit, type UnitActionResult } from './actions';
+import { Alert, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export function NewUnitForm({ propertyId }: { propertyId: string }) {
   const [state, formAction, isPending] = useActionState<UnitActionResult, FormData>(createUnit, {});
 
   return (
-    <form action={formAction} className='space-y-4'>
+    <form action={formAction} className='space-y-5'>
       <input type='hidden' name='propertyId' value={propertyId} />
 
       {state.error?.general && (
-        <div className='p-3 bg-red-100 border border-red-300 text-red-800 rounded-lg'>
-          {state.error.general}
-        </div>
+        <Alert variant='destructive'>
+          <AlertTitle>{state.error.general}</AlertTitle>
+        </Alert>
       )}
 
-      <div>
-        <label htmlFor='unitLabel' className='block text-sm font-medium mb-1'>
-          Unit Label
-        </label>
-        <input
-          id='unitLabel'
-          name='unitLabel'
-          required
-          placeholder='Unit 2B'
-          className='w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
-        />
+      <div className='space-y-2'>
+        <Label htmlFor='unitLabel'>Unit label</Label>
+        <Input id='unitLabel' name='unitLabel' required placeholder='Unit 2B' />
         {state.error?.unitLabel && (
-          <p className='mt-1 text-sm text-red-600'>{state.error.unitLabel[0]}</p>
+          <p className='text-sm text-destructive'>{state.error.unitLabel[0]}</p>
         )}
       </div>
 
       <div className='grid grid-cols-2 gap-4'>
-        <div>
-          <label htmlFor='bedrooms' className='block text-sm font-medium mb-1'>
-            Bedrooms
-          </label>
-          <input
+        <div className='space-y-2'>
+          <Label htmlFor='bedrooms'>Bedrooms</Label>
+          <Input
             id='bedrooms'
             name='bedrooms'
             type='number'
@@ -45,14 +39,11 @@ export function NewUnitForm({ propertyId }: { propertyId: string }) {
             step='1'
             defaultValue='1'
             required
-            className='w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
           />
         </div>
-        <div>
-          <label htmlFor='bathrooms' className='block text-sm font-medium mb-1'>
-            Bathrooms
-          </label>
-          <input
+        <div className='space-y-2'>
+          <Label htmlFor='bathrooms'>Bathrooms</Label>
+          <Input
             id='bathrooms'
             name='bathrooms'
             type='number'
@@ -60,16 +51,13 @@ export function NewUnitForm({ propertyId }: { propertyId: string }) {
             step='0.5'
             defaultValue='1'
             required
-            className='w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
           />
         </div>
       </div>
 
-      <div>
-        <label htmlFor='rentAmountDollars' className='block text-sm font-medium mb-1'>
-          Asking Rent ($/mo)
-        </label>
-        <input
+      <div className='space-y-2'>
+        <Label htmlFor='rentAmountDollars'>Asking rent (₱/mo)</Label>
+        <Input
           id='rentAmountDollars'
           name='rentAmountDollars'
           type='number'
@@ -83,21 +71,16 @@ export function NewUnitForm({ propertyId }: { propertyId: string }) {
             ) as HTMLInputElement | null;
             if (hidden) hidden.value = String(cents);
           }}
-          className='w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
         />
         <input type='hidden' name='rentAmount' />
         {state.error?.rentAmount && (
-          <p className='mt-1 text-sm text-red-600'>{state.error.rentAmount[0]}</p>
+          <p className='text-sm text-destructive'>{state.error.rentAmount[0]}</p>
         )}
       </div>
 
-      <button
-        type='submit'
-        disabled={isPending}
-        className='bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50'
-      >
-        {isPending ? 'Creating...' : 'Add Unit'}
-      </button>
+      <Button type='submit' disabled={isPending}>
+        {isPending ? 'Creating…' : 'Add unit'}
+      </Button>
     </form>
   );
 }

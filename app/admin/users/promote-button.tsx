@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { promoteToAdmin, type PromoteResult } from './actions';
+import { Button } from '@/components/ui/button';
 
 const initialState: PromoteResult = { success: false };
 
@@ -15,14 +16,10 @@ export function PromoteButton({ userId }: PromoteButtonProps) {
   return (
     <form action={formAction} className='inline-flex items-center gap-2'>
       <input type='hidden' name='userId' value={userId} />
-      <button
-        type='submit'
-        disabled={isPending}
-        className='px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
-      >
-        {isPending ? 'Promoting...' : 'Make admin'}
-      </button>
-      {state.error && <span className='text-sm text-red-600'>{state.error}</span>}
+      <Button type='submit' variant='outline' size='sm' disabled={isPending}>
+        {isPending ? 'Promoting…' : 'Make admin'}
+      </Button>
+      {state.error && <span className='text-sm text-destructive'>{state.error}</span>}
     </form>
   );
 }

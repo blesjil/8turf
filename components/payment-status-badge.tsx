@@ -1,9 +1,11 @@
 import type { PaymentStatus } from '@/lib/payment-status';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 const STYLES: Record<PaymentStatus, string> = {
-  paid: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-  partial: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-  unpaid: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+  paid: 'bg-success-muted text-success',
+  partial: 'bg-warning-muted text-warning',
+  unpaid: 'bg-danger-muted text-destructive',
 };
 
 const LABELS: Record<PaymentStatus, string> = {
@@ -14,8 +16,9 @@ const LABELS: Record<PaymentStatus, string> = {
 
 export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
   return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STYLES[status]}`}>
+    <Badge variant='secondary' className={cn('gap-1.5', STYLES[status])}>
+      <span aria-hidden className='size-1.5 rounded-full bg-current' />
       {LABELS[status]}
-    </span>
+    </Badge>
   );
 }

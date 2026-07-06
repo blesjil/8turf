@@ -1,72 +1,72 @@
 'use client';
 
-import { useState, type ReactNode, type RefObject } from 'react';
+import { type ReactNode, type RefObject } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 
 export function ConfirmButton({
   formRef,
+  title = 'Are you sure?',
   message,
   confirmLabel = 'Confirm',
   tone = 'default',
+  triggerVariant = 'ghost',
+  triggerSize = 'sm',
   triggerClassName,
   disabled,
   children,
 }: {
   formRef: RefObject<HTMLFormElement | null>;
+  title?: string;
   message: string;
   confirmLabel?: string;
   tone?: 'default' | 'danger';
-  triggerClassName: string;
+  triggerVariant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'destructive' | 'link';
+  triggerSize?: 'default' | 'xs' | 'sm' | 'lg';
+  triggerClassName?: string;
   disabled?: boolean;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
-
   return (
-    <>
-      <button
-        type='button'
-        disabled={disabled}
-        className={triggerClassName}
-        onClick={() => setOpen(true)}
+    <AlertDialog>
+      <AlertDialogTrigger
+        render={
+          <Button
+            type='button'
+            variant={triggerVariant}
+            size={triggerSize}
+            className={triggerClassName}
+            disabled={disabled}
+          />
+        }
       >
         {children}
-      </button>
-      {open && (
-        <div
-          className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className='w-full max-w-sm rounded-lg border border-border bg-background p-6 shadow-lg'
-            onClick={(e) => e.stopPropagation()}
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{message}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            variant={tone === 'danger' ? 'destructive' : 'default'}
+            onClick={() => formRef.current?.requestSubmit()}
           >
-            <p className='text-sm mb-6'>{message}</p>
-            <div className='flex justify-end gap-3'>
-              <button
-                type='button'
-                className='text-sm text-foreground/60 hover:text-foreground cursor-pointer'
-                onClick={() => setOpen(false)}
-              >
-                Cancel
-              </button>
-              <button
-                type='button'
-                className={
-                  tone === 'danger'
-                    ? 'text-sm bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 cursor-pointer'
-                    : 'text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 cursor-pointer'
-                }
-                onClick={() => {
-                  setOpen(false);
-                  formRef.current?.requestSubmit();
-                }}
-              >
-                {confirmLabel}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+            {confirmLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

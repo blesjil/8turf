@@ -16,7 +16,15 @@
       "Bash(bun test *)",
       "Bash(bun dev *)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
-      "Bash(docker exec supabase_db_8turf psql -U postgres -c ' *)"
+      "Bash(docker exec supabase_db_8turf psql -U postgres -c ' *)",
+      "Bash(lsof -i :3000 -sTCP:LISTEN -n -P)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/auth)",
+      "Bash(lsof -i :3001 -sTCP:LISTEN -n -P)",
+      "Bash(PORT=3001 bun dev)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3001/)",
+      "Bash(git push *)",
+      "Bash(bunx shadcn@latest init -d)",
+      "Bash(bunx shadcn@latest add button card input label textarea select table tabs badge dialog alert-dialog separator skeleton alert popover calendar sheet dropdown-menu -o)"
     ]
   },
   "hooks": {
