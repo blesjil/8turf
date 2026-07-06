@@ -39,7 +39,8 @@
       "Read(//Users/blesjil/Library/Caches/ms-playwright-mcp/mcp-chrome-74b60f2/**)",
       "Bash(pkill -f \"mcp-chrome-74b60f2\")",
       "Bash(PGPASSWORD=postgres psql -h 127.0.0.1 -p 54342 -U postgres -d postgres -tAc 'SELECT email FROM \"user\" LIMIT 5')",
-      "Bash(bun -e ' *)"
+      "Bash(bun -e ' *)",
+      "Bash(git fetch *)"
     ]
   },
   "hooks": {
