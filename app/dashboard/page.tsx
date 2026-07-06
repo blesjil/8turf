@@ -21,7 +21,7 @@ export default async function Dashboard() {
   );
 
   return (
-    <div className='mx-auto max-w-6xl p-6 sm:p-8'>
+    <div className='mx-auto max-w-6xl p-4 sm:p-8'>
       <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>
         <div>
           <h1 className='text-2xl font-semibold tracking-tight'>Properties</h1>

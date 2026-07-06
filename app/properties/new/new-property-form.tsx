@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import Link from 'next/link';
 import { createProperty, type PropertyActionResult } from '../actions';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -35,9 +36,14 @@ export function NewPropertyForm() {
         )}
       </div>
 
-      <Button type='submit' disabled={isPending}>
-        {isPending ? 'Creating…' : 'Create property'}
-      </Button>
+      <div className='flex gap-2'>
+        <Button type='submit' disabled={isPending}>
+          {isPending ? 'Creating…' : 'Create property'}
+        </Button>
+        <Button nativeButton={false} variant='outline' render={<Link href='/dashboard' />}>
+          Cancel
+        </Button>
+      </div>
     </form>
   );
 }

@@ -51,12 +51,12 @@ function FieldError({ messages }: { messages?: string[] }) {
 function PaymentFormFields({ state, payment }: { state: PaymentActionResult; payment?: Payment }) {
   return (
     <>
-      <div>
+      <div className='w-full sm:w-auto'>
         <Label className='mb-2 text-xs'>Period</Label>
         <MonthPickerField name='period' defaultValue={payment?.period} required />
         <FieldError messages={state.error?.period} />
       </div>
-      <div>
+      <div className='w-full sm:w-auto'>
         <Label className='mb-2 text-xs'>Amount (₱)</Label>
         <Input
           name='amountDollars'
@@ -65,7 +65,7 @@ function PaymentFormFields({ state, payment }: { state: PaymentActionResult; pay
           min='0.01'
           defaultValue={payment ? (payment.amount / 100).toFixed(2) : undefined}
           required={!payment}
-          className='w-32'
+          className='w-full sm:w-32'
           onChange={(e) => {
             const cents = Math.round(parseFloat(e.currentTarget.value || '0') * 100);
             const hidden = e.currentTarget.form?.elements.namedItem(
@@ -77,12 +77,12 @@ function PaymentFormFields({ state, payment }: { state: PaymentActionResult; pay
         <input type='hidden' name='amount' defaultValue={payment?.amount} />
         <FieldError messages={state.error?.amount} />
       </div>
-      <div>
+      <div className='w-full sm:w-auto'>
         <Label className='mb-2 text-xs'>Paid date</Label>
         <DatePickerField name='paidDate' defaultValue={payment?.paid_date} required />
         <FieldError messages={state.error?.paidDate} />
       </div>
-      <div>
+      <div className='w-full sm:w-auto'>
         <Label className='mb-2 text-xs'>Type</Label>
         <NativeSelect name='paymentType' defaultValue={payment?.payment_type ?? 'rental'}>
           <option value='rental'>Rental</option>
@@ -92,7 +92,7 @@ function PaymentFormFields({ state, payment }: { state: PaymentActionResult; pay
         </NativeSelect>
         <FieldError messages={state.error?.paymentType} />
       </div>
-      <div>
+      <div className='w-full sm:w-auto'>
         <Label className='mb-2 text-xs'>Method</Label>
         <NativeSelect name='method' defaultValue={payment?.method ?? ''}>
           <option value=''>—</option>
@@ -103,9 +103,9 @@ function PaymentFormFields({ state, payment }: { state: PaymentActionResult; pay
         </NativeSelect>
         <FieldError messages={state.error?.method} />
       </div>
-      <div>
+      <div className='w-full sm:w-auto'>
         <Label className='mb-2 text-xs'>Notes</Label>
-        <Input name='notes' defaultValue={payment?.notes ?? ''} className='w-40' />
+        <Input name='notes' defaultValue={payment?.notes ?? ''} className='w-full sm:w-40' />
         <FieldError messages={state.error?.notes} />
       </div>
     </>
@@ -149,9 +149,11 @@ function PaymentRow({ payment, readOnly }: { payment: Payment; readOnly?: boolea
         {formatCents(payment.amount)}
       </TableCell>
       <TableCell>{formatDate(payment.paid_date)}</TableCell>
-      <TableCell>{TYPE_LABELS[payment.payment_type]}</TableCell>
-      <TableCell>{payment.method || '—'}</TableCell>
-      <TableCell className='max-w-48 truncate'>{payment.notes || '—'}</TableCell>
+      <TableCell className='hidden sm:table-cell'>{TYPE_LABELS[payment.payment_type]}</TableCell>
+      <TableCell className='hidden md:table-cell'>{payment.method || '—'}</TableCell>
+      <TableCell className='hidden max-w-48 truncate md:table-cell'>
+        {payment.notes || '—'}
+      </TableCell>
       {!readOnly && (
         <TableCell>
           <div className='flex items-center justify-end gap-1'>
@@ -225,9 +227,9 @@ export function PaymentLedger({
                   <TableHead>Period</TableHead>
                   <TableHead className='text-right'>Amount</TableHead>
                   <TableHead>Paid date</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Notes</TableHead>
+                  <TableHead className='hidden sm:table-cell'>Type</TableHead>
+                  <TableHead className='hidden md:table-cell'>Method</TableHead>
+                  <TableHead className='hidden md:table-cell'>Notes</TableHead>
                   {!readOnly && <TableHead />}
                 </TableRow>
               </TableHeader>

@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState } from 'react';
+import { Suspense, useActionState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { signIn } from '@/lib/auth-client';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,16 @@ type FormState = {
   error: string;
 };
 
+function IdleNotice() {
+  const searchParams = useSearchParams();
+  if (searchParams.get('reason') !== 'idle') return null;
+  return (
+    <Alert role='status' className='mb-4'>
+      <AlertTitle>You were signed out due to inactivity.</AlertTitle>
+    </Alert>
+  );
+}
+
 function AuthForm() {
   const [state, submitAction, isPending] = useActionState<FormState, FormData>(
     async (_prevState, formData) => {
@@ -30,6 +41,7 @@ function AuthForm() {
         const result = await signIn.email({
           email,
           password,
+          rememberMe: false,
           callbackURL: '/dashboard',
         });
         if (result.error) {
@@ -91,6 +103,9 @@ export default function Authenticate() {
   return (
     <div className='flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-6'>
       <main className='w-full max-w-sm'>
+        <Suspense>
+          <IdleNotice />
+        </Suspense>
         <AuthForm />
       </main>
     </div>

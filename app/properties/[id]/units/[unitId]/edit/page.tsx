@@ -30,10 +30,11 @@ export default async function EditUnitPage({ params }: { params: Params }) {
   if (!unit) notFound();
 
   return (
-    <div className='mx-auto max-w-lg p-6 sm:p-8'>
+    <div className='mx-auto max-w-lg p-4 sm:p-8'>
       <h1 className='mb-6 text-2xl font-semibold tracking-tight'>Edit Unit</h1>
       <EditUnitForm
         id={unit.id}
+        propertyId={id}
         unitLabel={unit.unit_label}
         bedrooms={unit.bedrooms}
         bathrooms={unit.bathrooms}

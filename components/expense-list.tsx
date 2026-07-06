@@ -52,12 +52,12 @@ function FieldError({ messages }: { messages?: string[] }) {
 function ExpenseFormFields({ state, expense }: { state: ExpenseActionResult; expense?: Expense }) {
   return (
     <>
-      <div>
+      <div className='w-full sm:w-auto'>
         <Label className='mb-2 text-xs'>Date</Label>
         <DatePickerField name='expenseDate' defaultValue={expense?.expense_date} required />
         <FieldError messages={state.error?.expenseDate} />
       </div>
-      <div>
+      <div className='w-full sm:w-auto'>
         <Label className='mb-2 text-xs'>Category</Label>
         <NativeSelect name='category' defaultValue={expense?.category ?? 'repair'}>
           <option value='repair'>Repair</option>
@@ -67,7 +67,7 @@ function ExpenseFormFields({ state, expense }: { state: ExpenseActionResult; exp
         </NativeSelect>
         <FieldError messages={state.error?.category} />
       </div>
-      <div>
+      <div className='w-full sm:w-auto'>
         <Label className='mb-2 text-xs'>Amount (₱)</Label>
         <Input
           name='amountDollars'
@@ -76,7 +76,7 @@ function ExpenseFormFields({ state, expense }: { state: ExpenseActionResult; exp
           min='0.01'
           defaultValue={expense ? (expense.amount / 100).toFixed(2) : undefined}
           required={!expense}
-          className='w-32'
+          className='w-full sm:w-32'
           onChange={(e) => {
             const cents = Math.round(parseFloat(e.currentTarget.value || '0') * 100);
             const hidden = e.currentTarget.form?.elements.namedItem(
@@ -88,13 +88,13 @@ function ExpenseFormFields({ state, expense }: { state: ExpenseActionResult; exp
         <input type='hidden' name='amount' defaultValue={expense?.amount} />
         <FieldError messages={state.error?.amount} />
       </div>
-      <div>
+      <div className='w-full sm:w-auto'>
         <Label className='mb-2 text-xs'>Remarks</Label>
         <Input
           name='remarks'
           defaultValue={expense?.remarks ?? ''}
           placeholder='e.g. AC repair needed'
-          className='w-48'
+          className='w-full sm:w-48'
         />
         <FieldError messages={state.error?.remarks} />
       </div>
@@ -148,7 +148,9 @@ function ExpenseRow({ expense, updateAction, deleteAction }: ExpenseRowProps) {
       <TableCell className='text-right font-mono tabular-nums'>
         {formatCents(expense.amount)}
       </TableCell>
-      <TableCell className='max-w-48 truncate'>{expense.remarks || '—'}</TableCell>
+      <TableCell className='hidden max-w-48 truncate md:table-cell'>
+        {expense.remarks || '—'}
+      </TableCell>
       <TableCell>
         <div className='flex items-center justify-end gap-1'>
           <Button type='button' variant='ghost' size='sm' onClick={() => setIsEditing(true)}>
@@ -230,7 +232,7 @@ export function ExpenseList({
                   <TableHead>Date</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead className='text-right'>Amount</TableHead>
-                  <TableHead>Remarks</TableHead>
+                  <TableHead className='hidden md:table-cell'>Remarks</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>

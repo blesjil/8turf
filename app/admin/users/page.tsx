@@ -38,7 +38,7 @@ export default async function AdminUsersPage() {
   );
 
   return (
-    <div className='mx-auto max-w-4xl space-y-8 p-6 sm:p-8'>
+    <div className='mx-auto max-w-4xl space-y-8 p-4 sm:p-8'>
       <div>
         <h1 className='text-2xl font-semibold tracking-tight'>Manage Users</h1>
         <p className='text-sm text-muted-foreground'>

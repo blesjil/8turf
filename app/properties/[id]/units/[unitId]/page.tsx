@@ -86,7 +86,7 @@ export default async function UnitDetail({ params }: { params: Params }) {
       : null;
 
   return (
-    <div className='mx-auto max-w-4xl p-6 sm:p-8'>
+    <div className='mx-auto max-w-4xl p-4 sm:p-8'>
       <Link
         href={`/properties/${unit.property_id}`}
         className='mb-4 inline-block text-sm font-medium text-primary hover:underline'

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { headers } from 'next/headers';
 import './globals.css';
 import { Header } from '@/components/header';
+import { IdleLogout } from '@/components/idle-logout';
 import { auth } from '@/lib/auth';
 
 const geistSans = Geist({
@@ -33,6 +34,7 @@ export default async function RootLayout({
     <html lang='en' className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className='antialiased'>
         <Header user={session?.user} />
+        {session && <IdleLogout />}
         {children}
       </body>
     </html>

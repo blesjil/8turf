@@ -129,7 +129,7 @@ export default async function FinancialReportPage({
   const propertyGroups = [...groups.values()];
 
   return (
-    <div className='mx-auto max-w-6xl p-6 sm:p-8'>
+    <div className='mx-auto max-w-6xl p-4 sm:p-8'>
       <PaymentsTabs active='financial-report' isAdmin />
 
       <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>

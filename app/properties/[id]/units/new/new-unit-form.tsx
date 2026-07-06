@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import Link from 'next/link';
 import { createUnit, type UnitActionResult } from './actions';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -78,9 +79,18 @@ export function NewUnitForm({ propertyId }: { propertyId: string }) {
         )}
       </div>
 
-      <Button type='submit' disabled={isPending}>
-        {isPending ? 'Creating…' : 'Add unit'}
-      </Button>
+      <div className='flex gap-2'>
+        <Button type='submit' disabled={isPending}>
+          {isPending ? 'Creating…' : 'Add unit'}
+        </Button>
+        <Button
+          nativeButton={false}
+          variant='outline'
+          render={<Link href={`/properties/${propertyId}`} />}
+        >
+          Cancel
+        </Button>
+      </div>
     </form>
   );
 }

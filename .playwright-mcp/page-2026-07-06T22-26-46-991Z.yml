@@ -1,0 +1,79 @@
+- generic [active] [ref=f7e1]:
+    - banner [ref=f7e2]:
+        - generic [ref=f7e3]:
+            - generic [ref=f7e4]:
+                - link "8turf" [ref=f7e5] [cursor=pointer]:
+                    - /url: /dashboard
+                    - generic [ref=f7e6]: '8'
+                    - generic [ref=f7e7]: 8turf
+                - navigation [ref=f7e8]:
+                    - link "Properties" [ref=f7e9] [cursor=pointer]:
+                        - /url: /dashboard
+                    - link "Payments" [ref=f7e10] [cursor=pointer]:
+                        - /url: /payments
+            - button "Jill" [ref=f7e11]:
+                - generic [ref=f7e12]: Jill
+    - alert [ref=f7e32]
+    - generic [ref=f7e33]:
+        - link "← Back to Property" [ref=f7e34] [cursor=pointer]:
+            - /url: /properties/46784bb2-b02b-45b3-b8ae-b61b87ca70fd
+        - generic [ref=f7e35]:
+            - generic [ref=f7e36]:
+                - heading "Unit A" [level=1] [ref=f7e37]
+                - paragraph [ref=f7e38]: 1 bd / 1 ba · ₱ 1,000.00/mo asking
+            - generic [ref=f7e39]:
+                - button "Edit" [ref=f7e40] [cursor=pointer]
+                - button "Delete" [ref=f7e42]
+        - generic [ref=f7e43]:
+            - heading "Current Tenant" [level=2] [ref=f7e44]
+            - generic [ref=f7e45]:
+                - generic [ref=f7e47]: No tenant assigned
+                - generic [ref=f7e49]:
+                    - generic [ref=f7e50]:
+                        - generic [ref=f7e51]:
+                            - generic [ref=f7e52]: Name
+                            - textbox "Name" [ref=f7e53]
+                        - generic [ref=f7e54]:
+                            - generic [ref=f7e55]:
+                                - text: Email
+                                - generic [ref=f7e56]: (optional)
+                            - textbox "Email (optional)" [ref=f7e57]
+                        - generic [ref=f7e58]:
+                            - generic [ref=f7e59]:
+                                - text: Phone
+                                - generic [ref=f7e60]: (optional)
+                            - textbox "Phone (optional)" [ref=f7e61]
+                        - generic [ref=f7e62]:
+                            - generic [ref=f7e63]: Rent (₱/mo)
+                            - spinbutton "Rent (₱/mo)" [ref=f7e64]
+                        - generic [ref=f7e65]:
+                            - generic [ref=f7e66]: Lease start
+                            - button "Select date" [ref=f7e67]
+                        - generic [ref=f7e68]:
+                            - generic [ref=f7e69]:
+                                - text: Lease end
+                                - generic [ref=f7e70]: (optional)
+                            - button "Select date" [ref=f7e71]
+                    - button "Assign tenant" [ref=f7e72]
+        - generic [ref=f7e73]:
+            - heading "Unit Expenses" [level=2] [ref=f7e74]
+            - generic [ref=f7e75]:
+                - generic [ref=f7e77]:
+                    - generic [ref=f7e78]:
+                        - generic [ref=f7e79]: Date
+                        - button "Select date" [ref=f7e80]
+                    - generic [ref=f7e81]:
+                        - generic [ref=f7e82]: Category
+                        - combobox [ref=f7e83] [cursor=pointer]:
+                            - option "Repair" [selected]
+                            - option "Cleaning"
+                            - option "Tax"
+                            - option "Other"
+                    - generic [ref=f7e84]:
+                        - generic [ref=f7e85]: Amount (₱)
+                        - spinbutton [ref=f7e86]
+                    - generic [ref=f7e87]:
+                        - generic [ref=f7e88]: Remarks
+                        - textbox "e.g. AC repair needed" [ref=f7e89]
+                    - button "Add expense" [ref=f7e90]
+                - paragraph [ref=f7e91]: No expenses recorded yet.

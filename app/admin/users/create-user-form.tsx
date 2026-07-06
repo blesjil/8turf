@@ -23,21 +23,21 @@ export function CreateUserForm() {
             </Alert>
           )}
 
-          <div>
+          <div className='w-full sm:w-auto'>
             <Label htmlFor='name' className='mb-2'>
               Name
             </Label>
-            <Input type='text' id='name' name='name' required className='w-48' />
+            <Input type='text' id='name' name='name' required className='w-full sm:w-48' />
             {state.error?.name && (
               <p className='mt-1 text-sm text-destructive'>{state.error.name[0]}</p>
             )}
           </div>
 
-          <div>
+          <div className='w-full sm:w-auto'>
             <Label htmlFor='email' className='mb-2'>
               Email
             </Label>
-            <Input type='email' id='email' name='email' required className='w-64' />
+            <Input type='email' id='email' name='email' required className='w-full sm:w-64' />
             {state.error?.email && (
               <p className='mt-1 text-sm text-destructive'>{state.error.email[0]}</p>
             )}

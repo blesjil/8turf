@@ -11,6 +11,10 @@ export const auth = betterAuth({
     enabled: true,
     disableSignUp: true,
   },
+  session: {
+    expiresIn: 60 * 10, // sliding 10-minute idle window
+    updateAge: 60,
+  },
   plugins: [
     admin({
       defaultRole: 'user',

@@ -28,7 +28,18 @@
       "Bash(supabase status *)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3001)",
-      "Bash(nohup bun dev --port 3001)"
+      "Bash(nohup bun dev --port 3001)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001 --max-time 3)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:54342 --max-time 3)",
+      "Bash(psql \"postgresql://postgres:postgres@localhost:54342/postgres\" -c 'select email from \"user\";')",
+      "mcp__plugin_playwright_playwright__browser_resize",
+      "mcp__plugin_playwright_playwright__browser_wait_for",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/dashboard)",
+      "Bash(rm -f \"/Users/blesjil/Library/Caches/ms-playwright-mcp/mcp-chrome-74b60f2/SingletonLock\")",
+      "Read(//Users/blesjil/Library/Caches/ms-playwright-mcp/mcp-chrome-74b60f2/**)",
+      "Bash(pkill -f \"mcp-chrome-74b60f2\")",
+      "Bash(PGPASSWORD=postgres psql -h 127.0.0.1 -p 54342 -U postgres -d postgres -tAc 'SELECT email FROM \"user\" LIMIT 5')",
+      "Bash(bun -e ' *)"
     ]
   },
   "hooks": {

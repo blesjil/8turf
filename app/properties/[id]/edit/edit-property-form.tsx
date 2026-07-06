@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import Link from 'next/link';
 import { updateProperty, type PropertyActionResult } from '../../actions';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -45,9 +46,14 @@ export function EditPropertyForm({
         )}
       </div>
 
-      <Button type='submit' disabled={isPending}>
-        {isPending ? 'Saving…' : 'Save changes'}
-      </Button>
+      <div className='flex gap-2'>
+        <Button type='submit' disabled={isPending}>
+          {isPending ? 'Saving…' : 'Save changes'}
+        </Button>
+        <Button nativeButton={false} variant='outline' render={<Link href={`/properties/${id}`} />}>
+          Cancel
+        </Button>
+      </div>
     </form>
   );
 }

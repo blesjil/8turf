@@ -1,0 +1,53 @@
+[     148ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[     250ms] [LOG] [Fast Refresh] done in 203ms @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2567ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2704ms] [LOG] [HMR] connected @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3388ms] [ERROR] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+%s%s https://react.dev/link/hydration-mismatch 
+
+  ...
+    <RootLayout>
+      <html lang="en" className="geist_a715...">
+        ...
+          <header className="sticky top...">
+            <div className="mx-auto fl...">
+              <div>
+              <DropdownMenu>
+                <MenuRoot data-slot="dropdown-menu">
+                  <FloatingTree externalTree={{nodesRef:{...}, ...}}>
+                    <DropdownMenuTrigger render={<Button>} className="max-w-48">
+                      <MenuTrigger data-slot="dropdown-m..." render={<Button>} className="max-w-48">
+                        <Button variant="outline" size="sm" onClick={function} onMouseDown={function} ...>
+                          <Button data-slot="dropdown-m..." className={"group/bu..."} onClick={function} ...>
+                            <button
+                              type="button"
+                              onClick={function}
+                              onMouseDown={function}
+                              onKeyDown={function}
+                              onKeyUp={function}
+                              onPointerDown={function}
+                              tabIndex={0}
+                              disabled={false}
+                              data-slot="dropdown-menu-trigger"
+                              aria-haspopup="menu"
+                              aria-controls={undefined}
++                             id="base-ui-_R_elb_"
+-                             id="base-ui-_R_1plb_"
+                              ref={function}
+                              className={"group/button inline-flex shrink-0 items-center justify-center border bg-cli..."}
+                            >
+                    ...
+ @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[    3469ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3507ms] [LOG] [Fast Refresh] done in 138ms @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3647ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3690ms] [LOG] [Fast Refresh] done in 144ms @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297

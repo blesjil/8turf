@@ -1,0 +1,63 @@
+- generic [active] [ref=f13e1]:
+    - banner [ref=f13e2]:
+        - generic [ref=f13e3]:
+            - link "8turf" [ref=f13e5] [cursor=pointer]:
+                - /url: /dashboard
+                - generic [ref=f13e6]: '8'
+                - generic [ref=f13e7]: 8turf
+            - button "Jill Palattao" [ref=f13e8]:
+                - generic [ref=f13e9]: Jill Palattao
+    - generic [ref=f13e10]:
+        - link "← Back to Properties" [ref=f13e11] [cursor=pointer]:
+            - /url: /dashboard
+        - generic [ref=f13e12]:
+            - generic [ref=f13e13]:
+                - heading "Maple House" [level=1] [ref=f13e14]
+                - paragraph [ref=f13e15]: 123 Main St
+            - generic [ref=f13e16]:
+                - button "Edit" [ref=f13e17] [cursor=pointer]
+                - button "Archive" [ref=f13e19]
+                - button "Delete" [ref=f13e21]
+        - generic [ref=f13e22]:
+            - heading "Units" [level=2] [ref=f13e23]
+            - button "Add unit" [ref=f13e24] [cursor=pointer]
+        - generic [ref=f13e25]:
+            - link "Unit 1A Occupied 1 bd / 1 ba · ₱ 6,000.00/mo Maple House" [ref=f13e26] [cursor=pointer]:
+                - /url: /properties/532f2778-27cb-4567-9e4b-45d8305ebbea/units/22662ddc-d3a9-40a1-8f01-9a87f02410bb
+                - generic [ref=f13e28]:
+                    - generic [ref=f13e29]:
+                        - generic [ref=f13e30]: Unit 1A
+                        - generic [ref=f13e31]: Occupied
+                    - generic [ref=f13e32]: 1 bd / 1 ba · ₱ 6,000.00/mo
+                    - generic [ref=f13e33]: Maple House
+            - link "Unit 2B Occupied 1 bd / 1 ba · ₱ 6,000.00/mo Test Property" [ref=f13e34] [cursor=pointer]:
+                - /url: /properties/532f2778-27cb-4567-9e4b-45d8305ebbea/units/302dc5c4-c5dd-4e1f-93c3-fa6e2c08411c
+                - generic [ref=f13e36]:
+                    - generic [ref=f13e37]:
+                        - generic [ref=f13e38]: Unit 2B
+                        - generic [ref=f13e39]: Occupied
+                    - generic [ref=f13e40]: 1 bd / 1 ba · ₱ 6,000.00/mo
+                    - generic [ref=f13e41]: Test Property
+        - generic [ref=f13e42]:
+            - heading "Property Expenses" [level=2] [ref=f13e43]
+            - generic [ref=f13e44]:
+                - generic [ref=f13e46]:
+                    - generic [ref=f13e47]:
+                        - generic [ref=f13e48]: Date
+                        - button "Select date" [ref=f13e49]
+                    - generic [ref=f13e50]:
+                        - generic [ref=f13e51]: Category
+                        - combobox [ref=f13e52] [cursor=pointer]:
+                            - option "Repair" [selected]
+                            - option "Cleaning"
+                            - option "Tax"
+                            - option "Other"
+                    - generic [ref=f13e53]:
+                        - generic [ref=f13e54]: Amount (₱)
+                        - spinbutton [ref=f13e55]
+                    - generic [ref=f13e56]:
+                        - generic [ref=f13e57]: Remarks
+                        - textbox "e.g. AC repair needed" [ref=f13e58]
+                    - button "Add expense" [ref=f13e59]
+                - paragraph [ref=f13e60]: No expenses recorded yet.
+    - alert [ref=f13e61]

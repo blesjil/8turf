@@ -8,7 +8,7 @@ export default async function NewPropertyPage() {
   if (!session) redirect('/authenticate');
 
   return (
-    <div className='mx-auto max-w-lg p-6 sm:p-8'>
+    <div className='mx-auto max-w-lg p-4 sm:p-8'>
       <h1 className='mb-6 text-2xl font-semibold tracking-tight'>New Property</h1>
       <NewPropertyForm />
     </div>

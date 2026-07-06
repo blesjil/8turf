@@ -87,7 +87,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
   const outstanding = Math.max(totalDue - totalCollected, 0);
 
   return (
-    <div className='mx-auto max-w-6xl p-6 sm:p-8'>
+    <div className='mx-auto max-w-6xl p-4 sm:p-8'>
       <PaymentsTabs active='payments' isAdmin={session.user.role === 'admin'} />
 
       <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>
@@ -115,10 +115,10 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Property</TableHead>
+                    <TableHead className='hidden md:table-cell'>Property</TableHead>
                     <TableHead>Unit</TableHead>
                     <TableHead>Tenant</TableHead>
-                    <TableHead className='text-right'>Rent</TableHead>
+                    <TableHead className='hidden text-right sm:table-cell'>Rent</TableHead>
                     <TableHead className='text-right'>Paid</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
@@ -129,7 +129,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                     const status = computePaymentStatus(paid, r.rentAmount);
                     return (
                       <TableRow key={r.tenantId}>
-                        <TableCell>{r.propertyName}</TableCell>
+                        <TableCell className='hidden md:table-cell'>{r.propertyName}</TableCell>
                         <TableCell>
                           <Link
                             href={`/properties/${r.propertyId}/units/${r.unitId}`}
@@ -139,7 +139,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                           </Link>
                         </TableCell>
                         <TableCell>{r.tenantName}</TableCell>
-                        <TableCell className='text-right font-mono tabular-nums'>
+                        <TableCell className='hidden text-right font-mono tabular-nums sm:table-cell'>
                           {formatCents(r.rentAmount)}
                         </TableCell>
                         <TableCell className='text-right font-mono tabular-nums'>

@@ -1,0 +1,151 @@
+- generic [active] [ref=f10e1]:
+    - banner [ref=f10e2]:
+        - generic [ref=f10e3]:
+            - link "8turf" [ref=f10e5] [cursor=pointer]:
+                - /url: /dashboard
+                - generic [ref=f10e6]: '8'
+                - generic [ref=f10e7]: 8turf
+            - button "Jill Palattao" [ref=f10e8]:
+                - generic [ref=f10e9]: Jill Palattao
+    - generic [ref=f10e10]:
+        - link "← Back to Property" [ref=f10e11] [cursor=pointer]:
+            - /url: /properties/532f2778-27cb-4567-9e4b-45d8305ebbea
+        - generic [ref=f10e12]:
+            - generic [ref=f10e13]:
+                - heading "Unit 1A" [level=1] [ref=f10e14]
+                - paragraph [ref=f10e15]: 1 bd / 1 ba · ₱ 6,000.00/mo asking
+            - generic [ref=f10e16]:
+                - button "Edit" [ref=f10e17] [cursor=pointer]
+                - button "Archive" [ref=f10e19]
+                - button "Delete" [ref=f10e21]
+        - generic [ref=f10e22]:
+            - heading "Current Tenant" [level=2] [ref=f10e23]
+            - generic [ref=f10e25]:
+                - generic [ref=f10e26]:
+                    - heading "Maple House" [level=3] [ref=f10e27]
+                    - paragraph [ref=f10e28]: jill.palattao@gmail.com · 555-1234
+                    - paragraph [ref=f10e29]: 'Rent: ₱ 6,000.00/mo · Lease: July 5, 2026 to July 31, 2026'
+                - generic [ref=f10e30]:
+                    - button "Edit" [ref=f10e31]
+                    - button "End tenancy" [ref=f10e33]
+        - generic [ref=f10e34]:
+            - generic [ref=f10e35]:
+                - heading "Payment Ledger" [level=2] [ref=f10e36]
+                - generic [ref=f10e37]:
+                    - generic [ref=f10e38]: 'This month (July 2026):'
+                    - generic [ref=f10e39]: Paid
+            - generic [ref=f10e41]:
+                - generic [ref=f10e43]:
+                    - generic [ref=f10e44]:
+                        - generic [ref=f10e45]: Period
+                        - button "Select month" [ref=f10e46]
+                    - generic [ref=f10e47]:
+                        - generic [ref=f10e48]: Amount (₱)
+                        - spinbutton [ref=f10e49]
+                    - generic [ref=f10e50]:
+                        - generic [ref=f10e51]: Paid date
+                        - button "Select date" [ref=f10e52]
+                    - generic [ref=f10e53]:
+                        - generic [ref=f10e54]: Type
+                        - combobox [ref=f10e55] [cursor=pointer]:
+                            - option "Rental" [selected]
+                            - option "Deposit"
+                            - option "Advance"
+                            - option "Reservation"
+                    - generic [ref=f10e56]:
+                        - generic [ref=f10e57]: Method
+                        - combobox [ref=f10e58] [cursor=pointer]:
+                            - option "—" [selected]
+                            - option "Cash"
+                            - option "Bank Transfer"
+                            - option "GCash"
+                            - option "Other"
+                    - generic [ref=f10e59]:
+                        - generic [ref=f10e60]: Notes
+                        - textbox [ref=f10e61]
+                    - button "Record payment" [ref=f10e62]
+                - table [ref=f10e66]:
+                    - rowgroup [ref=f10e67]:
+                        - row "Period Amount Paid date Type" [ref=f10e68]:
+                            - columnheader "Period" [ref=f10e69]
+                            - columnheader "Amount" [ref=f10e70]
+                            - columnheader "Paid date" [ref=f10e71]
+                            - columnheader "Type" [ref=f10e72]
+                            - columnheader [ref=f10e73]
+                    - rowgroup [ref=f10e74]:
+                        - row "July 2026 ₱ 120,000.00 July 13, 2026 Rental Edit Delete" [ref=f10e75]:
+                            - cell "July 2026" [ref=f10e76]
+                            - cell "₱ 120,000.00" [ref=f10e77]
+                            - cell "July 13, 2026" [ref=f10e78]
+                            - cell "Rental" [ref=f10e79]
+                            - cell "Edit Delete" [ref=f10e80]:
+                                - generic [ref=f10e81]:
+                                    - button "Edit" [ref=f10e82]
+                                    - button "Delete" [ref=f10e84]
+                        - row "July 2026 ₱ 3,003.00 July 5, 2026 Rental Edit Delete" [ref=f10e85]:
+                            - cell "July 2026" [ref=f10e86]
+                            - cell "₱ 3,003.00" [ref=f10e87]
+                            - cell "July 5, 2026" [ref=f10e88]
+                            - cell "Rental" [ref=f10e89]
+                            - cell "Edit Delete" [ref=f10e90]:
+                                - generic [ref=f10e91]:
+                                    - button "Edit" [ref=f10e92]
+                                    - button "Delete" [ref=f10e94]
+        - generic [ref=f10e95]:
+            - heading "Tenancy History" [level=2] [ref=f10e96]
+            - list [ref=f10e97]:
+                - listitem [ref=f10e98]:
+                    - paragraph [ref=f10e99]:
+                        - strong [ref=f10e100]: Maple House
+                        - text: · July 5, 2026 to July 5, 2026
+                    - table [ref=f10e105]:
+                        - rowgroup [ref=f10e106]:
+                            - row "Period Amount Paid date Type" [ref=f10e107]:
+                                - columnheader "Period" [ref=f10e108]
+                                - columnheader "Amount" [ref=f10e109]
+                                - columnheader "Paid date" [ref=f10e110]
+                                - columnheader "Type" [ref=f10e111]
+                        - rowgroup [ref=f10e112]:
+                            - row "July 2026 ₱ 6,000.00 July 21, 2026 Rental" [ref=f10e113]:
+                                - cell "July 2026" [ref=f10e114]
+                                - cell "₱ 6,000.00" [ref=f10e115]
+                                - cell "July 21, 2026" [ref=f10e116]
+                                - cell "Rental" [ref=f10e117]
+        - generic [ref=f10e118]:
+            - heading "Unit Expenses" [level=2] [ref=f10e119]
+            - generic [ref=f10e120]:
+                - generic [ref=f10e122]:
+                    - generic [ref=f10e123]:
+                        - generic [ref=f10e124]: Date
+                        - button "Select date" [ref=f10e125]
+                    - generic [ref=f10e126]:
+                        - generic [ref=f10e127]: Category
+                        - combobox [ref=f10e128] [cursor=pointer]:
+                            - option "Repair" [selected]
+                            - option "Cleaning"
+                            - option "Tax"
+                            - option "Other"
+                    - generic [ref=f10e129]:
+                        - generic [ref=f10e130]: Amount (₱)
+                        - spinbutton [ref=f10e131]
+                    - generic [ref=f10e132]:
+                        - generic [ref=f10e133]: Remarks
+                        - textbox "e.g. AC repair needed" [ref=f10e134]
+                    - button "Add expense" [ref=f10e135]
+                - table [ref=f10e139]:
+                    - rowgroup [ref=f10e140]:
+                        - row "Date Category Amount" [ref=f10e141]:
+                            - columnheader "Date" [ref=f10e142]
+                            - columnheader "Category" [ref=f10e143]
+                            - columnheader "Amount" [ref=f10e144]
+                            - columnheader [ref=f10e145]
+                    - rowgroup [ref=f10e146]:
+                        - row "July 15, 2026 Repair ₱ 100.00 Edit Delete" [ref=f10e147]:
+                            - cell "July 15, 2026" [ref=f10e148]
+                            - cell "Repair" [ref=f10e149]
+                            - cell "₱ 100.00" [ref=f10e150]
+                            - cell "Edit Delete" [ref=f10e151]:
+                                - generic [ref=f10e152]:
+                                    - button "Edit" [ref=f10e153]
+                                    - button "Delete" [ref=f10e155]
+    - alert [ref=f10e156]

@@ -1,0 +1,28 @@
+- generic [active] [ref=f2e1]:
+    - banner [ref=f2e2]:
+        - generic [ref=f2e3]:
+            - generic [ref=f2e4]:
+                - link "8turf" [ref=f2e5] [cursor=pointer]:
+                    - /url: /dashboard
+                    - generic [ref=f2e6]: '8'
+                    - generic [ref=f2e7]: 8turf
+                - navigation [ref=f2e8]:
+                    - link "Properties" [ref=f2e9] [cursor=pointer]:
+                        - /url: /dashboard
+                    - link "Payments" [ref=f2e10] [cursor=pointer]:
+                        - /url: /payments
+            - button "Jill" [ref=f2e11]:
+                - generic [ref=f2e12]: Jill
+    - generic [ref=f2e13]:
+        - heading "New Property" [level=1] [ref=f2e14]
+        - generic [ref=f2e15]:
+            - generic [ref=f2e16]:
+                - generic [ref=f2e17]: Name
+                - textbox "Name" [ref=f2e18]
+            - generic [ref=f2e19]:
+                - generic [ref=f2e20]: Address
+                - textbox "Address" [ref=f2e21]
+            - generic [ref=f2e22]:
+                - button "Create property" [ref=f2e23]
+                - button "Cancel" [ref=f2e24] [cursor=pointer]
+    - alert [ref=f2e25]

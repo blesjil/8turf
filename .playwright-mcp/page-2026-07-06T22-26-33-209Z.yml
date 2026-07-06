@@ -1,0 +1,35 @@
+- generic [active] [ref=f7e1]:
+    - banner [ref=f7e2]:
+        - generic [ref=f7e3]:
+            - generic [ref=f7e4]:
+                - link "8turf" [ref=f7e5] [cursor=pointer]:
+                    - /url: /dashboard
+                    - generic [ref=f7e6]: '8'
+                    - generic [ref=f7e7]: 8turf
+                - navigation [ref=f7e8]:
+                    - link "Properties" [ref=f7e9] [cursor=pointer]:
+                        - /url: /dashboard
+                    - link "Payments" [ref=f7e10] [cursor=pointer]:
+                        - /url: /payments
+            - button "Jill" [ref=f7e11]:
+                - generic [ref=f7e12]: Jill
+    - generic [ref=f7e13]:
+        - heading "Edit Unit" [level=1] [ref=f7e14]
+        - generic [ref=f7e15]:
+            - generic [ref=f7e16]:
+                - generic [ref=f7e17]: Unit label
+                - textbox "Unit label" [ref=f7e18]: Unit A
+            - generic [ref=f7e19]:
+                - generic [ref=f7e20]:
+                    - generic [ref=f7e21]: Bedrooms
+                    - spinbutton "Bedrooms" [ref=f7e22]: '1'
+                - generic [ref=f7e23]:
+                    - generic [ref=f7e24]: Bathrooms
+                    - spinbutton "Bathrooms" [ref=f7e25]: '1'
+            - generic [ref=f7e26]:
+                - generic [ref=f7e27]: Asking rent (₱/mo)
+                - spinbutton "Asking rent (₱/mo)" [ref=f7e28]: '1000.00'
+            - generic [ref=f7e29]:
+                - button "Save changes" [ref=f7e30]
+                - button "Cancel" [ref=f7e31] [cursor=pointer]
+    - alert [ref=f7e32]
