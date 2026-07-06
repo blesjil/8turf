@@ -47,7 +47,7 @@ function AuthForm() {
   return (
     <Card className='w-full'>
       <CardHeader className='items-center text-center'>
-        <BrandMark className='mb-2 size-10 rounded-xl text-lg' />
+        <BrandMark className='mx-auto mb-2 size-10 rounded-xl text-lg' />
         <CardTitle className='text-xl'>Sign in to 8turf</CardTitle>
         <CardDescription>Manage your properties, tenants, and payments.</CardDescription>
       </CardHeader>

@@ -16,7 +16,12 @@ export function PropertyActions({ propertyId, isAdmin }: { propertyId: string; i
 
   return (
     <div className='flex items-center gap-2'>
-      <Button variant='outline' size='sm' render={<Link href={`/properties/${propertyId}/edit`} />}>
+      <Button
+        variant='outline'
+        size='sm'
+        nativeButton={false}
+        render={<Link href={`/properties/${propertyId}/edit`} />}
+      >
         Edit
       </Button>
       {isAdmin && (

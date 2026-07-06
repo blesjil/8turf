@@ -11,7 +11,12 @@ export default function Home() {
         <p className='mb-8 text-balance text-muted-foreground'>
           Track your properties, units, tenants, and rent payments in one place.
         </p>
-        <Button render={<Link href='/authenticate' />} size='lg' className='px-8'>
+        <Button
+          nativeButton={false}
+          render={<Link href='/authenticate' />}
+          size='lg'
+          className='px-8'
+        >
           Log in
         </Button>
       </main>

@@ -27,6 +27,7 @@ export function UnitActions({
       <Button
         variant='outline'
         size='sm'
+        nativeButton={false}
         render={<Link href={`/properties/${propertyId}/units/${unitId}/edit`} />}
       >
         Edit

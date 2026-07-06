@@ -1,0 +1,35 @@
+- generic [active] [ref=f5e1]:
+    - banner [ref=f5e2]:
+        - generic [ref=f5e3]:
+            - generic [ref=f5e4]:
+                - link "8turf" [ref=f5e5] [cursor=pointer]:
+                    - /url: /dashboard
+                    - generic [ref=f5e6]: '8'
+                    - generic [ref=f5e7]: 8turf
+                - navigation [ref=f5e8]:
+                    - link "Properties" [ref=f5e9] [cursor=pointer]:
+                        - /url: /dashboard
+                    - link "Payments" [ref=f5e10] [cursor=pointer]:
+                        - /url: /payments
+                    - link "Financials" [ref=f5e11] [cursor=pointer]:
+                        - /url: /financial-report
+            - button "Jill Palattao" [ref=f5e12]:
+                - generic [ref=f5e13]: Jill Palattao
+    - main [ref=f5e15]:
+        - generic [ref=f5e16]:
+            - generic [ref=f5e17]:
+                - generic [ref=f5e18]: '8'
+                - generic [ref=f5e19]: Sign in to 8turf
+                - generic [ref=f5e20]: Manage your properties, tenants, and payments.
+            - generic [ref=f5e21]:
+                - generic [ref=f5e22]:
+                    - generic [ref=f5e23]:
+                        - generic [ref=f5e24]: Email
+                        - textbox "Email" [ref=f5e25]
+                    - generic [ref=f5e26]:
+                        - generic [ref=f5e27]: Password
+                        - textbox "Password" [ref=f5e28]
+                - generic [ref=f5e29]:
+                    - button "Sign in" [ref=f5e30]
+                    - paragraph [ref=f5e31]: Forgot your password? Ask an admin to reset it from Manage Users.
+    - alert [ref=f5e32]

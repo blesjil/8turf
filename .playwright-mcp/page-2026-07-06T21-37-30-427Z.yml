@@ -1,0 +1,105 @@
+- generic [active] [ref=f3e1]:
+    - banner [ref=f3e2]:
+        - generic [ref=f3e3]:
+            - generic [ref=f3e4]:
+                - link "8turf" [ref=f3e5] [cursor=pointer]:
+                    - /url: /dashboard
+                    - generic [ref=f3e6]: '8'
+                    - generic [ref=f3e7]: 8turf
+                - navigation [ref=f3e8]:
+                    - link "Properties" [ref=f3e9] [cursor=pointer]:
+                        - /url: /dashboard
+                    - link "Payments" [ref=f3e10] [cursor=pointer]:
+                        - /url: /payments
+                    - link "Financials" [ref=f3e11] [cursor=pointer]:
+                        - /url: /financial-report
+            - button "Jill Palattao" [ref=f3e12]:
+                - generic [ref=f3e13]: Jill Palattao
+    - generic [ref=f3e14]:
+        - generic [ref=f3e15]:
+            - link "Payments Overview" [ref=f3e16] [cursor=pointer]:
+                - /url: /payments
+            - link "Financial Report" [ref=f3e17] [cursor=pointer]:
+                - /url: /financial-report
+        - generic [ref=f3e18]:
+            - heading "Financial Report" [level=1] [ref=f3e19]
+            - generic [ref=f3e20]:
+                - combobox "Report period" [ref=f3e21] [cursor=pointer]:
+                    - option "Month" [selected]
+                    - option "Year"
+                - generic [ref=f3e22]:
+                    - combobox "Month" [ref=f3e23] [cursor=pointer]:
+                        - option "January"
+                        - option "February"
+                        - option "March"
+                        - option "April"
+                        - option "May"
+                        - option "June"
+                        - option "July" [selected]
+                        - option "August"
+                        - option "September"
+                        - option "October"
+                        - option "November"
+                        - option "December"
+                    - combobox "Year" [ref=f3e24] [cursor=pointer]:
+                        - option "2027"
+                        - option "2026" [selected]
+                        - option "2025"
+                        - option "2024"
+                        - option "2023"
+                        - option "2022"
+                        - option "2021"
+        - generic [ref=f3e25]:
+            - generic [ref=f3e26]:
+                - generic [ref=f3e27]:
+                    - heading "Maple House" [level=2] [ref=f3e28]
+                    - paragraph [ref=f3e29]: 'Net income: ₱ 135,903.00'
+                - table [ref=f3e33]:
+                    - rowgroup [ref=f3e34]:
+                        - row "Unit Income Expenses" [ref=f3e35]:
+                            - columnheader "Unit" [ref=f3e36]
+                            - columnheader "Income" [ref=f3e37]
+                            - columnheader "Expenses" [ref=f3e38]
+                    - rowgroup [ref=f3e39]:
+                        - row "Unit 1A ₱ 129,003.00 ₱ 100.00" [ref=f3e40]:
+                            - cell "Unit 1A" [ref=f3e41]
+                            - cell "₱ 129,003.00" [ref=f3e42]
+                            - cell "₱ 100.00" [ref=f3e43]
+                        - row "Unit 2B ₱ 7,000.00 ₱ 0.00" [ref=f3e44]:
+                            - cell "Unit 2B" [ref=f3e45]
+                            - cell "₱ 7,000.00" [ref=f3e46]
+                            - cell "₱ 0.00" [ref=f3e47]
+                        - row "Property-level expenses ₱ 0.00" [ref=f3e48]:
+                            - cell "Property-level expenses" [ref=f3e49]
+                            - cell [ref=f3e50]
+                            - cell "₱ 0.00" [ref=f3e51]
+                    - rowgroup [ref=f3e52]:
+                        - row "Total ₱ 136,003.00 ₱ 100.00" [ref=f3e53]:
+                            - cell "Total" [ref=f3e54]
+                            - cell "₱ 136,003.00" [ref=f3e55]
+                            - cell "₱ 100.00" [ref=f3e56]
+            - generic [ref=f3e57]:
+                - generic [ref=f3e58]:
+                    - heading "Test Property" [level=2] [ref=f3e59]
+                    - paragraph [ref=f3e60]: 'Net income: -₱ 100.00'
+                - table [ref=f3e64]:
+                    - rowgroup [ref=f3e65]:
+                        - row "Unit Income Expenses" [ref=f3e66]:
+                            - columnheader "Unit" [ref=f3e67]
+                            - columnheader "Income" [ref=f3e68]
+                            - columnheader "Expenses" [ref=f3e69]
+                    - rowgroup [ref=f3e70]:
+                        - 'row "UNIT` ₱ 0.00 ₱ 0.00" [ref=f3e71]':
+                            - 'cell "UNIT`" [ref=f3e72]'
+                            - cell "₱ 0.00" [ref=f3e73]
+                            - cell "₱ 0.00" [ref=f3e74]
+                        - row "Property-level expenses ₱ 100.00" [ref=f3e75]:
+                            - cell "Property-level expenses" [ref=f3e76]
+                            - cell [ref=f3e77]
+                            - cell "₱ 100.00" [ref=f3e78]
+                    - rowgroup [ref=f3e79]:
+                        - row "Total ₱ 0.00 ₱ 100.00" [ref=f3e80]:
+                            - cell "Total" [ref=f3e81]
+                            - cell "₱ 0.00" [ref=f3e82]
+                            - cell "₱ 100.00" [ref=f3e83]
+    - alert [ref=f3e84]

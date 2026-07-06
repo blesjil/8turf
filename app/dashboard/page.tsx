@@ -32,11 +32,17 @@ export default async function Dashboard() {
         </div>
         <div className='flex gap-2'>
           {session.user.role === 'admin' && (
-            <Button variant='outline' render={<Link href='/properties/archived' />}>
+            <Button
+              variant='outline'
+              nativeButton={false}
+              render={<Link href='/properties/archived' />}
+            >
               Archived
             </Button>
           )}
-          <Button render={<Link href='/properties/new' />}>New property</Button>
+          <Button nativeButton={false} render={<Link href='/properties/new' />}>
+            New property
+          </Button>
         </div>
       </div>
 

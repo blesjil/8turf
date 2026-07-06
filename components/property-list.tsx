@@ -18,7 +18,7 @@ export function PropertyList({ properties }: { properties: PropertyListItem[] })
           <CardTitle>No properties yet</CardTitle>
           <CardDescription>Add your first property to start tracking rent.</CardDescription>
         </CardHeader>
-        <Button render={<Link href='/properties/new' />} className='mx-auto'>
+        <Button nativeButton={false} render={<Link href='/properties/new' />} className='mx-auto'>
           New property
         </Button>
       </Card>

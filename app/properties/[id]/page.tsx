@@ -64,7 +64,12 @@ export default async function PropertyDetail({ params }: { params: Params }) {
 
       <div className='mb-4 flex items-center justify-between'>
         <h2 className='text-xl font-semibold tracking-tight'>Units</h2>
-        <Button render={<Link href={`/properties/${property.id}/units/new`} />}>Add unit</Button>
+        <Button
+          nativeButton={false}
+          render={<Link href={`/properties/${property.id}/units/new`} />}
+        >
+          Add unit
+        </Button>
       </div>
 
       <UnitList propertyId={property.id} units={units} />
