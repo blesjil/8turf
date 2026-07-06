@@ -1,11 +1,14 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useRef, useState } from 'react';
 import { formatCents } from '@/lib/money';
+import { formatDate } from '@/lib/format-date';
+import { DatePickerField } from '@/components/ui/date-picker-field';
+import { ConfirmButton } from '@/components/confirm-button';
 
 export interface Expense {
   id: string;
-  category: 'repair' | 'cleaning' | 'tax' | 'other' | 'repaint';
+  category: 'repair' | 'cleaning' | 'tax' | 'other';
   amount: number;
   expense_date: string;
   remarks: string | null;
@@ -26,7 +29,6 @@ const CATEGORY_LABELS: Record<Expense['category'], string> = {
   cleaning: 'Cleaning',
   tax: 'Tax',
   other: 'Other',
-  repaint: 'Re-Paint',
 };
 
 function CategorySelect({ defaultValue }: { defaultValue?: string }) {
@@ -40,7 +42,6 @@ function CategorySelect({ defaultValue }: { defaultValue?: string }) {
       <option value='cleaning'>Cleaning</option>
       <option value='tax'>Tax</option>
       <option value='other'>Other</option>
-      <option value='repaint'>Re-Paint</option>
     </select>
   );
 }
@@ -60,6 +61,7 @@ function ExpenseRow({ expense, updateAction, deleteAction }: ExpenseRowProps) {
     {},
   );
   const [isEditing, setIsEditing] = useState(false);
+  const deleteFormRef = useRef<HTMLFormElement>(null);
 
   if (isEditing) {
     return (
@@ -72,13 +74,7 @@ function ExpenseRow({ expense, updateAction, deleteAction }: ExpenseRowProps) {
             )}
             <div>
               <label className='block text-xs mb-1'>Date</label>
-              <input
-                name='expenseDate'
-                type='date'
-                defaultValue={expense.expense_date}
-                required
-                className='px-3 py-2 border border-border rounded-lg'
-              />
+              <DatePickerField name='expenseDate' defaultValue={expense.expense_date} required />
               {state.error?.expenseDate && (
                 <p className='mt-1 text-sm text-red-600'>{state.error.expenseDate[0]}</p>
               )}
@@ -146,7 +142,7 @@ function ExpenseRow({ expense, updateAction, deleteAction }: ExpenseRowProps) {
 
   return (
     <tr className='border-b border-border/50'>
-      <td className='py-2 pr-4'>{expense.expense_date}</td>
+      <td className='py-2 pr-4'>{formatDate(expense.expense_date)}</td>
       <td className='py-2 pr-4'>{CATEGORY_LABELS[expense.category]}</td>
       <td className='py-2 pr-4'>{formatCents(expense.amount)}</td>
       <td className='py-2 pr-4'>{expense.remarks || '—'}</td>
@@ -160,14 +156,21 @@ function ExpenseRow({ expense, updateAction, deleteAction }: ExpenseRowProps) {
             Edit
           </button>
           <form
+            ref={deleteFormRef}
             action={async (formData) => {
               formData.set('id', expense.id);
               await deleteAction(formData);
             }}
           >
-            <button type='submit' className='text-red-600 hover:text-red-800 cursor-pointer'>
+            <ConfirmButton
+              formRef={deleteFormRef}
+              message='Delete this expense? This cannot be undone.'
+              confirmLabel='Delete'
+              tone='danger'
+              triggerClassName='text-red-600 hover:text-red-800 cursor-pointer'
+            >
               Delete
-            </button>
+            </ConfirmButton>
           </form>
         </div>
       </td>
@@ -210,12 +213,7 @@ export function ExpenseList({
         )}
         <div>
           <label className='block text-xs mb-1'>Date</label>
-          <input
-            name='expenseDate'
-            type='date'
-            required
-            className='px-3 py-2 border border-border rounded-lg'
-          />
+          <DatePickerField name='expenseDate' required />
           {state.error?.expenseDate && (
             <p className='mt-1 text-sm text-red-600'>{state.error.expenseDate[0]}</p>
           )}

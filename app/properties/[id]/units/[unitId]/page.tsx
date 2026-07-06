@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { query, queryOne } from '@/lib/db';
 import { formatCents } from '@/lib/money';
+import { formatDate, formatPeriod } from '@/lib/format-date';
 import { UnitActions } from './unit-actions';
 import { TenantCard, type Tenant } from '@/components/tenant-card';
 import { PaymentLedger, type Payment } from '@/components/payment-ledger';
@@ -116,7 +117,9 @@ export default async function UnitDetail({ params }: { params: Params }) {
       {activeTenant && (
         <div className='mb-8'>
           <div className='mb-4 flex items-center gap-2'>
-            <span className='text-sm text-foreground/60'>This month ({currentPeriod}):</span>
+            <span className='text-sm text-foreground/60'>
+              This month ({formatPeriod(currentPeriod)}):
+            </span>
             {currentStatus && <PaymentStatusBadge status={currentStatus} />}
           </div>
           <h2 className='text-xl font-semibold mb-3'>Payment Ledger</h2>
@@ -135,7 +138,8 @@ export default async function UnitDetail({ params }: { params: Params }) {
               <li key={t.id}>
                 <p className='text-sm text-foreground/60 border-b border-border/50 pb-2 mb-3'>
                   <strong className='text-foreground'>{t.name}</strong> &middot;{' '}
-                  {t.lease_start_date} to {t.lease_end_date || 'ongoing'}
+                  {formatDate(t.lease_start_date)} to{' '}
+                  {t.lease_end_date ? formatDate(t.lease_end_date) : 'ongoing'}
                 </p>
                 <PaymentLedger
                   tenantId={t.id}

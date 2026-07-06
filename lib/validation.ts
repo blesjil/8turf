@@ -89,7 +89,7 @@ export const recordPaymentSchema = z.object({
   period: periodField,
   paidDate: dateField,
   paymentType: paymentTypeField,
-  method: z.enum(['cash', 'bank_transfer', 'check', 'other']).optional().or(z.literal('')),
+  method: z.enum(['cash', 'bank_transfer', 'gcash', 'other']).optional().or(z.literal('')),
   notes: z.string().max(1000, 'Notes are too long').optional().or(z.literal('')),
 });
 
@@ -97,7 +97,7 @@ export const updatePaymentSchema = recordPaymentSchema.omit({ tenantId: true }).
   id: z.string().min(1, 'Payment id is required'),
 });
 
-const expenseCategoryField = z.enum(['repair', 'cleaning', 'tax', 'other', 'repaint']);
+const expenseCategoryField = z.enum(['repair', 'cleaning', 'tax', 'other']);
 const expenseBaseSchema = z.object({
   category: expenseCategoryField,
   amount: z.coerce

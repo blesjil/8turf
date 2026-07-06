@@ -1,7 +1,11 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useRef, useState } from 'react';
 import { formatCents } from '@/lib/money';
+import { formatDate, formatPeriod } from '@/lib/format-date';
+import { DatePickerField } from '@/components/ui/date-picker-field';
+import { MonthPickerField } from '@/components/ui/month-picker-field';
+import { ConfirmButton } from '@/components/confirm-button';
 import {
   recordPayment,
   updatePayment,
@@ -32,6 +36,7 @@ function PaymentRow({ payment, readOnly }: { payment: Payment; readOnly?: boolea
     {},
   );
   const [isEditing, setIsEditing] = useState(false);
+  const deleteFormRef = useRef<HTMLFormElement>(null);
 
   if (isEditing) {
     return (
@@ -44,13 +49,7 @@ function PaymentRow({ payment, readOnly }: { payment: Payment; readOnly?: boolea
             )}
             <div>
               <label className='block text-xs mb-1'>Period</label>
-              <input
-                name='period'
-                type='month'
-                defaultValue={payment.period}
-                required
-                className='px-3 py-2 border border-border rounded-lg'
-              />
+              <MonthPickerField name='period' defaultValue={payment.period} required />
               {state.error?.period && (
                 <p className='mt-1 text-sm text-red-600'>{state.error.period[0]}</p>
               )}
@@ -79,13 +78,7 @@ function PaymentRow({ payment, readOnly }: { payment: Payment; readOnly?: boolea
             </div>
             <div>
               <label className='block text-xs mb-1'>Paid Date</label>
-              <input
-                name='paidDate'
-                type='date'
-                defaultValue={payment.paid_date}
-                required
-                className='px-3 py-2 border border-border rounded-lg'
-              />
+              <DatePickerField name='paidDate' defaultValue={payment.paid_date} required />
               {state.error?.paidDate && (
                 <p className='mt-1 text-sm text-red-600'>{state.error.paidDate[0]}</p>
               )}
@@ -116,7 +109,7 @@ function PaymentRow({ payment, readOnly }: { payment: Payment; readOnly?: boolea
                 <option value=''>—</option>
                 <option value='cash'>Cash</option>
                 <option value='bank_transfer'>Bank Transfer</option>
-                <option value='check'>Check</option>
+                <option value='gcash'>GCash</option>
                 <option value='other'>Other</option>
               </select>
               {state.error?.method && (
@@ -156,9 +149,9 @@ function PaymentRow({ payment, readOnly }: { payment: Payment; readOnly?: boolea
 
   return (
     <tr className='border-b border-border/50'>
-      <td className='py-2 pr-4'>{payment.period}</td>
+      <td className='py-2 pr-4'>{formatPeriod(payment.period)}</td>
       <td className='py-2 pr-4'>{formatCents(payment.amount)}</td>
-      <td className='py-2 pr-4'>{payment.paid_date}</td>
+      <td className='py-2 pr-4'>{formatDate(payment.paid_date)}</td>
       <td className='py-2 pr-4'>{TYPE_LABELS[payment.payment_type]}</td>
       <td className='py-2 pr-4'>{payment.method || '—'}</td>
       <td className='py-2 pr-4'>{payment.notes || '—'}</td>
@@ -173,14 +166,21 @@ function PaymentRow({ payment, readOnly }: { payment: Payment; readOnly?: boolea
               Edit
             </button>
             <form
+              ref={deleteFormRef}
               action={async (formData) => {
                 formData.set('id', payment.id);
                 await deletePayment(formData);
               }}
             >
-              <button type='submit' className='text-red-600 hover:text-red-800 cursor-pointer'>
+              <ConfirmButton
+                formRef={deleteFormRef}
+                message='Delete this payment? This cannot be undone.'
+                confirmLabel='Delete'
+                tone='danger'
+                triggerClassName='text-red-600 hover:text-red-800 cursor-pointer'
+              >
                 Delete
-              </button>
+              </ConfirmButton>
             </form>
           </div>
         </td>
@@ -213,12 +213,7 @@ export function PaymentLedger({
           )}
           <div>
             <label className='block text-xs mb-1'>Period</label>
-            <input
-              name='period'
-              type='month'
-              required
-              className='px-3 py-2 border border-border rounded-lg'
-            />
+            <MonthPickerField name='period' required />
             {state.error?.period && (
               <p className='mt-1 text-sm text-red-600'>{state.error.period[0]}</p>
             )}
@@ -247,12 +242,7 @@ export function PaymentLedger({
           </div>
           <div>
             <label className='block text-xs mb-1'>Paid Date</label>
-            <input
-              name='paidDate'
-              type='date'
-              required
-              className='px-3 py-2 border border-border rounded-lg'
-            />
+            <DatePickerField name='paidDate' required />
             {state.error?.paidDate && (
               <p className='mt-1 text-sm text-red-600'>{state.error.paidDate[0]}</p>
             )}
@@ -279,7 +269,7 @@ export function PaymentLedger({
               <option value=''>—</option>
               <option value='cash'>Cash</option>
               <option value='bank_transfer'>Bank Transfer</option>
-              <option value='check'>Check</option>
+              <option value='gcash'>GCash</option>
               <option value='other'>Other</option>
             </select>
             {state.error?.method && (

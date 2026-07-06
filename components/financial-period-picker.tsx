@@ -2,13 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { MonthPicker } from '@/components/month-picker';
-
-function yearOptions(): number[] {
-  const currentYear = new Date().getFullYear();
-  const years: number[] = [];
-  for (let y = currentYear + 1; y >= currentYear - 5; y--) years.push(y);
-  return years;
-}
+import { yearOptions } from '@/lib/format-date';
 
 export function FinancialPeriodPicker({
   mode,

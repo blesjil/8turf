@@ -2,6 +2,8 @@
 
 import { useActionState, useState } from 'react';
 import { formatCents } from '@/lib/money';
+import { formatDate } from '@/lib/format-date';
+import { DatePickerField } from '@/components/ui/date-picker-field';
 import {
   endTenancy,
   assignTenant,
@@ -96,21 +98,19 @@ export function TenantCard({ unitId, tenant }: { unitId: string; tenant: Tenant 
               )}
             </div>
             <div>
-              <input
+              <DatePickerField
                 name='leaseStartDate'
-                type='date'
                 required
-                className='w-full px-3 py-2 border border-border rounded-lg'
+                className='w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-left cursor-pointer'
               />
               {assignState.error?.leaseStartDate && (
                 <p className='mt-1 text-sm text-red-600'>{assignState.error.leaseStartDate[0]}</p>
               )}
             </div>
             <div>
-              <input
+              <DatePickerField
                 name='leaseEndDate'
-                type='date'
-                className='w-full px-3 py-2 border border-border rounded-lg'
+                className='w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-left cursor-pointer'
               />
               {assignState.error?.leaseEndDate && (
                 <p className='mt-1 text-sm text-red-600'>{assignState.error.leaseEndDate[0]}</p>
@@ -198,23 +198,21 @@ export function TenantCard({ unitId, tenant }: { unitId: string; tenant: Tenant 
               )}
             </div>
             <div>
-              <input
+              <DatePickerField
                 name='leaseStartDate'
-                type='date'
                 defaultValue={tenant.lease_start_date}
                 required
-                className='w-full px-3 py-2 border border-border rounded-lg'
+                className='w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-left cursor-pointer'
               />
               {updateState.error?.leaseStartDate && (
                 <p className='mt-1 text-sm text-red-600'>{updateState.error.leaseStartDate[0]}</p>
               )}
             </div>
             <div>
-              <input
+              <DatePickerField
                 name='leaseEndDate'
-                type='date'
-                defaultValue={tenant.lease_end_date ?? ''}
-                className='w-full px-3 py-2 border border-border rounded-lg'
+                defaultValue={tenant.lease_end_date ?? undefined}
+                className='w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-left cursor-pointer'
               />
               {updateState.error?.leaseEndDate && (
                 <p className='mt-1 text-sm text-red-600'>{updateState.error.leaseEndDate[0]}</p>
@@ -251,8 +249,9 @@ export function TenantCard({ unitId, tenant }: { unitId: string; tenant: Tenant 
             {tenant.email || 'No email'} &middot; {tenant.phone || 'No phone'}
           </p>
           <p className='text-sm text-foreground/60'>
-            Rent: {formatCents(tenant.rent_amount)}/mo &middot; Lease: {tenant.lease_start_date} to{' '}
-            {tenant.lease_end_date || 'ongoing'}
+            Rent: {formatCents(tenant.rent_amount)}/mo &middot; Lease:{' '}
+            {formatDate(tenant.lease_start_date)} to{' '}
+            {tenant.lease_end_date ? formatDate(tenant.lease_end_date) : 'ongoing'}
           </p>
         </div>
         <div className='flex items-center gap-3'>

@@ -26,14 +26,14 @@ export default async function Dashboard() {
         <div className='flex gap-3'>
           <Link
             href='/payments'
-            className='px-4 py-2 border border-border rounded-lg hover:bg-foreground/5'
+            className='bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700'
           >
             Payments Overview
           </Link>
           {session.user.role === 'admin' && (
             <Link
               href='/properties/archived'
-              className='px-4 py-2 border border-border rounded-lg hover:bg-foreground/5'
+              className='bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700'
             >
               Archived Properties
             </Link>
