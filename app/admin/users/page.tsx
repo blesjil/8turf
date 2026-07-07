@@ -15,6 +15,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { PAGE_SIZE, PaginationNav, clampPage, paginate } from '@/components/ui/pagination';
+
+type SearchParams = Promise<{ page?: string }>;
 
 interface UserRow {
   id: string;
@@ -24,7 +27,7 @@ interface UserRow {
   createdAt: string;
 }
 
-export default async function AdminUsersPage() {
+export default async function AdminUsersPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
     redirect('/authenticate');
@@ -33,9 +36,14 @@ export default async function AdminUsersPage() {
     notFound();
   }
 
+  const { page: rawPage } = await searchParams;
+
   const users = await query<UserRow>(
     'SELECT id, name, email, role, "createdAt" FROM "user" ORDER BY "createdAt" DESC',
   );
+
+  const totalPages = Math.ceil(users.length / PAGE_SIZE);
+  const page = clampPage(rawPage, totalPages);
 
   return (
     <div className='mx-auto max-w-4xl space-y-8 p-4 sm:p-8'>
@@ -60,7 +68,7 @@ export default async function AdminUsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {paginate(users, page).map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className='font-medium'>{user.name}</TableCell>
                   <TableCell className='text-muted-foreground'>{user.email}</TableCell>
@@ -83,6 +91,7 @@ export default async function AdminUsersPage() {
           </Table>
         </div>
       </Card>
+      <PaginationNav page={page} totalPages={totalPages} basePath='/admin/users' />
     </div>
   );
 }

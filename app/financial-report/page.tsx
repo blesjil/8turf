@@ -1,5 +1,6 @@
 import { redirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
+import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { formatCents } from '@/lib/money';
@@ -175,7 +176,14 @@ export default async function FinancialReportPage({
                     <TableBody>
                       {group.units.map((u) => (
                         <TableRow key={u.unitId}>
-                          <TableCell className='font-mono'>{u.unitLabel}</TableCell>
+                          <TableCell>
+                            <Link
+                              href={`/properties/${group.propertyId}/units/${u.unitId}`}
+                              className='font-mono font-medium text-primary hover:underline'
+                            >
+                              {u.unitLabel}
+                            </Link>
+                          </TableCell>
                           <TableCell className='text-right font-mono tabular-nums'>
                             {formatCents(u.income)}
                           </TableCell>

@@ -1,8 +1,10 @@
 'use client';
 
 import { useActionState, useRef, useState } from 'react';
+import { addDays, format, parseISO } from 'date-fns';
 import { formatCents } from '@/lib/money';
-import { formatDate, formatPeriod } from '@/lib/format-date';
+import { nextPeriodStart } from '@/lib/payment-status';
+import { formatDate } from '@/lib/format-date';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,8 +19,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { DatePickerField } from '@/components/ui/date-picker-field';
-import { MonthPickerField } from '@/components/ui/month-picker-field';
 import { ConfirmButton } from '@/components/confirm-button';
+import { PAGE_SIZE, paginate } from '@/components/ui/pagination';
+import { PaginationControls } from '@/components/ui/pagination-controls';
+import { TablePeriodFilter } from '@/components/ui/table-period-filter';
 import {
   recordPayment,
   updatePayment,
@@ -30,6 +34,8 @@ export interface Payment {
   id: string;
   amount: number;
   period: string;
+  period_start: string;
+  period_end: string;
   paid_date: string;
   payment_type: 'deposit' | 'advance' | 'reservation' | 'rental';
   method: string | null;
@@ -48,13 +54,34 @@ function FieldError({ messages }: { messages?: string[] }) {
   return <p className='mt-1 text-sm text-destructive'>{messages[0]}</p>;
 }
 
-function PaymentFormFields({ state, payment }: { state: PaymentActionResult; payment?: Payment }) {
+function PaymentFormFields({
+  state,
+  payment,
+  defaultPeriod,
+}: {
+  state: PaymentActionResult;
+  payment?: Payment;
+  defaultPeriod?: { start: string; end: string };
+}) {
   return (
     <>
       <div className='w-full sm:w-auto'>
-        <Label className='mb-2 text-xs'>Period</Label>
-        <MonthPickerField name='period' defaultValue={payment?.period} required />
-        <FieldError messages={state.error?.period} />
+        <Label className='mb-2 text-xs'>Period start</Label>
+        <DatePickerField
+          name='periodStart'
+          defaultValue={payment?.period_start ?? defaultPeriod?.start}
+          required
+        />
+        <FieldError messages={state.error?.periodStart} />
+      </div>
+      <div className='w-full sm:w-auto'>
+        <Label className='mb-2 text-xs'>Period end</Label>
+        <DatePickerField
+          name='periodEnd'
+          defaultValue={payment?.period_end ?? defaultPeriod?.end}
+          required
+        />
+        <FieldError messages={state.error?.periodEnd} />
       </div>
       <div className='w-full sm:w-auto'>
         <Label className='mb-2 text-xs'>Amount (₱)</Label>
@@ -144,7 +171,9 @@ function PaymentRow({ payment, readOnly }: { payment: Payment; readOnly?: boolea
 
   return (
     <TableRow>
-      <TableCell>{formatPeriod(payment.period)}</TableCell>
+      <TableCell className='whitespace-nowrap'>
+        {formatDate(payment.period_start)} – {formatDate(payment.period_end)}
+      </TableCell>
       <TableCell className='text-right font-mono tabular-nums'>
         {formatCents(payment.amount)}
       </TableCell>
@@ -188,10 +217,12 @@ function PaymentRow({ payment, readOnly }: { payment: Payment; readOnly?: boolea
 export function PaymentLedger({
   tenantId,
   payments,
+  leaseStartDate,
   readOnly,
 }: {
   tenantId: string;
   payments: Payment[];
+  leaseStartDate?: string;
   readOnly?: boolean;
 }) {
   const [state, formAction, isPending] = useActionState<PaymentActionResult, FormData>(
@@ -199,16 +230,36 @@ export function PaymentLedger({
     {},
   );
 
+  const defaultStart = nextPeriodStart(payments, leaseStartDate);
+  const defaultPeriod = defaultStart
+    ? { start: defaultStart, end: format(addDays(parseISO(defaultStart), 30), 'yyyy-MM-dd') }
+    : undefined;
+  const [page, setPage] = useState(1);
+  const [year, setYear] = useState('');
+  const [month, setMonth] = useState('');
+
+  const years = [...new Set(payments.map((p) => p.period.slice(0, 4)))].sort().reverse();
+  const filtered = payments.filter(
+    (p) => (!year || p.period.slice(0, 4) === year) && (!month || p.period.slice(5, 7) === month),
+  );
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const currentPage = Math.min(page, Math.max(totalPages, 1));
+
   return (
     <div className='space-y-4'>
       {!readOnly && (
         <Card className='p-4'>
-          <form action={formAction} className='flex flex-wrap items-end gap-3'>
+          <form
+            key={defaultPeriod?.start}
+            action={formAction}
+            className='flex flex-wrap items-end gap-3'
+          >
             <input type='hidden' name='tenantId' value={tenantId} />
             {state.error?.general && (
               <p className='w-full text-sm text-destructive'>{state.error.general}</p>
             )}
-            <PaymentFormFields state={state} />
+            <PaymentFormFields state={state} defaultPeriod={defaultPeriod} />
             <Button type='submit' disabled={isPending}>
               {isPending ? 'Recording…' : 'Record payment'}
             </Button>
@@ -216,8 +267,26 @@ export function PaymentLedger({
         </Card>
       )}
 
+      {payments.length > 0 && (
+        <TablePeriodFilter
+          years={years}
+          year={year}
+          month={month}
+          onYearChange={(y) => {
+            setYear(y);
+            setPage(1);
+          }}
+          onMonthChange={(m) => {
+            setMonth(m);
+            setPage(1);
+          }}
+        />
+      )}
+
       {payments.length === 0 ? (
         <p className='text-sm text-muted-foreground'>No payments recorded yet.</p>
+      ) : filtered.length === 0 ? (
+        <p className='text-sm text-muted-foreground'>No payments match this filter.</p>
       ) : (
         <Card className='py-0'>
           <div className='overflow-x-auto'>
@@ -234,7 +303,7 @@ export function PaymentLedger({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {payments.map((p) => (
+                {paginate(filtered, currentPage).map((p) => (
                   <PaymentRow key={p.id} payment={p} readOnly={readOnly} />
                 ))}
               </TableBody>
@@ -242,6 +311,7 @@ export function PaymentLedger({
           </div>
         </Card>
       )}
+      <PaginationControls page={currentPage} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

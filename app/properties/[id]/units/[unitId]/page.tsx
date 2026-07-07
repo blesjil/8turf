@@ -64,8 +64,9 @@ export default async function UnitDetail({ params }: { params: Params }) {
   const paymentsByTenant = new Map<string, Payment[]>();
   for (const t of tenantHistory) {
     const tenantPayments = await query<Payment>(
-      `SELECT id, amount, period, paid_date, payment_type, method, notes FROM rent_payments
-       WHERE tenant_id = $1 ORDER BY period DESC, paid_date DESC`,
+      `SELECT id, amount, period, period_start, period_end, paid_date, payment_type, method, notes
+       FROM rent_payments
+       WHERE tenant_id = $1 ORDER BY period_start DESC, period_end DESC, paid_date DESC`,
       [t.id],
     );
     paymentsByTenant.set(t.id, tenantPayments);
@@ -128,12 +129,25 @@ export default async function UnitDetail({ params }: { params: Params }) {
           <PaymentLedger
             tenantId={activeTenant.id}
             payments={paymentsByTenant.get(activeTenant.id) ?? []}
+            leaseStartDate={activeTenant.lease_start_date}
           />
         </div>
       )}
 
+      <div className='mb-10'>
+        <h2 className='mb-4 text-xl font-semibold tracking-tight'>Unit Expenses</h2>
+        <ExpenseList
+          parentIdField='unitId'
+          parentId={unit.id}
+          expenses={expenses}
+          recordAction={recordUnitExpense}
+          updateAction={updateUnitExpense}
+          deleteAction={deleteUnitExpense}
+        />
+      </div>
+
       {pastTenants.length > 0 && (
-        <div className='mb-10'>
+        <div>
           <h2 className='mb-4 text-xl font-semibold tracking-tight'>Tenancy History</h2>
           <ul className='space-y-6'>
             {pastTenants.map((t) => (
@@ -153,18 +167,6 @@ export default async function UnitDetail({ params }: { params: Params }) {
           </ul>
         </div>
       )}
-
-      <div>
-        <h2 className='mb-4 text-xl font-semibold tracking-tight'>Unit Expenses</h2>
-        <ExpenseList
-          parentIdField='unitId'
-          parentId={unit.id}
-          expenses={expenses}
-          recordAction={recordUnitExpense}
-          updateAction={updateUnitExpense}
-          deleteAction={deleteUnitExpense}
-        />
-      </div>
     </div>
   );
 }

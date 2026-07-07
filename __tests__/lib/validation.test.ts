@@ -136,7 +136,8 @@ describe('recordPaymentSchema', () => {
     const result = recordPaymentSchema.safeParse({
       tenantId: 'tenant-1',
       amount: '75000',
-      period: '2026-03',
+      periodStart: '2026-03-01',
+      periodEnd: '2026-03-31',
       paidDate: '2026-03-05',
       paymentType: 'rental',
       method: 'cash',
@@ -149,19 +150,36 @@ describe('recordPaymentSchema', () => {
     const result = recordPaymentSchema.safeParse({
       tenantId: 'tenant-1',
       amount: '0',
-      period: '2026-03',
+      periodStart: '2026-03-01',
+      periodEnd: '2026-03-31',
       paidDate: '2026-03-05',
     });
     expect(result.success).toBe(false);
   });
 
-  it('rejects a malformed period', () => {
+  it('rejects a malformed period start', () => {
     const result = recordPaymentSchema.safeParse({
       tenantId: 'tenant-1',
       amount: '75000',
-      period: '2026-3',
+      periodStart: '2026-03',
+      periodEnd: '2026-03-31',
       paidDate: '2026-03-05',
     });
     expect(result.success).toBe(false);
+  });
+
+  it('rejects a period end before the period start', () => {
+    const result = recordPaymentSchema.safeParse({
+      tenantId: 'tenant-1',
+      amount: '75000',
+      periodStart: '2026-03-31',
+      periodEnd: '2026-03-01',
+      paidDate: '2026-03-05',
+      paymentType: 'rental',
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.periodEnd).toBeTruthy();
+    }
   });
 });

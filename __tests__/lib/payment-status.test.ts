@@ -1,5 +1,43 @@
 import { describe, expect, it } from 'vitest';
-import { computePaymentStatus, isLeaseActiveForPeriod } from '@/lib/payment-status';
+import {
+  computePaymentStatus,
+  isLeaseActiveForPeriod,
+  nextPeriodStart,
+} from '@/lib/payment-status';
+
+describe('nextPeriodStart', () => {
+  it('falls back to lease start when there are no period-covering payments', () => {
+    expect(nextPeriodStart([], '2026-07-07')).toBe('2026-07-07');
+  });
+
+  it('starts the day after the latest rental period end', () => {
+    const payments = [
+      { payment_type: 'rental', period_end: '2026-08-06' },
+      { payment_type: 'rental', period_end: '2026-07-06' },
+    ];
+    expect(nextPeriodStart(payments, '2026-06-07')).toBe('2026-08-07');
+  });
+
+  it('counts advance payments as covering a rental period', () => {
+    const payments = [
+      { payment_type: 'deposit', period_end: '2026-07-07' },
+      { payment_type: 'advance', period_end: '2026-08-06' },
+    ];
+    expect(nextPeriodStart(payments, '2026-07-07')).toBe('2026-08-07');
+  });
+
+  it('ignores deposits and reservations', () => {
+    const payments = [
+      { payment_type: 'deposit', period_end: '2026-09-01' },
+      { payment_type: 'reservation', period_end: '2026-09-15' },
+    ];
+    expect(nextPeriodStart(payments, '2026-07-07')).toBe('2026-07-07');
+  });
+
+  it('returns undefined with no payments and no lease start', () => {
+    expect(nextPeriodStart([], undefined)).toBeUndefined();
+  });
+});
 
 describe('computePaymentStatus', () => {
   it('returns unpaid when nothing has been paid', () => {

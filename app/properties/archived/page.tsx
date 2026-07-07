@@ -6,6 +6,9 @@ import { query } from '@/lib/db';
 import { unarchiveProperty } from '../actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { PAGE_SIZE, PaginationNav, clampPage, paginate } from '@/components/ui/pagination';
+
+type SearchParams = Promise<{ page?: string }>;
 
 interface ArchivedProperty {
   id: string;
@@ -14,10 +17,16 @@ interface ArchivedProperty {
   archived_at: string;
 }
 
-export default async function ArchivedPropertiesPage() {
+export default async function ArchivedPropertiesPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect('/authenticate');
   if (session.user.role !== 'admin') notFound();
+
+  const { page: rawPage } = await searchParams;
 
   const properties = await query<ArchivedProperty>(
     `SELECT id, name, address, archived_at FROM properties
@@ -25,6 +34,9 @@ export default async function ArchivedPropertiesPage() {
      ORDER BY archived_at DESC`,
     [session.user.id],
   );
+
+  const totalPages = Math.ceil(properties.length / PAGE_SIZE);
+  const page = clampPage(rawPage, totalPages);
 
   return (
     <div className='mx-auto max-w-4xl p-4 sm:p-8'>
@@ -46,7 +58,7 @@ export default async function ArchivedPropertiesPage() {
         </Card>
       ) : (
         <ul className='space-y-3'>
-          {properties.map((property) => (
+          {paginate(properties, page).map((property) => (
             <li key={property.id}>
               <Card>
                 <CardContent className='flex items-center justify-between gap-4'>
@@ -69,6 +81,7 @@ export default async function ArchivedPropertiesPage() {
           ))}
         </ul>
       )}
+      <PaginationNav page={page} totalPages={totalPages} basePath='/properties/archived' />
     </div>
   );
 }

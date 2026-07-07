@@ -8,8 +8,10 @@ import { PropertyActions } from './property-actions';
 import { UnitList, type UnitListItem } from '@/components/unit-list';
 import { ExpenseList, type Expense } from '@/components/expense-list';
 import { recordPropertyExpense, updatePropertyExpense, deletePropertyExpense } from '../actions';
+import { PAGE_SIZE, PaginationNav, clampPage, paginate } from '@/components/ui/pagination';
 
 type Params = Promise<{ id: string }>;
+type SearchParams = Promise<{ page?: string }>;
 
 interface Property {
   id: string;
@@ -17,11 +19,18 @@ interface Property {
   address: string;
 }
 
-export default async function PropertyDetail({ params }: { params: Params }) {
+export default async function PropertyDetail({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: SearchParams;
+}) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect('/authenticate');
 
   const { id } = await params;
+  const { page: rawPage } = await searchParams;
 
   const property = await queryOne<Property>(
     'SELECT id, name, address FROM properties WHERE id = $1 AND user_id = $2',
@@ -44,6 +53,9 @@ export default async function PropertyDetail({ params }: { params: Params }) {
      WHERE property_id = $1 AND unit_id IS NULL ORDER BY expense_date DESC`,
     [property.id],
   );
+
+  const totalPages = Math.ceil(units.length / PAGE_SIZE);
+  const page = clampPage(rawPage, totalPages);
 
   return (
     <div className='mx-auto max-w-4xl p-4 sm:p-8'>
@@ -72,7 +84,8 @@ export default async function PropertyDetail({ params }: { params: Params }) {
         </Button>
       </div>
 
-      <UnitList propertyId={property.id} units={units} />
+      <UnitList propertyId={property.id} units={paginate(units, page)} />
+      <PaginationNav page={page} totalPages={totalPages} basePath={`/properties/${property.id}`} />
 
       <div className='mt-10'>
         <h2 className='mb-4 text-xl font-semibold tracking-tight'>Property Expenses</h2>

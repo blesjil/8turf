@@ -17,18 +17,19 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { PAGE_SIZE, PaginationNav, clampPage, paginate } from '@/components/ui/pagination';
 
-type SearchParams = Promise<{ month?: string }>;
+type SearchParams = Promise<{ month?: string; page?: string }>;
 
 interface Row {
   propertyId: string;
   propertyName: string;
   unitId: string;
   unitLabel: string;
-  tenantId: string;
-  tenantName: string;
-  rentAmount: number;
-  leaseStartDate: string;
+  tenantId: string | null;
+  tenantName: string | null;
+  rentAmount: number | null;
+  leaseStartDate: string | null;
   leaseEndDate: string | null;
 }
 
@@ -47,7 +48,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect('/authenticate');
 
-  const { month } = await searchParams;
+  const { month, page: rawPage } = await searchParams;
   const period =
     month && /^\d{4}-\d{2}$/.test(month) ? month : new Date().toISOString().slice(0, 7);
 
@@ -56,21 +57,25 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
             u.id as "unitId", u.unit_label as "unitLabel",
             t.id as "tenantId", t.name as "tenantName",
             t.rent_amount as "rentAmount", t.lease_start_date as "leaseStartDate", t.lease_end_date as "leaseEndDate"
-     FROM tenants t
-     JOIN units u ON u.id = t.unit_id
+     FROM units u
+     LEFT JOIN tenants t ON t.unit_id = u.id
      JOIN properties p ON p.id = u.property_id
      WHERE p.user_id = $1 AND p.archived_at IS NULL AND u.archived_at IS NULL
      ORDER BY p.name, u.unit_label`,
     [session.user.id],
   );
 
-  const relevantRows = rows.filter((r) =>
-    isLeaseActiveForPeriod(r.leaseStartDate, r.leaseEndDate, period),
-  );
+  const isActive = (r: Row) =>
+    r.tenantId !== null &&
+    r.leaseStartDate !== null &&
+    isLeaseActiveForPeriod(r.leaseStartDate, r.leaseEndDate, period);
+  const activeRows = rows.filter(isActive);
+  const inactiveRows = rows.filter((r) => !isActive(r));
+  const allRows = [...activeRows, ...inactiveRows];
 
   const paidByTenant = new Map<string, number>();
-  if (relevantRows.length > 0) {
-    const tenantIds = relevantRows.map((r) => r.tenantId);
+  if (activeRows.length > 0) {
+    const tenantIds = activeRows.map((r) => r.tenantId!);
     const totals = await query<{ tenant_id: string; total: number }>(
       `SELECT tenant_id, SUM(amount)::int as total FROM rent_payments
        WHERE period = $1 AND tenant_id = ANY($2) GROUP BY tenant_id`,
@@ -79,12 +84,15 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
     for (const t of totals) paidByTenant.set(t.tenant_id, t.total);
   }
 
-  const totalDue = relevantRows.reduce((sum, r) => sum + r.rentAmount, 0);
-  const totalCollected = relevantRows.reduce(
-    (sum, r) => sum + Math.min(paidByTenant.get(r.tenantId) ?? 0, r.rentAmount),
+  const totalDue = activeRows.reduce((sum, r) => sum + (r.rentAmount ?? 0), 0);
+  const totalCollected = activeRows.reduce(
+    (sum, r) => sum + Math.min(paidByTenant.get(r.tenantId!) ?? 0, r.rentAmount ?? 0),
     0,
   );
   const outstanding = Math.max(totalDue - totalCollected, 0);
+
+  const totalPages = Math.ceil(allRows.length / PAGE_SIZE);
+  const page = clampPage(rawPage, totalPages);
 
   return (
     <div className='mx-auto max-w-6xl p-4 sm:p-8'>
@@ -95,17 +103,17 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
         <MonthPicker value={period} />
       </div>
 
-      {relevantRows.length === 0 ? (
+      {allRows.length === 0 ? (
         <Card className='py-8 text-center'>
           <CardHeader className='items-center'>
-            <CardTitle>No active leases</CardTitle>
-            <CardDescription>No units have an active lease for this month.</CardDescription>
+            <CardTitle>No units yet</CardTitle>
+            <CardDescription>Add a property with units to track rent payments.</CardDescription>
           </CardHeader>
         </Card>
       ) : (
         <>
           <div className='mb-6 grid gap-4 sm:grid-cols-3'>
-            <StatCard label='Active leases' value={String(relevantRows.length)} />
+            <StatCard label='Active leases' value={String(activeRows.length)} />
             <StatCard label='Rent collected' value={formatCents(totalCollected)} />
             <StatCard label='Outstanding' value={formatCents(outstanding)} />
           </div>
@@ -124,11 +132,14 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {relevantRows.map((r) => {
-                    const paid = paidByTenant.get(r.tenantId) ?? 0;
-                    const status = computePaymentStatus(paid, r.rentAmount);
+                  {paginate(allRows, page).map((r) => {
+                    const active = isActive(r);
+                    const paid = active ? (paidByTenant.get(r.tenantId!) ?? 0) : 0;
+                    const status = active
+                      ? computePaymentStatus(paid, r.rentAmount ?? 0)
+                      : 'inactive';
                     return (
-                      <TableRow key={r.tenantId}>
+                      <TableRow key={r.tenantId ?? r.unitId}>
                         <TableCell className='hidden md:table-cell'>{r.propertyName}</TableCell>
                         <TableCell>
                           <Link
@@ -138,12 +149,14 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                             {r.unitLabel}
                           </Link>
                         </TableCell>
-                        <TableCell>{r.tenantName}</TableCell>
+                        <TableCell className={r.tenantName ? '' : 'text-muted-foreground'}>
+                          {r.tenantName ?? '—'}
+                        </TableCell>
                         <TableCell className='hidden text-right font-mono tabular-nums sm:table-cell'>
-                          {formatCents(r.rentAmount)}
+                          {r.rentAmount !== null ? formatCents(r.rentAmount) : '—'}
                         </TableCell>
                         <TableCell className='text-right font-mono tabular-nums'>
-                          {formatCents(paid)}
+                          {active ? formatCents(paid) : '—'}
                         </TableCell>
                         <TableCell>
                           <PaymentStatusBadge status={status} />
@@ -155,6 +168,12 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
               </Table>
             </div>
           </Card>
+          <PaginationNav
+            page={page}
+            totalPages={totalPages}
+            basePath='/payments'
+            params={{ month: period }}
+          />
         </>
       )}
     </div>

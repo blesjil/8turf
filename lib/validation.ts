@@ -77,25 +77,40 @@ export const endTenancySchema = z.object({
   leaseEndDate: dateField,
 });
 
-const periodField = z.string().regex(/^\d{4}-\d{2}$/, 'Must be a valid month (YYYY-MM)');
 const paymentTypeField = z.enum(['deposit', 'advance', 'reservation', 'rental']);
 
-export const recordPaymentSchema = z.object({
-  tenantId: z.string().min(1, 'Tenant id is required'),
+const paymentBaseSchema = z.object({
   amount: z.coerce
     .number()
     .int('Must be a whole number of cents')
     .positive('Must be greater than zero'),
-  period: periodField,
+  periodStart: dateField,
+  periodEnd: dateField,
   paidDate: dateField,
   paymentType: paymentTypeField,
   method: z.enum(['cash', 'bank_transfer', 'gcash', 'other']).optional().or(z.literal('')),
   notes: z.string().max(1000, 'Notes are too long').optional().or(z.literal('')),
 });
 
-export const updatePaymentSchema = recordPaymentSchema.omit({ tenantId: true }).extend({
-  id: z.string().min(1, 'Payment id is required'),
-});
+const periodRangeCheck = {
+  check: (data: { periodStart: string; periodEnd: string }) => data.periodEnd >= data.periodStart,
+  options: {
+    message: 'Period end must be on or after period start',
+    path: ['periodEnd'],
+  },
+};
+
+export const recordPaymentSchema = paymentBaseSchema
+  .extend({
+    tenantId: z.string().min(1, 'Tenant id is required'),
+  })
+  .refine(periodRangeCheck.check, periodRangeCheck.options);
+
+export const updatePaymentSchema = paymentBaseSchema
+  .extend({
+    id: z.string().min(1, 'Payment id is required'),
+  })
+  .refine(periodRangeCheck.check, periodRangeCheck.options);
 
 const expenseCategoryField = z.enum(['repair', 'cleaning', 'tax', 'other']);
 const expenseBaseSchema = z.object({

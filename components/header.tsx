@@ -38,9 +38,19 @@ export function BrandMark({ className }: { className?: string }) {
   );
 }
 
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+function NavLink({
+  href,
+  match,
+  children,
+}: {
+  href: string;
+  match?: string[];
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
-  const active = pathname === href || pathname.startsWith(`${href}/`);
+  const active = [href, ...(match ?? [])].some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
   return (
     <Link
       href={href}
@@ -66,8 +76,9 @@ export function Header({ user }: HeaderProps) {
           {user && (
             <nav className='hidden items-center gap-1 sm:flex'>
               <NavLink href='/dashboard'>Properties</NavLink>
-              <NavLink href='/payments'>Payments</NavLink>
-              {user.role === 'admin' && <NavLink href='/financial-report'>Financials</NavLink>}
+              <NavLink href='/payments' match={['/financial-report']}>
+                Financials
+              </NavLink>
             </nav>
           )}
         </div>
@@ -92,12 +103,9 @@ export function Header({ user }: HeaderProps) {
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem render={<Link href='/dashboard' />}>Properties</DropdownMenuItem>
-              <DropdownMenuItem render={<Link href='/payments' />}>Payments</DropdownMenuItem>
+              <DropdownMenuItem render={<Link href='/payments' />}>Financials</DropdownMenuItem>
               {user.role === 'admin' && (
                 <>
-                  <DropdownMenuItem render={<Link href='/financial-report' />}>
-                    Financial report
-                  </DropdownMenuItem>
                   <DropdownMenuItem render={<Link href='/properties/archived' />}>
                     Archived properties
                   </DropdownMenuItem>

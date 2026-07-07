@@ -18,6 +18,9 @@ import {
 } from '@/components/ui/table';
 import { DatePickerField } from '@/components/ui/date-picker-field';
 import { ConfirmButton } from '@/components/confirm-button';
+import { PAGE_SIZE, paginate } from '@/components/ui/pagination';
+import { PaginationControls } from '@/components/ui/pagination-controls';
+import { TablePeriodFilter } from '@/components/ui/table-period-filter';
 
 export interface Expense {
   id: string;
@@ -205,6 +208,19 @@ export function ExpenseList({
     recordAction,
     {},
   );
+  const [page, setPage] = useState(1);
+  const [year, setYear] = useState('');
+  const [month, setMonth] = useState('');
+
+  const years = [...new Set(expenses.map((e) => e.expense_date.slice(0, 4)))].sort().reverse();
+  const filtered = expenses.filter(
+    (e) =>
+      (!year || e.expense_date.slice(0, 4) === year) &&
+      (!month || e.expense_date.slice(5, 7) === month),
+  );
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const currentPage = Math.min(page, Math.max(totalPages, 1));
 
   return (
     <div className='space-y-4'>
@@ -221,8 +237,26 @@ export function ExpenseList({
         </form>
       </Card>
 
+      {expenses.length > 0 && (
+        <TablePeriodFilter
+          years={years}
+          year={year}
+          month={month}
+          onYearChange={(y) => {
+            setYear(y);
+            setPage(1);
+          }}
+          onMonthChange={(m) => {
+            setMonth(m);
+            setPage(1);
+          }}
+        />
+      )}
+
       {expenses.length === 0 ? (
         <p className='text-sm text-muted-foreground'>No expenses recorded yet.</p>
+      ) : filtered.length === 0 ? (
+        <p className='text-sm text-muted-foreground'>No expenses match this filter.</p>
       ) : (
         <Card className='py-0'>
           <div className='overflow-x-auto'>
@@ -237,7 +271,7 @@ export function ExpenseList({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expenses.map((expense) => (
+                {paginate(filtered, currentPage).map((expense) => (
                   <ExpenseRow
                     key={expense.id}
                     expense={expense}
@@ -250,6 +284,7 @@ export function ExpenseList({
           </div>
         </Card>
       )}
+      <PaginationControls page={currentPage} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

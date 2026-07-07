@@ -5,10 +5,15 @@ import { auth } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { PropertyList, type PropertyListItem } from '@/components/property-list';
+import { PAGE_SIZE, PaginationNav, clampPage, paginate } from '@/components/ui/pagination';
 
-export default async function Dashboard() {
+type SearchParams = Promise<{ page?: string }>;
+
+export default async function Dashboard({ searchParams }: { searchParams: SearchParams }) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect('/authenticate');
+
+  const { page: rawPage } = await searchParams;
 
   const properties = await query<PropertyListItem>(
     `SELECT p.id, p.name, p.address, COUNT(u.id)::int as "unitCount"
@@ -19,6 +24,9 @@ export default async function Dashboard() {
      ORDER BY p.created_at DESC`,
     [session.user.id],
   );
+
+  const totalPages = Math.ceil(properties.length / PAGE_SIZE);
+  const page = clampPage(rawPage, totalPages);
 
   return (
     <div className='mx-auto max-w-6xl p-4 sm:p-8'>
@@ -46,7 +54,8 @@ export default async function Dashboard() {
         </div>
       </div>
 
-      <PropertyList properties={properties} />
+      <PropertyList properties={paginate(properties, page)} />
+      <PaginationNav page={page} totalPages={totalPages} basePath='/dashboard' />
     </div>
   );
 }

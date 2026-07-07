@@ -260,7 +260,8 @@ export async function endTenancy(formData: FormData): Promise<void> {
 export interface PaymentActionResult {
   error?: {
     amount?: string[];
-    period?: string[];
+    periodStart?: string[];
+    periodEnd?: string[];
     paidDate?: string[];
     paymentType?: string[];
     method?: string[];
@@ -279,7 +280,8 @@ export async function recordPayment(
   const parsed = recordPaymentSchema.safeParse({
     tenantId: formData.get('tenantId'),
     amount: formData.get('amount'),
-    period: formData.get('period'),
+    periodStart: formData.get('periodStart'),
+    periodEnd: formData.get('periodEnd'),
     paidDate: formData.get('paidDate'),
     paymentType: formData.get('paymentType'),
     method: formData.get('method'),
@@ -299,14 +301,16 @@ export async function recordPayment(
 
   const id = crypto.randomUUID();
   await query(
-    `INSERT INTO rent_payments (id, tenant_id, unit_id, amount, period, paid_date, payment_type, method, notes)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    `INSERT INTO rent_payments (id, tenant_id, unit_id, amount, period, period_start, period_end, paid_date, payment_type, method, notes)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
     [
       id,
       tenant.id,
       tenant.unit_id,
       parsed.data.amount,
-      parsed.data.period,
+      parsed.data.periodStart.slice(0, 7),
+      parsed.data.periodStart,
+      parsed.data.periodEnd,
       parsed.data.paidDate,
       parsed.data.paymentType,
       parsed.data.method || null,
@@ -345,7 +349,8 @@ export async function updatePayment(
   const parsed = updatePaymentSchema.safeParse({
     id: formData.get('id'),
     amount: formData.get('amount'),
-    period: formData.get('period'),
+    periodStart: formData.get('periodStart'),
+    periodEnd: formData.get('periodEnd'),
     paidDate: formData.get('paidDate'),
     paymentType: formData.get('paymentType'),
     method: formData.get('method'),
@@ -364,10 +369,15 @@ export async function updatePayment(
   }
 
   await query(
-    'UPDATE rent_payments SET amount = $1, period = $2, paid_date = $3, payment_type = $4, method = $5, notes = $6 WHERE id = $7',
+    `UPDATE rent_payments
+     SET amount = $1, period = $2, period_start = $3, period_end = $4, paid_date = $5,
+         payment_type = $6, method = $7, notes = $8
+     WHERE id = $9`,
     [
       parsed.data.amount,
-      parsed.data.period,
+      parsed.data.periodStart.slice(0, 7),
+      parsed.data.periodStart,
+      parsed.data.periodEnd,
       parsed.data.paidDate,
       parsed.data.paymentType,
       parsed.data.method || null,
