@@ -74,7 +74,9 @@
       "Bash(git -C /Users/blesjil/Documents/Jill/apps/8turf status --short)",
       "Bash(git rm *)",
       "Bash(psql \"postgresql://postgres:postgres@127.0.0.1:54342/postgres\" -c 'select email, role from \"user\"')",
-      "Bash(docker exec supabase_db_8turf psql -U postgres -d postgres -c ' *)"
+      "Bash(docker exec supabase_db_8turf psql -U postgres -d postgres -c ' *)",
+      "Bash(bun run *)",
+      "Bash(curl -s -w ' [%{http_code}]\\\\n' -X POST http://localhost:3001/api/auth/sign-in/email -H 'Content-Type: application/json' -d '{\"email\":\"test@example.com\",\"password\":\"still-wrong\"}')"
     ]
   },
   "hooks": {

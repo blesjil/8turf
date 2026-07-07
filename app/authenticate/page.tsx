@@ -45,6 +45,9 @@ function AuthForm() {
           callbackURL: '/dashboard',
         });
         if (result.error) {
+          if (result.error.status === 429 && result.error.message) {
+            return { error: result.error.message };
+          }
           return { error: 'Invalid email or password.' };
         }
       } catch {
