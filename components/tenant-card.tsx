@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import { format } from 'date-fns';
 import { formatCents } from '@/lib/money';
 import { formatDate } from '@/lib/format-date';
 import { Button } from '@/components/ui/button';
@@ -192,7 +193,7 @@ export function TenantCard({
           <form
             action={async (formData) => {
               formData.set('id', tenant.id);
-              formData.set('leaseEndDate', new Date().toISOString().slice(0, 10));
+              formData.set('leaseEndDate', format(new Date(), 'yyyy-MM-dd'));
               await endTenancy(formData);
             }}
           >

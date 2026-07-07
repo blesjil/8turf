@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
+import { format } from 'date-fns';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { query } from '@/lib/db';
@@ -49,8 +50,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
   if (!session) redirect('/authenticate');
 
   const { month, page: rawPage } = await searchParams;
-  const period =
-    month && /^\d{4}-\d{2}$/.test(month) ? month : new Date().toISOString().slice(0, 7);
+  const period = month && /^\d{4}-\d{2}$/.test(month) ? month : format(new Date(), 'yyyy-MM');
 
   const rows = await query<Row>(
     `SELECT p.id as "propertyId", p.name as "propertyName",
@@ -69,8 +69,33 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
     r.tenantId !== null &&
     r.leaseStartDate !== null &&
     isLeaseActiveForPeriod(r.leaseStartDate, r.leaseEndDate, period);
-  const activeRows = rows.filter(isActive);
-  const inactiveRows = rows.filter((r) => !isActive(r));
+
+  // The tenants join yields one row per tenant ever assigned to a unit. Keep
+  // the rows whose lease covers the selected month; collapse the rest into a
+  // single vacant row per unit so past tenants don't show as duplicates.
+  const rowsByUnit = new Map<string, Row[]>();
+  for (const r of rows) {
+    const unitRows = rowsByUnit.get(r.unitId);
+    if (unitRows) unitRows.push(r);
+    else rowsByUnit.set(r.unitId, [r]);
+  }
+  const activeRows: Row[] = [];
+  const inactiveRows: Row[] = [];
+  for (const unitRows of rowsByUnit.values()) {
+    const covering = unitRows.filter(isActive);
+    if (covering.length > 0) {
+      activeRows.push(...covering);
+    } else {
+      inactiveRows.push({
+        ...unitRows[0],
+        tenantId: null,
+        tenantName: null,
+        rentAmount: null,
+        leaseStartDate: null,
+        leaseEndDate: null,
+      });
+    }
+  }
   const allRows = [...activeRows, ...inactiveRows];
 
   const paidByTenant = new Map<string, number>();
@@ -78,7 +103,9 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
     const tenantIds = activeRows.map((r) => r.tenantId!);
     const totals = await query<{ tenant_id: string; total: number }>(
       `SELECT tenant_id, SUM(amount)::int as total FROM rent_payments
-       WHERE period = $1 AND tenant_id = ANY($2) GROUP BY tenant_id`,
+       WHERE period = $1 AND tenant_id = ANY($2)
+         AND payment_type IN ('rental', 'advance')
+       GROUP BY tenant_id`,
       [period, tenantIds],
     );
     for (const t of totals) paidByTenant.set(t.tenant_id, t.total);

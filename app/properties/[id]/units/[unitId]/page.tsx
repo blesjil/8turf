@@ -1,5 +1,6 @@
 import { redirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
+import { format } from 'date-fns';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { query, queryOne } from '@/lib/db';
@@ -9,7 +10,11 @@ import { UnitActions } from './unit-actions';
 import { TenantCard, type Tenant } from '@/components/tenant-card';
 import { PaymentLedger, type Payment } from '@/components/payment-ledger';
 import { PaymentStatusBadge } from '@/components/payment-status-badge';
-import { computePaymentStatus, isLeaseActiveForPeriod } from '@/lib/payment-status';
+import {
+  computePaymentStatus,
+  countsTowardRent,
+  isLeaseActiveForPeriod,
+} from '@/lib/payment-status';
 import { ExpenseList, type Expense } from '@/components/expense-list';
 import { recordUnitExpense, updateUnitExpense, deleteUnitExpense } from './actions';
 
@@ -59,7 +64,7 @@ export default async function UnitDetail({ params }: { params: Params }) {
     [unit.id],
   );
 
-  const currentPeriod = new Date().toISOString().slice(0, 7);
+  const currentPeriod = format(new Date(), 'yyyy-MM');
 
   const paymentsByTenant = new Map<string, Payment[]>();
   for (const t of tenantHistory) {
@@ -73,7 +78,7 @@ export default async function UnitDetail({ params }: { params: Params }) {
   }
 
   const currentPeriodTotal = ((activeTenant && paymentsByTenant.get(activeTenant.id)) || [])
-    .filter((p) => p.period === currentPeriod)
+    .filter((p) => p.period === currentPeriod && countsTowardRent(p.payment_type))
     .reduce((sum, p) => sum + p.amount, 0);
 
   const currentStatus =

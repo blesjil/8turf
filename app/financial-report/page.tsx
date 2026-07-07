@@ -1,5 +1,6 @@
 import { redirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
+import { format } from 'date-fns';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { query } from '@/lib/db';
@@ -49,7 +50,7 @@ export default async function FinancialReportPage({
   const { mode: rawMode, month: rawMonth, year: rawYear } = await searchParams;
   const mode: 'month' | 'year' = rawMode === 'year' ? 'year' : 'month';
   const month =
-    rawMonth && /^\d{4}-\d{2}$/.test(rawMonth) ? rawMonth : new Date().toISOString().slice(0, 7);
+    rawMonth && /^\d{4}-\d{2}$/.test(rawMonth) ? rawMonth : format(new Date(), 'yyyy-MM');
   const year = rawYear && /^\d{4}$/.test(rawYear) ? rawYear : new Date().getFullYear().toString();
 
   const rows = await query<UnitRow>(

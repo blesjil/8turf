@@ -1,9 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import {
   computePaymentStatus,
+  countsTowardRent,
   isLeaseActiveForPeriod,
   nextPeriodStart,
 } from '@/lib/payment-status';
+
+describe('countsTowardRent', () => {
+  it('counts rental and advance payments toward monthly rent', () => {
+    expect(countsTowardRent('rental')).toBe(true);
+    expect(countsTowardRent('advance')).toBe(true);
+  });
+
+  it('excludes deposits and reservations from monthly rent', () => {
+    expect(countsTowardRent('deposit')).toBe(false);
+    expect(countsTowardRent('reservation')).toBe(false);
+  });
+});
 
 describe('nextPeriodStart', () => {
   it('falls back to lease start when there are no period-covering payments', () => {

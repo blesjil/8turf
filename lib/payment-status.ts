@@ -2,6 +2,14 @@ import { addDays, format, parseISO } from 'date-fns';
 
 export type PaymentStatus = 'unpaid' | 'partial' | 'paid';
 
+// Deposits and reservations are money held, not rent for a period — only
+// rental and advance payments count toward a month's paid/partial/unpaid math.
+export const RENT_COVERING_PAYMENT_TYPES = ['rental', 'advance'] as const;
+
+export function countsTowardRent(paymentType: string): boolean {
+  return (RENT_COVERING_PAYMENT_TYPES as readonly string[]).includes(paymentType);
+}
+
 export function computePaymentStatus(totalPaid: number, rentAmount: number): PaymentStatus {
   if (totalPaid <= 0) return 'unpaid';
   if (totalPaid < rentAmount) return 'partial';
@@ -14,7 +22,7 @@ export function nextPeriodStart(
 ): string | undefined {
   // Deposits and reservations don't cover a rental period, so they don't move the next start.
   const lastCoveredEnd = payments
-    .filter((p) => p.payment_type === 'rental' || p.payment_type === 'advance')
+    .filter((p) => countsTowardRent(p.payment_type))
     .reduce<string | null>((max, p) => (!max || p.period_end > max ? p.period_end : max), null);
   if (!lastCoveredEnd) return leaseStartDate;
   return format(addDays(parseISO(lastCoveredEnd), 1), 'yyyy-MM-dd');
