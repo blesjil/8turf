@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
+import { ownerScope } from '@/lib/access';
 import { query, queryOne } from '@/lib/db';
 import { createUnitSchema } from '@/lib/validation';
 
@@ -35,8 +36,8 @@ export async function createUnit(
   }
 
   const property = await queryOne<{ id: string }>(
-    'SELECT id FROM properties WHERE id = $1 AND user_id = $2',
-    [parsed.data.propertyId, session.user.id],
+    'SELECT id FROM properties WHERE id = $1 AND ($2::text IS NULL OR user_id = $2)',
+    [parsed.data.propertyId, ownerScope(session)],
   );
   if (!property) {
     return { error: { general: 'Property not found or access denied.' } };

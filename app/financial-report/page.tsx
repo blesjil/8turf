@@ -59,9 +59,8 @@ export default async function FinancialReportPage({
             u.id as "unitId", u.unit_label as "unitLabel"
      FROM properties p
      JOIN units u ON u.property_id = p.id
-     WHERE p.user_id = $1 AND p.archived_at IS NULL AND u.archived_at IS NULL
+     WHERE p.archived_at IS NULL AND u.archived_at IS NULL
      ORDER BY p.name, u.unit_label`,
-    [session.user.id],
   );
 
   const unitIds = rows.map((r) => r.unitId);

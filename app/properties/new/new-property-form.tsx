@@ -7,8 +7,21 @@ import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 
-export function NewPropertyForm() {
+export interface OwnerOption {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export function NewPropertyForm({
+  owners,
+  currentUserId,
+}: {
+  owners?: OwnerOption[];
+  currentUserId?: string;
+}) {
   const [state, formAction, isPending] = useActionState<PropertyActionResult, FormData>(
     createProperty,
     {},
@@ -35,6 +48,19 @@ export function NewPropertyForm() {
           <p className='text-sm text-destructive'>{state.error.address[0]}</p>
         )}
       </div>
+
+      {owners && owners.length > 0 && (
+        <div className='space-y-2'>
+          <Label htmlFor='ownerId'>Owner</Label>
+          <NativeSelect id='ownerId' name='ownerId' defaultValue={currentUserId}>
+            {owners.map((owner) => (
+              <option key={owner.id} value={owner.id}>
+                {owner.name} ({owner.email})
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
+      )}
 
       <div className='flex gap-2'>
         <Button type='submit' disabled={isPending}>

@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
+import { ownerScope } from '@/lib/access';
 import { query, queryOne } from '@/lib/db';
 import {
   updateUnitSchema,
@@ -25,12 +26,12 @@ export interface UnitActionResult {
   };
 }
 
-async function findAuthorizedUnit(unitId: string, userId: string) {
+async function findAuthorizedUnit(unitId: string, scope: string | null) {
   return queryOne<{ id: string; property_id: string }>(
     `SELECT u.id, u.property_id FROM units u
      JOIN properties p ON p.id = u.property_id
-     WHERE u.id = $1 AND p.user_id = $2`,
-    [unitId, userId],
+     WHERE u.id = $1 AND ($2::text IS NULL OR p.user_id = $2)`,
+    [unitId, scope],
   );
 }
 
@@ -52,7 +53,7 @@ export async function updateUnit(
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  const unit = await findAuthorizedUnit(parsed.data.id, session.user.id);
+  const unit = await findAuthorizedUnit(parsed.data.id, ownerScope(session));
   if (!unit) {
     return { error: { general: 'Unit not found or access denied.' } };
   }
@@ -79,7 +80,7 @@ export async function archiveUnit(formData: FormData): Promise<void> {
   const id = formData.get('id');
   if (typeof id !== 'string') return;
 
-  const unit = await findAuthorizedUnit(id, session.user.id);
+  const unit = await findAuthorizedUnit(id, ownerScope(session));
   if (!unit) return;
 
   await query('UPDATE units SET archived_at = now() WHERE id = $1', [unit.id]);
@@ -102,7 +103,7 @@ export async function deleteUnit(
     return { error: 'Invalid unit id.' };
   }
 
-  const unit = await findAuthorizedUnit(id, session.user.id);
+  const unit = await findAuthorizedUnit(id, ownerScope(session));
   if (!unit) {
     return { error: 'Unit not found or access denied.' };
   }
@@ -151,7 +152,7 @@ export async function assignTenant(
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  const unit = await findAuthorizedUnit(parsed.data.unitId, session.user.id);
+  const unit = await findAuthorizedUnit(parsed.data.unitId, ownerScope(session));
   if (!unit) {
     return { error: { general: 'Unit not found or access denied.' } };
   }
@@ -184,13 +185,13 @@ export async function assignTenant(
   redirect(`/properties/${unit.property_id}/units/${unit.id}`);
 }
 
-async function findAuthorizedTenant(tenantId: string, userId: string) {
+async function findAuthorizedTenant(tenantId: string, scope: string | null) {
   return queryOne<{ id: string; unit_id: string; property_id: string; is_active: boolean }>(
     `SELECT t.id, t.unit_id, u.property_id, t.is_active FROM tenants t
      JOIN units u ON u.id = t.unit_id
      JOIN properties p ON p.id = u.property_id
-     WHERE t.id = $1 AND p.user_id = $2`,
-    [tenantId, userId],
+     WHERE t.id = $1 AND ($2::text IS NULL OR p.user_id = $2)`,
+    [tenantId, scope],
   );
 }
 
@@ -214,7 +215,7 @@ export async function updateTenant(
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  const tenant = await findAuthorizedTenant(parsed.data.id, session.user.id);
+  const tenant = await findAuthorizedTenant(parsed.data.id, ownerScope(session));
   if (!tenant) {
     return { error: { general: 'Tenant not found or access denied.' } };
   }
@@ -246,7 +247,7 @@ export async function endTenancy(formData: FormData): Promise<void> {
   });
   if (!parsed.success) return;
 
-  const tenant = await findAuthorizedTenant(parsed.data.id, session.user.id);
+  const tenant = await findAuthorizedTenant(parsed.data.id, ownerScope(session));
   if (!tenant) return;
 
   await query('UPDATE tenants SET is_active = false, lease_end_date = $1 WHERE id = $2', [
@@ -291,7 +292,7 @@ export async function recordPayment(
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  const tenant = await findAuthorizedTenant(parsed.data.tenantId, session.user.id);
+  const tenant = await findAuthorizedTenant(parsed.data.tenantId, ownerScope(session));
   if (!tenant) {
     return { error: { general: 'Tenant not found or access denied.' } };
   }
@@ -321,7 +322,7 @@ export async function recordPayment(
   redirect(`/properties/${tenant.property_id}/units/${tenant.unit_id}`);
 }
 
-async function findAuthorizedPayment(paymentId: string, userId: string) {
+async function findAuthorizedPayment(paymentId: string, scope: string | null) {
   return queryOne<{
     id: string;
     tenant_id: string;
@@ -334,8 +335,8 @@ async function findAuthorizedPayment(paymentId: string, userId: string) {
      JOIN tenants t ON t.id = rp.tenant_id
      JOIN units u ON u.id = t.unit_id
      JOIN properties p ON p.id = u.property_id
-     WHERE rp.id = $1 AND p.user_id = $2`,
-    [paymentId, userId],
+     WHERE rp.id = $1 AND ($2::text IS NULL OR p.user_id = $2)`,
+    [paymentId, scope],
   );
 }
 
@@ -360,7 +361,7 @@ export async function updatePayment(
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  const payment = await findAuthorizedPayment(parsed.data.id, session.user.id);
+  const payment = await findAuthorizedPayment(parsed.data.id, ownerScope(session));
   if (!payment) {
     return { error: { general: 'Payment not found or access denied.' } };
   }
@@ -396,7 +397,7 @@ export async function deletePayment(formData: FormData): Promise<void> {
   const id = formData.get('id');
   if (typeof id !== 'string') return;
 
-  const payment = await findAuthorizedPayment(id, session.user.id);
+  const payment = await findAuthorizedPayment(id, ownerScope(session));
   if (!payment) return;
   if (!payment.tenant_is_active) return;
 
@@ -414,13 +415,13 @@ export interface ExpenseActionResult {
   };
 }
 
-async function findAuthorizedExpense(expenseId: string, userId: string) {
+async function findAuthorizedExpense(expenseId: string, scope: string | null) {
   return queryOne<{ id: string; unit_id: string; property_id: string }>(
     `SELECT e.id, e.unit_id, e.property_id FROM expenses e
      JOIN units u ON u.id = e.unit_id
      JOIN properties p ON p.id = u.property_id
-     WHERE e.id = $1 AND p.user_id = $2`,
-    [expenseId, userId],
+     WHERE e.id = $1 AND ($2::text IS NULL OR p.user_id = $2)`,
+    [expenseId, scope],
   );
 }
 
@@ -442,7 +443,7 @@ export async function recordUnitExpense(
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  const unit = await findAuthorizedUnit(parsed.data.unitId, session.user.id);
+  const unit = await findAuthorizedUnit(parsed.data.unitId, ownerScope(session));
   if (!unit) {
     return { error: { general: 'Unit not found or access denied.' } };
   }
@@ -483,7 +484,7 @@ export async function updateUnitExpense(
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  const expense = await findAuthorizedExpense(parsed.data.id, session.user.id);
+  const expense = await findAuthorizedExpense(parsed.data.id, ownerScope(session));
   if (!expense) {
     return { error: { general: 'Expense not found or access denied.' } };
   }
@@ -509,7 +510,7 @@ export async function deleteUnitExpense(formData: FormData): Promise<void> {
   const id = formData.get('id');
   if (typeof id !== 'string') return;
 
-  const expense = await findAuthorizedExpense(id, session.user.id);
+  const expense = await findAuthorizedExpense(id, ownerScope(session));
   if (!expense) return;
 
   await query('DELETE FROM expenses WHERE id = $1', [expense.id]);

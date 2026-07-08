@@ -2,6 +2,7 @@ import { redirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
+import { isAdmin, ownerScope } from '@/lib/access';
 import { query, queryOne } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { PropertyActions } from './property-actions';
@@ -17,6 +18,7 @@ interface Property {
   id: string;
   name: string;
   address: string;
+  ownerName: string | null;
 }
 
 export default async function PropertyDetail({
@@ -33,8 +35,11 @@ export default async function PropertyDetail({
   const { page: rawPage } = await searchParams;
 
   const property = await queryOne<Property>(
-    'SELECT id, name, address FROM properties WHERE id = $1 AND user_id = $2',
-    [id, session.user.id],
+    `SELECT p.id, p.name, p.address, CASE WHEN $3 THEN owner.name END as "ownerName"
+     FROM properties p
+     JOIN "user" owner ON owner.id = p.user_id
+     WHERE p.id = $1 AND ($2::text IS NULL OR p.user_id = $2)`,
+    [id, ownerScope(session), isAdmin(session)],
   );
   if (!property) notFound();
 
@@ -70,6 +75,9 @@ export default async function PropertyDetail({
         <div>
           <h1 className='text-3xl font-semibold tracking-tight'>{property.name}</h1>
           <p className='text-muted-foreground'>{property.address}</p>
+          {property.ownerName && (
+            <p className='mt-1 text-sm text-muted-foreground'>Owned by {property.ownerName}</p>
+          )}
         </div>
         <PropertyActions propertyId={property.id} isAdmin={session.user.role === 'admin'} />
       </div>

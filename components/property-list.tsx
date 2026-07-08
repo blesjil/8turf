@@ -8,6 +8,7 @@ export interface PropertyListItem {
   name: string;
   address: string;
   unitCount: number;
+  ownerName?: string | null;
 }
 
 export function PropertyList({ properties }: { properties: PropertyListItem[] }) {
@@ -38,6 +39,11 @@ export function PropertyList({ properties }: { properties: PropertyListItem[] })
                 </Badge>
               </div>
               <CardDescription>{property.address}</CardDescription>
+              {property.ownerName && (
+                <Badge variant='outline' className='mt-1 w-fit'>
+                  {property.ownerName}
+                </Badge>
+              )}
             </CardHeader>
           </Card>
         </Link>

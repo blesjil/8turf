@@ -76,7 +76,18 @@
       "Bash(psql \"postgresql://postgres:postgres@127.0.0.1:54342/postgres\" -c 'select email, role from \"user\"')",
       "Bash(docker exec supabase_db_8turf psql -U postgres -d postgres -c ' *)",
       "Bash(bun run *)",
-      "Bash(curl -s -w ' [%{http_code}]\\\\n' -X POST http://localhost:3001/api/auth/sign-in/email -H 'Content-Type: application/json' -d '{\"email\":\"test@example.com\",\"password\":\"still-wrong\"}')"
+      "Bash(curl -s -w ' [%{http_code}]\\\\n' -X POST http://localhost:3001/api/auth/sign-in/email -H 'Content-Type: application/json' -d '{\"email\":\"test@example.com\",\"password\":\"still-wrong\"}')",
+      "Bash(psql postgresql://postgres:postgres@127.0.0.1:54342/postgres -c \"select count\\(*\\) from rent_payments\")",
+      "Bash(psql \"postgresql://postgres:postgres@127.0.0.1:54342/postgres\" -c 'TRUNCATE properties, units, tenants, rent_payments, expenses, login_attempts RESTART IDENTITY CASCADE;' -c 'SELECT \\(SELECT count\\(*\\) FROM \"user\"\\) AS users, \\(SELECT count\\(*\\) FROM properties\\) AS properties, \\(SELECT count\\(*\\) FROM tenants\\) AS tenants, \\(SELECT count\\(*\\) FROM rent_payments\\) AS payments, \\(SELECT count\\(*\\) FROM expenses\\) AS expenses;')",
+      "Bash(grep -n \"import\\\\|user_id = \\\\$1\" /Users/blesjil/Documents/Jill/apps/8turf/app/financial-report/page.tsx)",
+      "Bash(PGPASSWORD=postgres psql -h 127.0.0.1 -p 54342 -U postgres -d postgres -c 'SELECT id, email, name, role FROM \"user\"' -c 'SELECT id, user_id, name, archived_at FROM properties')",
+      "Bash(curl -s -H 'Cookie: better-auth.session_token=4c2861f4ad5548a0bea35b3305975faeadmin.-VQgqJwk8uvJLdY5d7wFyIUE7ApMoWkOvveViCTdOyY' http://localhost:3001/dashboard)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\\\\n\" -H 'Cookie: better-auth.session_token=4c2861f4ad5548a0bea35b3305975faeadmin.-VQgqJwk8uvJLdY5d7wFyIUE7ApMoWkOvveViCTdOyY' http://localhost:3001/dashboard)",
+      "Bash(curl -s http://localhost:3001/)",
+      "Bash(curl -s -H 'Cookie: better-auth.session_token=4c2861f4ad5548a0bea35b3305975faeadmin.-VQgqJwk8uvJLdY5d7wFyIUE7ApMoWkOvveViCTdOyY' http://localhost:3001/api/auth/get-session)",
+      "Bash(curl -s -H 'Cookie: better-auth.session_token=4c2861f4ad5548a0bea35b3305975faeadmin.%2BVQgqJwk8uvJLdY5d7wFyIUE7ApMoWkOvveViCTdOyY%3D' http://localhost:3001/dashboard)",
+      "Bash(curl -s -H 'Cookie: better-auth.session_token=4c2861f4ad5548a0bea35b3305975faeadmin.%2BVQgqJwk8uvJLdY5d7wFyIUE7ApMoWkOvveViCTdOyY%3D' http://localhost:3001/properties/0fcc2aef-7e72-4920-a3dc-688595776a13)",
+      "WebFetch(domain:www.better-auth.com)"
     ]
   },
   "hooks": {

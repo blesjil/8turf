@@ -68,12 +68,19 @@ Login stays self-service; account creation does not:
 - The very first admin account is created outside the web UI, via a one-time seed script: `bun run scripts/create-admin.ts <email> <name>` — run once during setup
 - `/admin/users` is admin-only: unauthenticated visitors are redirected to `/authenticate`; authenticated non-admins get a 404 (the existence of the admin surface isn't revealed to regular users)
 
+**Admin as super-user over all data:**
+- An admin can view and edit **every** user's properties, units, tenants, payments, and expenses — not just their own. Regular users remain strictly scoped to their own data
+- The admin's `/dashboard` merges all users' properties into one list, each card labeled with the owner's name; the property detail page shows "Owned by <name>" for admins
+- Payments (`/payments`) and the Financial Report aggregate across all users for admins
+- When an admin creates a property, the new-property form shows an owner dropdown (all users, defaulting to the admin) so the property can be created on behalf of any user; the server only honors `ownerId` from admins and verifies the user exists
+- Implementation: `lib/access.ts` exposes `ownerScope(session)` which returns `null` for admins and `session.user.id` otherwise; every ownership predicate is written as `($n::text IS NULL OR p.user_id = $n)` so a `null` scope disables the filter (see §11)
+
 There is no unauthenticated/public area for rental data — the previous public note-sharing concept is removed entirely.
 
 ### 3.2 Properties (Authenticated)
 
 - **Create:** name + address
-- **List:** all non-archived properties owned by the current user, with unit count
+- **List:** all non-archived properties owned by the current user, with unit count (admins see every user's properties, labeled by owner)
 - **View:** property detail — list of its units (non-archived), add-unit entry point
 - **Update:** name/address
 - **Archive:** hide from default views without deleting data
@@ -119,7 +126,7 @@ There is no unauthenticated/public area for rental data — the previous public 
 - Property/unit/payment list and detail views should load under ~300 ms for typical data sizes
 
 **Security**
-- Every property, unit, tenant, and payment operation is scoped to the authenticated user's properties — see §11
+- Every property, unit, tenant, and payment operation is scoped to the authenticated user's properties; admins are exempt and operate on all users' data — see §11
 - No public/anonymous routes exist for rental data
 
 **Reliability**
@@ -421,7 +428,7 @@ Removed entirely: `rich-text-editor.tsx`, `share-toggle.tsx`, `tiptap-renderer.t
 
 **Authorization — the key architectural risk in this design**
 
-Only `properties` carries a direct `user_id` column. `units`, `tenants`, and `rent_payments` do **not** — every read/write on them must join up the ownership chain to confirm the row belongs to a property owned by `session.user.id`:
+Only `properties` carries a direct `user_id` column. `units`, `tenants`, and `rent_payments` do **not** — every read/write on them must join up the ownership chain to confirm the row belongs to a property owned by the requesting user. Admins bypass the ownership filter entirely: queries take `ownerScope(session)` from `lib/access.ts` (`null` for admins, the user id otherwise) and phrase the predicate as `($n::text IS NULL OR p.user_id = $n)`:
 
 ```sql
 -- units

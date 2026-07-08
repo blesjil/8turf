@@ -1,6 +1,7 @@
 import { redirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
+import { ownerScope } from '@/lib/access';
 import { queryOne } from '@/lib/db';
 import { EditUnitForm } from './edit-unit-form';
 
@@ -24,8 +25,8 @@ export default async function EditUnitPage({ params }: { params: Params }) {
     `SELECT u.id, u.unit_label, u.bedrooms, u.bathrooms, u.rent_amount
      FROM units u
      JOIN properties p ON p.id = u.property_id
-     WHERE u.id = $1 AND u.property_id = $2 AND p.user_id = $3`,
-    [unitId, id, session.user.id],
+     WHERE u.id = $1 AND u.property_id = $2 AND ($3::text IS NULL OR p.user_id = $3)`,
+    [unitId, id, ownerScope(session)],
   );
   if (!unit) notFound();
 

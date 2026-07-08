@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
+import { isAdmin, ownerScope } from '@/lib/access';
 import { execute, query, queryOne } from '@/lib/db';
 import {
   createPropertySchema,
@@ -25,15 +26,28 @@ export async function createProperty(
   const parsed = createPropertySchema.safeParse({
     name: formData.get('name'),
     address: formData.get('address'),
+    ownerId: formData.get('ownerId') ?? undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors };
   }
 
+  // Only admins may assign another user as owner, and only to an existing user.
+  let ownerId = session.user.id;
+  if (parsed.data.ownerId && parsed.data.ownerId !== session.user.id && isAdmin(session)) {
+    const owner = await queryOne<{ id: string }>('SELECT id FROM "user" WHERE id = $1', [
+      parsed.data.ownerId,
+    ]);
+    if (!owner) {
+      return { error: { general: 'Selected owner does not exist.' } };
+    }
+    ownerId = owner.id;
+  }
+
   const id = crypto.randomUUID();
   await query('INSERT INTO properties (id, user_id, name, address) VALUES ($1, $2, $3, $4)', [
     id,
-    session.user.id,
+    ownerId,
     parsed.data.name,
     parsed.data.address,
   ]);
@@ -58,8 +72,8 @@ export async function updateProperty(
   }
 
   const changes = await execute(
-    'UPDATE properties SET name = $1, address = $2 WHERE id = $3 AND user_id = $4',
-    [parsed.data.name, parsed.data.address, parsed.data.id, session.user.id],
+    'UPDATE properties SET name = $1, address = $2 WHERE id = $3 AND ($4::text IS NULL OR user_id = $4)',
+    [parsed.data.name, parsed.data.address, parsed.data.id, ownerScope(session)],
   );
   if (changes === 0) {
     return { error: { general: 'Property not found or access denied.' } };
@@ -76,10 +90,7 @@ export async function archiveProperty(formData: FormData): Promise<void> {
   const id = formData.get('id');
   if (typeof id !== 'string') return;
 
-  await query('UPDATE properties SET archived_at = now() WHERE id = $1 AND user_id = $2', [
-    id,
-    session.user.id,
-  ]);
+  await query('UPDATE properties SET archived_at = now() WHERE id = $1', [id]);
 
   redirect('/dashboard');
 }
@@ -92,10 +103,7 @@ export async function unarchiveProperty(formData: FormData): Promise<void> {
   const id = formData.get('id');
   if (typeof id !== 'string') return;
 
-  await query('UPDATE properties SET archived_at = NULL WHERE id = $1 AND user_id = $2', [
-    id,
-    session.user.id,
-  ]);
+  await query('UPDATE properties SET archived_at = NULL WHERE id = $1', [id]);
 
   redirect('/properties/archived');
 }
@@ -117,8 +125,8 @@ export async function deleteProperty(
   }
 
   const property = await queryOne<{ id: string }>(
-    'SELECT id FROM properties WHERE id = $1 AND user_id = $2',
-    [id, session.user.id],
+    'SELECT id FROM properties WHERE id = $1 AND ($2::text IS NULL OR user_id = $2)',
+    [id, ownerScope(session)],
   );
   if (!property) {
     return { error: 'Property not found or access denied.' };
@@ -132,7 +140,7 @@ export async function deleteProperty(
     return { error: 'This property still has units — archive it instead of deleting.' };
   }
 
-  await query('DELETE FROM properties WHERE id = $1 AND user_id = $2', [id, session.user.id]);
+  await query('DELETE FROM properties WHERE id = $1', [id]);
   redirect('/dashboard');
 }
 
@@ -146,12 +154,12 @@ export interface ExpenseActionResult {
   };
 }
 
-async function findAuthorizedPropertyExpense(expenseId: string, userId: string) {
+async function findAuthorizedPropertyExpense(expenseId: string, scope: string | null) {
   return queryOne<{ id: string; property_id: string }>(
     `SELECT e.id, e.property_id FROM expenses e
      JOIN properties p ON p.id = e.property_id
-     WHERE e.id = $1 AND e.unit_id IS NULL AND p.user_id = $2`,
-    [expenseId, userId],
+     WHERE e.id = $1 AND e.unit_id IS NULL AND ($2::text IS NULL OR p.user_id = $2)`,
+    [expenseId, scope],
   );
 }
 
@@ -174,8 +182,8 @@ export async function recordPropertyExpense(
   }
 
   const property = await queryOne<{ id: string }>(
-    'SELECT id FROM properties WHERE id = $1 AND user_id = $2',
-    [parsed.data.propertyId, session.user.id],
+    'SELECT id FROM properties WHERE id = $1 AND ($2::text IS NULL OR user_id = $2)',
+    [parsed.data.propertyId, ownerScope(session)],
   );
   if (!property) {
     return { error: { general: 'Property not found or access denied.' } };
@@ -216,7 +224,7 @@ export async function updatePropertyExpense(
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  const expense = await findAuthorizedPropertyExpense(parsed.data.id, session.user.id);
+  const expense = await findAuthorizedPropertyExpense(parsed.data.id, ownerScope(session));
   if (!expense) {
     return { error: { general: 'Expense not found or access denied.' } };
   }
@@ -242,7 +250,7 @@ export async function deletePropertyExpense(formData: FormData): Promise<void> {
   const id = formData.get('id');
   if (typeof id !== 'string') return;
 
-  const expense = await findAuthorizedPropertyExpense(id, session.user.id);
+  const expense = await findAuthorizedPropertyExpense(id, ownerScope(session));
   if (!expense) return;
 
   await query('DELETE FROM expenses WHERE id = $1', [expense.id]);

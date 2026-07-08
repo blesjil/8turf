@@ -22,6 +22,7 @@ export const resetUserPasswordSchema = z.object({
 export const createPropertySchema = z.object({
   name: z.string().min(1, 'Name is required').max(200, 'Name is too long'),
   address: z.string().min(1, 'Address is required').max(500, 'Address is too long'),
+  ownerId: z.string().optional(),
 });
 
 export const updatePropertySchema = createPropertySchema.extend({

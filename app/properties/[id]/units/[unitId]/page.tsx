@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
+import { ownerScope } from '@/lib/access';
 import { query, queryOne } from '@/lib/db';
 import { formatCents } from '@/lib/money';
 import { formatDate, formatPeriod } from '@/lib/format-date';
@@ -40,8 +41,8 @@ export default async function UnitDetail({ params }: { params: Params }) {
     `SELECT u.id, u.property_id, u.unit_label, u.bedrooms, u.bathrooms, u.rent_amount
      FROM units u
      JOIN properties p ON p.id = u.property_id
-     WHERE u.id = $1 AND u.property_id = $2 AND p.user_id = $3`,
-    [unitId, id, session.user.id],
+     WHERE u.id = $1 AND u.property_id = $2 AND ($3::text IS NULL OR p.user_id = $3)`,
+    [unitId, id, ownerScope(session)],
   );
   if (!unit) notFound();
 

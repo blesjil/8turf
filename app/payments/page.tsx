@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { endOfMonth, format, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
+import { ownerScope } from '@/lib/access';
 import { query } from '@/lib/db';
 import { formatCents } from '@/lib/money';
 import {
@@ -64,9 +65,9 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
      FROM units u
      LEFT JOIN tenants t ON t.unit_id = u.id
      JOIN properties p ON p.id = u.property_id
-     WHERE p.user_id = $1 AND p.archived_at IS NULL AND u.archived_at IS NULL
+     WHERE ($1::text IS NULL OR p.user_id = $1) AND p.archived_at IS NULL AND u.archived_at IS NULL
      ORDER BY p.name, u.unit_label`,
-    [session.user.id],
+    [ownerScope(session)],
   );
 
   const isActive = (r: Row) =>

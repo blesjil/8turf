@@ -1,6 +1,7 @@
 import { redirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
+import { ownerScope } from '@/lib/access';
 import { queryOne } from '@/lib/db';
 import { EditPropertyForm } from './edit-property-form';
 
@@ -13,8 +14,8 @@ export default async function EditPropertyPage({ params }: { params: Params }) {
   const { id } = await params;
 
   const property = await queryOne<{ id: string; name: string; address: string }>(
-    'SELECT id, name, address FROM properties WHERE id = $1 AND user_id = $2',
-    [id, session.user.id],
+    'SELECT id, name, address FROM properties WHERE id = $1 AND ($2::text IS NULL OR user_id = $2)',
+    [id, ownerScope(session)],
   );
   if (!property) notFound();
 

@@ -15,6 +15,7 @@ interface ArchivedProperty {
   name: string;
   address: string;
   archived_at: string;
+  ownerName: string;
 }
 
 export default async function ArchivedPropertiesPage({
@@ -28,11 +29,13 @@ export default async function ArchivedPropertiesPage({
 
   const { page: rawPage } = await searchParams;
 
+  // Admin-only page: show archived properties across all users.
   const properties = await query<ArchivedProperty>(
-    `SELECT id, name, address, archived_at FROM properties
-     WHERE user_id = $1 AND archived_at IS NOT NULL
-     ORDER BY archived_at DESC`,
-    [session.user.id],
+    `SELECT p.id, p.name, p.address, p.archived_at, owner.name as "ownerName"
+     FROM properties p
+     JOIN "user" owner ON owner.id = p.user_id
+     WHERE p.archived_at IS NOT NULL
+     ORDER BY p.archived_at DESC`,
   );
 
   const totalPages = Math.ceil(properties.length / PAGE_SIZE);
@@ -66,7 +69,7 @@ export default async function ArchivedPropertiesPage({
                     <h2 className='font-semibold'>{property.name}</h2>
                     <p className='text-sm text-muted-foreground'>{property.address}</p>
                     <p className='mt-1 text-xs text-muted-foreground'>
-                      Archived {property.archived_at}
+                      Archived {property.archived_at} · {property.ownerName}
                     </p>
                   </div>
                   <form action={unarchiveProperty}>

@@ -1,6 +1,7 @@
 import { redirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
+import { ownerScope } from '@/lib/access';
 import { queryOne } from '@/lib/db';
 import { NewUnitForm } from './new-unit-form';
 
@@ -13,8 +14,8 @@ export default async function NewUnitPage({ params }: { params: Params }) {
   const { id } = await params;
 
   const property = await queryOne<{ id: string }>(
-    'SELECT id FROM properties WHERE id = $1 AND user_id = $2',
-    [id, session.user.id],
+    'SELECT id FROM properties WHERE id = $1 AND ($2::text IS NULL OR user_id = $2)',
+    [id, ownerScope(session)],
   );
   if (!property) notFound();
 
