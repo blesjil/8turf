@@ -45,3 +45,4 @@ test_results
 # playwright mcp session logs
 /.playwright-mcp/
 cookies.txt
+!.env.example

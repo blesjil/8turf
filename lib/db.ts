@@ -12,7 +12,16 @@ const connectionString =
 // Survive Next.js dev-server module reloads with a single pool
 const globalForDb = globalThis as unknown as { pgPool?: Pool };
 
-export const pool = globalForDb.pgPool ?? new Pool({ connectionString });
+// Hosted Postgres (Supabase) requires TLS but its pooler cert isn't in the default
+// CA chain; local Supabase speaks plain TCP.
+const isLocalDb = /127\.0\.0\.1|localhost/.test(connectionString);
+
+export const pool =
+  globalForDb.pgPool ??
+  new Pool({
+    connectionString,
+    ssl: isLocalDb ? undefined : { rejectUnauthorized: false },
+  });
 globalForDb.pgPool = pool;
 
 export async function query<T>(text: string, params: unknown[] = []): Promise<T[]> {
