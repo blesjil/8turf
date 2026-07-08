@@ -62,9 +62,15 @@ export function ResetPasswordButton({ userId }: { userId: string }) {
       </Dialog>
 
       {state.error && <span className='text-sm text-destructive'>{state.error}</span>}
-      {state.success && state.tempPassword && (
+      {state.success && state.emailed && (
         <Alert className='w-auto'>
-          <AlertTitle>New password (shown once)</AlertTitle>
+          <AlertTitle>Password reset</AlertTitle>
+          <AlertDescription>The new password was emailed to the user.</AlertDescription>
+        </Alert>
+      )}
+      {state.success && !state.emailed && state.tempPassword && (
+        <Alert className='w-auto'>
+          <AlertTitle>New password (shown once — email could not be sent)</AlertTitle>
           <AlertDescription>
             <code className='rounded bg-muted px-1.5 py-0.5 font-mono'>{state.tempPassword}</code>
           </AlertDescription>

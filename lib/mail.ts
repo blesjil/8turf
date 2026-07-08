@@ -160,6 +160,71 @@ export async function sendPaymentReminder(
   return true;
 }
 
+export interface TemporaryPasswordDetails {
+  name: string;
+  password: string;
+  isNewAccount: boolean;
+}
+
+// Returns false when the mailer isn't configured, so callers can fall back
+// to showing the password on screen instead of claiming it was emailed.
+export async function sendTemporaryPassword(
+  to: string,
+  details: TemporaryPasswordDetails,
+): Promise<boolean> {
+  const transporter = getTransporter();
+  if (!transporter) {
+    console.warn('GMAIL_USER/GMAIL_APP_PASSWORD not set — skipping temporary password email');
+    return false;
+  }
+
+  const signInUrl = process.env.BETTER_AUTH_URL;
+  const intro = details.isNewAccount
+    ? 'An account has been created for you on 8Turf Apartments.'
+    : 'Your 8Turf Apartments password has been reset.';
+
+  const text = [
+    `Hi ${details.name},`,
+    '',
+    intro,
+    '',
+    `Email: ${to}`,
+    `Temporary password: ${details.password}`,
+    '',
+    ...(signInUrl
+      ? [`Sign in at ${signInUrl} and change your password after logging in.`]
+      : ['Please change your password after logging in.']),
+    '',
+    'Thank you!',
+  ].join('\n');
+
+  const html = `
+    <p>Hi ${escapeHtml(details.name)},</p>
+    <p>${intro}</p>
+    <table cellpadding="4" style="border-collapse:collapse">
+      <tr><td style="color:#555;padding-right:12px">Email</td><td><strong>${escapeHtml(to)}</strong></td></tr>
+      <tr><td style="color:#555;padding-right:12px">Temporary password</td><td><strong style="font-family:monospace">${escapeHtml(details.password)}</strong></td></tr>
+    </table>
+    <p>${
+      signInUrl
+        ? `<a href="${escapeHtml(signInUrl)}">Sign in</a> and change your password after logging in.`
+        : 'Please change your password after logging in.'
+    }</p>
+    <p>Thank you!</p>
+  `;
+
+  await transporter.sendMail({
+    from: `"8Turf Apartments" <${gmailUser}>`,
+    to,
+    subject: details.isNewAccount
+      ? 'Your 8Turf Apartments account'
+      : 'Your 8Turf Apartments password was reset',
+    text,
+    html,
+  });
+  return true;
+}
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll('&', '&amp;')

@@ -49,9 +49,15 @@ export function CreateUserForm() {
         </form>
       </Card>
 
-      {state.success && state.tempPassword && (
+      {state.success && state.emailed && (
         <Alert>
           <AlertTitle>User created</AlertTitle>
+          <AlertDescription>The temporary password was emailed to the new user.</AlertDescription>
+        </Alert>
+      )}
+      {state.success && !state.emailed && state.tempPassword && (
+        <Alert>
+          <AlertTitle>User created — email could not be sent</AlertTitle>
           <AlertDescription>
             Temporary password (shown once — relay it to the new user):{' '}
             <code className='rounded bg-muted px-1.5 py-0.5 font-mono'>{state.tempPassword}</code>

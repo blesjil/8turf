@@ -7,6 +7,8 @@ import { APIError } from 'better-auth/api';
 import { auth } from '@/lib/auth';
 import { createUserSchema, promoteToAdminSchema, resetUserPasswordSchema } from '@/lib/validation';
 import { generateTempPassword } from '@/lib/generate-password';
+import { query } from '@/lib/db';
+import { sendTemporaryPassword } from '@/lib/mail';
 
 async function requireAdminSession() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -22,6 +24,7 @@ async function requireAdminSession() {
 export interface CreateUserResult {
   success: boolean;
   tempPassword?: string;
+  emailed?: boolean;
   error?: { email?: string[]; name?: string[]; general?: string };
 }
 
@@ -57,13 +60,25 @@ export async function createUser(
     return { success: false, error: { general: message } };
   }
 
+  let emailed = false;
+  try {
+    emailed = await sendTemporaryPassword(parsed.data.email, {
+      name: parsed.data.name,
+      password: tempPassword,
+      isNewAccount: true,
+    });
+  } catch (err) {
+    console.error('Failed to email temporary password:', err);
+  }
+
   revalidatePath('/admin/users');
-  return { success: true, tempPassword };
+  return { success: true, tempPassword, emailed };
 }
 
 export interface ResetPasswordResult {
   success: boolean;
   tempPassword?: string;
+  emailed?: boolean;
   error?: string;
 }
 
@@ -98,7 +113,24 @@ export async function resetUserPassword(
     };
   }
 
-  return { success: true, tempPassword: newPassword };
+  let emailed = false;
+  try {
+    const [user] = await query<{ email: string; name: string }>(
+      'SELECT email, name FROM "user" WHERE id = $1',
+      [parsed.data.userId],
+    );
+    if (user) {
+      emailed = await sendTemporaryPassword(user.email, {
+        name: user.name,
+        password: newPassword,
+        isNewAccount: false,
+      });
+    }
+  } catch (err) {
+    console.error('Failed to email new password:', err);
+  }
+
+  return { success: true, tempPassword: newPassword, emailed };
 }
 
 export interface PromoteResult {
