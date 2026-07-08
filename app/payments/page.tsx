@@ -1,19 +1,19 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import { endOfMonth, format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { ownerScope } from '@/lib/access';
 import { query } from '@/lib/db';
 import { formatCents } from '@/lib/money';
-import {
-  computePaymentStatus,
-  creditForPeriod,
-  isLeaseActiveForPeriod,
-} from '@/lib/payment-status';
+import { formatPeriod } from '@/lib/format-date';
+import { computePaymentStatus } from '@/lib/payment-status';
+import { getPaymentsOverview } from '@/lib/payments-overview';
 import { PaymentStatusBadge } from '@/components/payment-status-badge';
 import { MonthPicker } from '@/components/month-picker';
 import { PaymentsTabs } from '@/components/payments-tabs';
+import { SendReminderButton } from '@/components/send-reminder-button';
+import { RemindAllButton } from '@/components/remind-all-button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -26,18 +26,6 @@ import {
 import { PAGE_SIZE, PaginationNav, clampPage, paginate } from '@/components/ui/pagination';
 
 type SearchParams = Promise<{ month?: string; page?: string }>;
-
-interface Row {
-  propertyId: string;
-  propertyName: string;
-  unitId: string;
-  unitLabel: string;
-  tenantId: string | null;
-  tenantName: string | null;
-  rentAmount: number | null;
-  leaseStartDate: string | null;
-  leaseEndDate: string | null;
-}
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -57,76 +45,29 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
   const { month, page: rawPage } = await searchParams;
   const period = month && /^\d{4}-\d{2}$/.test(month) ? month : format(new Date(), 'yyyy-MM');
 
-  const rows = await query<Row>(
-    `SELECT p.id as "propertyId", p.name as "propertyName",
-            u.id as "unitId", u.unit_label as "unitLabel",
-            t.id as "tenantId", t.name as "tenantName",
-            t.rent_amount as "rentAmount", t.lease_start_date as "leaseStartDate", t.lease_end_date as "leaseEndDate"
-     FROM units u
-     LEFT JOIN tenants t ON t.unit_id = u.id
-     JOIN properties p ON p.id = u.property_id
-     WHERE ($1::text IS NULL OR p.user_id = $1) AND p.archived_at IS NULL AND u.archived_at IS NULL
-     ORDER BY p.name, u.unit_label`,
-    [ownerScope(session)],
+  const { activeRows, inactiveRows, paidByTenant } = await getPaymentsOverview(
+    period,
+    ownerScope(session),
   );
-
-  const isActive = (r: Row) =>
-    r.tenantId !== null &&
-    r.leaseStartDate !== null &&
-    isLeaseActiveForPeriod(r.leaseStartDate, r.leaseEndDate, period);
-
-  // The tenants join yields one row per tenant ever assigned to a unit. Keep
-  // the rows whose lease covers the selected month; collapse the rest into a
-  // single vacant row per unit so past tenants don't show as duplicates.
-  const rowsByUnit = new Map<string, Row[]>();
-  for (const r of rows) {
-    const unitRows = rowsByUnit.get(r.unitId);
-    if (unitRows) unitRows.push(r);
-    else rowsByUnit.set(r.unitId, [r]);
-  }
-  const activeRows: Row[] = [];
-  const inactiveRows: Row[] = [];
-  for (const unitRows of rowsByUnit.values()) {
-    const covering = unitRows.filter(isActive);
-    if (covering.length > 0) {
-      activeRows.push(...covering);
-    } else {
-      inactiveRows.push({
-        ...unitRows[0],
-        tenantId: null,
-        tenantName: null,
-        rentAmount: null,
-        leaseStartDate: null,
-        leaseEndDate: null,
-      });
-    }
-  }
   const allRows = [...activeRows, ...inactiveRows];
 
-  const paidByTenant = new Map<string, number>();
+  const lastRemindedByTenant = new Map<string, string>();
   if (activeRows.length > 0) {
-    const tenantIds = activeRows.map((r) => r.tenantId!);
-    // Multi-month payments credit each covered month a share of the amount, so
-    // fetch every range overlapping this month and let creditForPeriod decide
-    // how much (possibly 0) lands in it.
-    const monthStart = `${period}-01`;
-    const monthEnd = format(endOfMonth(parseISO(monthStart)), 'yyyy-MM-dd');
-    const payments = await query<{
-      tenant_id: string;
-      amount: number;
-      period_start: string;
-      period_end: string;
-    }>(
-      `SELECT tenant_id, amount, period_start, period_end FROM rent_payments
-       WHERE tenant_id = ANY($1) AND payment_type IN ('rental', 'advance')
-         AND period_start <= $2 AND period_end >= $3`,
-      [tenantIds, monthEnd, monthStart],
+    const reminders = await query<{ tenant_id: string; sent_at: Date }>(
+      `SELECT DISTINCT ON (tenant_id) tenant_id, sent_at FROM payment_reminders
+       WHERE period = $1 AND tenant_id = ANY($2)
+       ORDER BY tenant_id, sent_at DESC`,
+      [period, activeRows.map((r) => r.tenantId!)],
     );
-    for (const p of payments) {
-      const credit = creditForPeriod(p, period);
-      if (credit > 0) paidByTenant.set(p.tenant_id, (paidByTenant.get(p.tenant_id) ?? 0) + credit);
+    for (const r of reminders) {
+      lastRemindedByTenant.set(r.tenant_id, format(r.sent_at, 'MMM d, yyyy'));
     }
   }
+
+  const unpaidRows = activeRows.filter(
+    (r) => (paidByTenant.get(r.tenantId!) ?? 0) < (r.rentAmount ?? 0),
+  );
+  const unpaidWithEmail = unpaidRows.filter((r) => r.tenantEmail).length;
 
   const totalDue = activeRows.reduce((sum, r) => sum + (r.rentAmount ?? 0), 0);
   const totalCollected = activeRows.reduce(
@@ -144,7 +85,15 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
 
       <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>
         <h1 className='text-2xl font-semibold tracking-tight'>Payments Overview</h1>
-        <MonthPicker value={period} />
+        <div className='flex flex-wrap items-center gap-2'>
+          <MonthPicker value={period} />
+          <RemindAllButton
+            period={period}
+            monthLabel={formatPeriod(period)}
+            unpaidWithEmail={unpaidWithEmail}
+            unpaidWithoutEmail={unpaidRows.length - unpaidWithEmail}
+          />
+        </div>
       </div>
 
       {allRows.length === 0 ? (
@@ -173,11 +122,15 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                     <TableHead className='hidden text-right sm:table-cell'>Rent</TableHead>
                     <TableHead className='text-right'>Paid</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className='text-right'>
+                      <span className='sr-only'>Reminder</span>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginate(allRows, page).map((r) => {
-                    const active = isActive(r);
+                    // Inactive/vacant rows come back with tenant fields nulled.
+                    const active = r.tenantId !== null;
                     const paid = active ? (paidByTenant.get(r.tenantId!) ?? 0) : 0;
                     const status = active
                       ? computePaymentStatus(paid, r.rentAmount ?? 0)
@@ -204,6 +157,19 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                         </TableCell>
                         <TableCell>
                           <PaymentStatusBadge status={status} />
+                        </TableCell>
+                        <TableCell className='text-right'>
+                          {active &&
+                            status !== 'paid' &&
+                            (r.tenantEmail ? (
+                              <SendReminderButton
+                                tenantId={r.tenantId!}
+                                period={period}
+                                lastRemindedAt={lastRemindedByTenant.get(r.tenantId!) ?? null}
+                              />
+                            ) : (
+                              <span className='text-xs text-muted-foreground'>No email</span>
+                            ))}
                         </TableCell>
                       </TableRow>
                     );

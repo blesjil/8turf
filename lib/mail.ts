@@ -93,6 +93,73 @@ export async function sendPaymentReceipt(
   });
 }
 
+export interface PaymentReminderDetails {
+  tenantName: string;
+  propertyName: string;
+  unitLabel: string;
+  monthLabel: string; // e.g. "July 2026"
+  rentAmount: number; // integer cents
+  amountPaid: number; // integer cents
+  amountDue: number; // integer cents
+}
+
+// Returns false when the mailer isn't configured, so callers can surface
+// "email not configured" instead of claiming the reminder was sent.
+export async function sendPaymentReminder(
+  to: string,
+  details: PaymentReminderDetails,
+): Promise<boolean> {
+  const transporter = getTransporter();
+  if (!transporter) {
+    console.warn('GMAIL_USER/GMAIL_APP_PASSWORD not set — skipping payment reminder email');
+    return false;
+  }
+
+  const rows: [string, string][] = [
+    ['Property', `${details.propertyName} — Unit ${details.unitLabel}`],
+    ['Month', details.monthLabel],
+    ['Monthly rent', formatCents(details.rentAmount)],
+  ];
+  if (details.amountPaid > 0) rows.push(['Paid so far', formatCents(details.amountPaid)]);
+  rows.push(['Balance due', formatCents(details.amountDue)]);
+
+  const text = [
+    `Hi ${details.tenantName},`,
+    '',
+    `This is a friendly reminder that your rent for ${details.monthLabel} has an outstanding balance:`,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    'If you have already settled this, kindly disregard this message.',
+    '',
+    'Thank you!',
+  ].join('\n');
+
+  const html = `
+    <p>Hi ${escapeHtml(details.tenantName)},</p>
+    <p>This is a friendly reminder that your rent for ${escapeHtml(details.monthLabel)} has an outstanding balance:</p>
+    <table cellpadding="4" style="border-collapse:collapse">
+      ${rows
+        .map(
+          ([label, value]) =>
+            `<tr><td style="color:#555;padding-right:12px">${escapeHtml(label)}</td><td><strong>${escapeHtml(value)}</strong></td></tr>`,
+        )
+        .join('')}
+    </table>
+    <p>If you have already settled this, kindly disregard this message.</p>
+    <p>Thank you!</p>
+  `;
+
+  await transporter.sendMail({
+    from: `"8Turf Apartments" <${gmailUser}>`,
+    to,
+    subject: `Rent reminder — ${formatCents(details.amountDue)} due for ${details.monthLabel}`,
+    text,
+    html,
+  });
+  return true;
+}
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll('&', '&amp;')
