@@ -1,10 +1,11 @@
 import { redirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
-import { format } from 'date-fns';
+import { endOfMonth, format, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { formatCents } from '@/lib/money';
+import { creditsByPeriod } from '@/lib/payment-status';
 import { PaymentsTabs } from '@/components/payments-tabs';
 import { FinancialPeriodPicker } from '@/components/financial-period-picker';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -72,17 +73,31 @@ export default async function FinancialReportPage({
 
   if (unitIds.length > 0) {
     const periodValue = mode === 'month' ? month : year;
-    const periodPredicate = mode === 'month' ? 'period = $2' : 'substr(period, 1, 4) = $2';
     const expenseDatePredicate =
       mode === 'month' ? 'substr(expense_date, 1, 7) = $2' : 'substr(expense_date, 1, 4) = $2';
 
-    const incomeTotals = await query<{ unit_id: string; total: number }>(
-      `SELECT unit_id, SUM(amount)::int as total FROM rent_payments
-       WHERE unit_id = ANY($1) AND ${periodPredicate}
-       GROUP BY unit_id`,
-      [unitIds, periodValue],
+    // Multi-month payments credit each covered month a share of the amount, so
+    // fetch every range overlapping the reporting window and keep the shares
+    // whose month falls inside it.
+    const windowStart = mode === 'month' ? `${month}-01` : `${year}-01-01`;
+    const windowEnd =
+      mode === 'month' ? format(endOfMonth(parseISO(windowStart)), 'yyyy-MM-dd') : `${year}-12-31`;
+    const payments = await query<{
+      unit_id: string;
+      amount: number;
+      period_start: string;
+      period_end: string;
+    }>(
+      `SELECT unit_id, amount, period_start, period_end FROM rent_payments
+       WHERE unit_id = ANY($1) AND period_start <= $2 AND period_end >= $3`,
+      [unitIds, windowEnd, windowStart],
     );
-    for (const t of incomeTotals) incomeByUnit.set(t.unit_id, t.total);
+    for (const p of payments) {
+      for (const [creditPeriod, credit] of creditsByPeriod(p)) {
+        const inWindow = mode === 'month' ? creditPeriod === month : creditPeriod.startsWith(year);
+        if (inWindow) incomeByUnit.set(p.unit_id, (incomeByUnit.get(p.unit_id) ?? 0) + credit);
+      }
+    }
 
     const unitExpenseTotals = await query<{ unit_id: string; total: number }>(
       `SELECT unit_id, SUM(amount)::int as total FROM expenses

@@ -13,6 +13,7 @@ import { PaymentStatusBadge } from '@/components/payment-status-badge';
 import {
   computePaymentStatus,
   countsTowardRent,
+  creditForPeriod,
   isLeaseActiveForPeriod,
 } from '@/lib/payment-status';
 import { ExpenseList, type Expense } from '@/components/expense-list';
@@ -78,8 +79,8 @@ export default async function UnitDetail({ params }: { params: Params }) {
   }
 
   const currentPeriodTotal = ((activeTenant && paymentsByTenant.get(activeTenant.id)) || [])
-    .filter((p) => p.period === currentPeriod && countsTowardRent(p.payment_type))
-    .reduce((sum, p) => sum + p.amount, 0);
+    .filter((p) => countsTowardRent(p.payment_type))
+    .reduce((sum, p) => sum + creditForPeriod(p, currentPeriod), 0);
 
   const currentStatus =
     activeTenant &&

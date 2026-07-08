@@ -1,11 +1,15 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import { format } from 'date-fns';
+import { endOfMonth, format, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { formatCents } from '@/lib/money';
-import { computePaymentStatus, isLeaseActiveForPeriod } from '@/lib/payment-status';
+import {
+  computePaymentStatus,
+  creditForPeriod,
+  isLeaseActiveForPeriod,
+} from '@/lib/payment-status';
 import { PaymentStatusBadge } from '@/components/payment-status-badge';
 import { MonthPicker } from '@/components/month-picker';
 import { PaymentsTabs } from '@/components/payments-tabs';
@@ -101,14 +105,26 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
   const paidByTenant = new Map<string, number>();
   if (activeRows.length > 0) {
     const tenantIds = activeRows.map((r) => r.tenantId!);
-    const totals = await query<{ tenant_id: string; total: number }>(
-      `SELECT tenant_id, SUM(amount)::int as total FROM rent_payments
-       WHERE period = $1 AND tenant_id = ANY($2)
-         AND payment_type IN ('rental', 'advance')
-       GROUP BY tenant_id`,
-      [period, tenantIds],
+    // Multi-month payments credit each covered month a share of the amount, so
+    // fetch every range overlapping this month and let creditForPeriod decide
+    // how much (possibly 0) lands in it.
+    const monthStart = `${period}-01`;
+    const monthEnd = format(endOfMonth(parseISO(monthStart)), 'yyyy-MM-dd');
+    const payments = await query<{
+      tenant_id: string;
+      amount: number;
+      period_start: string;
+      period_end: string;
+    }>(
+      `SELECT tenant_id, amount, period_start, period_end FROM rent_payments
+       WHERE tenant_id = ANY($1) AND payment_type IN ('rental', 'advance')
+         AND period_start <= $2 AND period_end >= $3`,
+      [tenantIds, monthEnd, monthStart],
     );
-    for (const t of totals) paidByTenant.set(t.tenant_id, t.total);
+    for (const p of payments) {
+      const credit = creditForPeriod(p, period);
+      if (credit > 0) paidByTenant.set(p.tenant_id, (paidByTenant.get(p.tenant_id) ?? 0) + credit);
+    }
   }
 
   const totalDue = activeRows.reduce((sum, r) => sum + (r.rentAmount ?? 0), 0);
