@@ -5,6 +5,7 @@ import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { ownerScope } from '@/lib/access';
 import { query, queryOne } from '@/lib/db';
+import { sendPaymentReceipt } from '@/lib/mail';
 import {
   updateUnitSchema,
   assignTenantSchema,
@@ -186,8 +187,18 @@ export async function assignTenant(
 }
 
 async function findAuthorizedTenant(tenantId: string, scope: string | null) {
-  return queryOne<{ id: string; unit_id: string; property_id: string; is_active: boolean }>(
-    `SELECT t.id, t.unit_id, u.property_id, t.is_active FROM tenants t
+  return queryOne<{
+    id: string;
+    unit_id: string;
+    property_id: string;
+    is_active: boolean;
+    name: string;
+    email: string | null;
+    unit_label: string;
+    property_name: string;
+  }>(
+    `SELECT t.id, t.unit_id, u.property_id, t.is_active, t.name, t.email,
+            u.unit_label, p.name AS property_name FROM tenants t
      JOIN units u ON u.id = t.unit_id
      JOIN properties p ON p.id = u.property_id
      WHERE t.id = $1 AND ($2::text IS NULL OR p.user_id = $2)`,
@@ -318,6 +329,25 @@ export async function recordPayment(
       parsed.data.notes || null,
     ],
   );
+
+  if (tenant.email) {
+    // A receipt failure must never fail or roll back the recorded payment.
+    try {
+      await sendPaymentReceipt(tenant.email, {
+        tenantName: tenant.name,
+        propertyName: tenant.property_name,
+        unitLabel: tenant.unit_label,
+        amount: parsed.data.amount,
+        paidDate: parsed.data.paidDate,
+        periodStart: parsed.data.periodStart,
+        periodEnd: parsed.data.periodEnd,
+        paymentType: parsed.data.paymentType,
+        method: parsed.data.method || null,
+      });
+    } catch (error) {
+      console.error('Failed to send payment receipt email:', error);
+    }
+  }
 
   redirect(`/properties/${tenant.property_id}/units/${tenant.unit_id}`);
 }
