@@ -137,6 +137,7 @@ export default async function UnitDetail({ params }: { params: Params }) {
             tenantId={activeTenant.id}
             payments={paymentsByTenant.get(activeTenant.id) ?? []}
             leaseStartDate={activeTenant.lease_start_date}
+            rentAmount={activeTenant.rent_amount}
           />
         </div>
       )}

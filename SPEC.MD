@@ -101,6 +101,8 @@ There is no unauthenticated/public area for rental data — the previous public 
   - The unit's asking rent pre-fills the tenant's rent amount but the tenant's own rent amount is the source of truth for payment math (may differ from the unit's asking rent)
 - **Update tenant:** correct name/contact/rent/lease dates while still active
 - **End tenancy:** sets the tenant inactive and records a lease end date, freeing the unit for a new tenant assignment. The outgoing tenant's record and full payment history are preserved permanently — a tenant row is never moved to a different unit
+  - Requires confirmation via the standard alert dialog before taking effect
+  - The dialog asks for the lease end date (pre-filled with the tenant's existing lease end date, or today), which is required and validated on both client and server — allows backdating the actual move-out date
 - **View tenancy history:** unit detail page lists every tenant who has ever occupied it, past and present
 
 ### 3.5 Rent Payment Ledger (Authenticated)

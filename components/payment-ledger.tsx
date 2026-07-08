@@ -58,11 +58,14 @@ function PaymentFormFields({
   state,
   payment,
   defaultPeriod,
+  defaultAmount,
 }: {
   state: PaymentActionResult;
   payment?: Payment;
   defaultPeriod?: { start: string; end: string };
+  defaultAmount?: number;
 }) {
+  const initialAmount = payment?.amount ?? defaultAmount;
   return (
     <>
       <div className='w-full sm:w-auto'>
@@ -90,7 +93,7 @@ function PaymentFormFields({
           type='number'
           step='0.01'
           min='0.01'
-          defaultValue={payment ? (payment.amount / 100).toFixed(2) : undefined}
+          defaultValue={initialAmount != null ? (initialAmount / 100).toFixed(2) : undefined}
           required={!payment}
           className='w-full sm:w-32'
           onChange={(e) => {
@@ -101,12 +104,16 @@ function PaymentFormFields({
             if (hidden) hidden.value = String(cents);
           }}
         />
-        <input type='hidden' name='amount' defaultValue={payment?.amount} />
+        <input type='hidden' name='amount' defaultValue={initialAmount} />
         <FieldError messages={state.error?.amount} />
       </div>
       <div className='w-full sm:w-auto'>
         <Label className='mb-2 text-xs'>Paid date</Label>
-        <DatePickerField name='paidDate' defaultValue={payment?.paid_date} required />
+        <DatePickerField
+          name='paidDate'
+          defaultValue={payment?.paid_date ?? format(new Date(), 'yyyy-MM-dd')}
+          required
+        />
         <FieldError messages={state.error?.paidDate} />
       </div>
       <div className='w-full sm:w-auto'>
@@ -218,11 +225,13 @@ export function PaymentLedger({
   tenantId,
   payments,
   leaseStartDate,
+  rentAmount,
   readOnly,
 }: {
   tenantId: string;
   payments: Payment[];
   leaseStartDate?: string;
+  rentAmount?: number;
   readOnly?: boolean;
 }) {
   const [state, formAction, isPending] = useActionState<PaymentActionResult, FormData>(
@@ -259,7 +268,11 @@ export function PaymentLedger({
             {state.error?.general && (
               <p className='w-full text-sm text-destructive'>{state.error.general}</p>
             )}
-            <PaymentFormFields state={state} defaultPeriod={defaultPeriod} />
+            <PaymentFormFields
+              state={state}
+              defaultPeriod={defaultPeriod}
+              defaultAmount={rentAmount}
+            />
             <Button type='submit' disabled={isPending}>
               {isPending ? 'Recording…' : 'Record payment'}
             </Button>

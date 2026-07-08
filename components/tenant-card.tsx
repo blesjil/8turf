@@ -5,6 +5,17 @@ import { format } from 'date-fns';
 import { formatCents } from '@/lib/money';
 import { formatDate } from '@/lib/format-date';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -122,6 +133,7 @@ export function TenantCard({
     {},
   );
   const [isEditing, setIsEditing] = useState(false);
+  const [endDateError, setEndDateError] = useState<string | null>(null);
 
   if (!tenant) {
     return (
@@ -190,17 +202,48 @@ export function TenantCard({
           <Button type='button' variant='outline' size='sm' onClick={() => setIsEditing(true)}>
             Edit
           </Button>
-          <form
-            action={async (formData) => {
-              formData.set('id', tenant.id);
-              formData.set('leaseEndDate', format(new Date(), 'yyyy-MM-dd'));
-              await endTenancy(formData);
-            }}
-          >
-            <Button type='submit' variant='destructive' size='sm'>
+          <AlertDialog onOpenChange={() => setEndDateError(null)}>
+            <AlertDialogTrigger render={<Button type='button' variant='destructive' size='sm' />}>
               End tenancy
-            </Button>
-          </form>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <form
+                action={async (formData) => {
+                  const leaseEndDate = formData.get('leaseEndDate');
+                  if (!leaseEndDate) {
+                    setEndDateError('Lease end date is required.');
+                    return;
+                  }
+                  formData.set('id', tenant.id);
+                  await endTenancy(formData);
+                }}
+                className='grid gap-4'
+              >
+                <AlertDialogHeader>
+                  <AlertDialogTitle>End tenancy</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    End {tenant.name}&rsquo;s tenancy? The unit will be marked vacant. This cannot
+                    be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div>
+                  <Label className='mb-2'>Lease end date</Label>
+                  <DatePickerField
+                    name='leaseEndDate'
+                    defaultValue={tenant.lease_end_date ?? format(new Date(), 'yyyy-MM-dd')}
+                    required
+                  />
+                  {endDateError && <p className='mt-1 text-sm text-destructive'>{endDateError}</p>}
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction type='submit' variant='destructive'>
+                    End tenancy
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </form>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </CardContent>
     </Card>

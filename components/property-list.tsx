@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface PropertyListItem {
@@ -14,14 +13,11 @@ export interface PropertyListItem {
 export function PropertyList({ properties }: { properties: PropertyListItem[] }) {
   if (properties.length === 0) {
     return (
-      <Card className='items-center py-12 text-center'>
-        <CardHeader className='items-center'>
+      <Card className='py-12 text-center'>
+        <CardHeader className='justify-items-center'>
           <CardTitle>No properties yet</CardTitle>
           <CardDescription>Add your first property to start tracking rent.</CardDescription>
         </CardHeader>
-        <Button nativeButton={false} render={<Link href='/properties/new' />} className='mx-auto'>
-          New property
-        </Button>
       </Card>
     );
   }
