@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DatePickerField } from '@/components/ui/date-picker-field';
+import { TenantDocuments, type TenantDocument } from '@/components/tenant-documents';
 import {
   endTenancy,
   assignTenant,
@@ -229,10 +230,14 @@ export function TenantCard({
   unitId,
   tenant,
   askingRent,
+  documents = [],
+  documentsEnabled = false,
 }: {
   unitId: string;
   tenant: Tenant | null;
   askingRent?: number;
+  documents?: TenantDocument[];
+  documentsEnabled?: boolean;
 }) {
   const [assignState, assignAction, assignPending] = useActionState<TenantActionResult, FormData>(
     assignTenant,
@@ -320,6 +325,13 @@ export function TenantCard({
               </Button>
             </div>
           </form>
+          <div className='mt-6'>
+            <TenantDocuments
+              tenantId={tenant.id}
+              documents={documents}
+              enabled={documentsEnabled}
+            />
+          </div>
         </CardContent>
       </Card>
     );
@@ -327,79 +339,84 @@ export function TenantCard({
 
   return (
     <Card>
-      <CardContent className='flex items-start justify-between gap-4'>
-        <div className='space-y-1'>
-          <h3 className='font-semibold'>{tenant.name}</h3>
-          <p className='text-sm text-muted-foreground'>
-            {tenant.email || 'No email'} · {tenant.phone || 'No phone'}
-          </p>
-          <p className='text-sm text-muted-foreground'>
-            Rent: <span className='font-mono'>{formatCents(tenant.rent_amount)}</span>/mo · Lease:{' '}
-            {formatDate(tenant.lease_start_date)} to{' '}
-            {tenant.lease_end_date ? formatDate(tenant.lease_end_date) : 'ongoing'}
-          </p>
-          {tenant.occupants?.length > 0 && (
-            <p className='text-sm text-muted-foreground'>With: {tenant.occupants.join(', ')}</p>
-          )}
-          {(tenant.emergency_contact_name || tenant.emergency_contact_phone) && (
+      <CardContent className='space-y-4'>
+        <div className='flex items-start justify-between gap-4'>
+          <div className='space-y-1'>
+            <h3 className='font-semibold'>{tenant.name}</h3>
             <p className='text-sm text-muted-foreground'>
-              Emergency:{' '}
-              {[tenant.emergency_contact_name, tenant.emergency_contact_phone]
-                .filter(Boolean)
-                .join(' · ')}
+              {tenant.email || 'No email'} · {tenant.phone || 'No phone'}
             </p>
-          )}
+            <p className='text-sm text-muted-foreground'>
+              Rent: <span className='font-mono'>{formatCents(tenant.rent_amount)}</span>/mo · Lease:{' '}
+              {formatDate(tenant.lease_start_date)} to{' '}
+              {tenant.lease_end_date ? formatDate(tenant.lease_end_date) : 'ongoing'}
+            </p>
+            {tenant.occupants?.length > 0 && (
+              <p className='text-sm text-muted-foreground'>With: {tenant.occupants.join(', ')}</p>
+            )}
+            {(tenant.emergency_contact_name || tenant.emergency_contact_phone) && (
+              <p className='text-sm text-muted-foreground'>
+                Emergency:{' '}
+                {[tenant.emergency_contact_name, tenant.emergency_contact_phone]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+            )}
+          </div>
+          <div className='flex shrink-0 items-center gap-2'>
+            <Button type='button' variant='outline' size='sm' onClick={() => setIsEditing(true)}>
+              Edit
+            </Button>
+            <AlertDialog onOpenChange={() => setEndDateError(null)}>
+              <AlertDialogTrigger render={<Button type='button' variant='destructive' size='sm' />}>
+                End tenancy
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <form
+                  action={async (formData) => {
+                    const leaseEndDate = formData.get('leaseEndDate');
+                    if (!leaseEndDate) {
+                      setEndDateError('Lease end date is required.');
+                      return;
+                    }
+                    formData.set('id', tenant.id);
+                    const result = await endTenancy(formData);
+                    if (result?.error) {
+                      setEndDateError(result.error);
+                    }
+                  }}
+                  className='grid gap-4'
+                >
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>End tenancy</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      End {tenant.name}&rsquo;s tenancy? The unit will be marked vacant. This cannot
+                      be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div>
+                    <Label className='mb-2'>Lease end date</Label>
+                    <DatePickerField
+                      name='leaseEndDate'
+                      defaultValue={tenant.lease_end_date ?? format(new Date(), 'yyyy-MM-dd')}
+                      required
+                    />
+                    {endDateError && (
+                      <p className='mt-1 text-sm text-destructive'>{endDateError}</p>
+                    )}
+                  </div>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction type='submit' variant='destructive'>
+                      End tenancy
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </form>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
-        <div className='flex shrink-0 items-center gap-2'>
-          <Button type='button' variant='outline' size='sm' onClick={() => setIsEditing(true)}>
-            Edit
-          </Button>
-          <AlertDialog onOpenChange={() => setEndDateError(null)}>
-            <AlertDialogTrigger render={<Button type='button' variant='destructive' size='sm' />}>
-              End tenancy
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <form
-                action={async (formData) => {
-                  const leaseEndDate = formData.get('leaseEndDate');
-                  if (!leaseEndDate) {
-                    setEndDateError('Lease end date is required.');
-                    return;
-                  }
-                  formData.set('id', tenant.id);
-                  const result = await endTenancy(formData);
-                  if (result?.error) {
-                    setEndDateError(result.error);
-                  }
-                }}
-                className='grid gap-4'
-              >
-                <AlertDialogHeader>
-                  <AlertDialogTitle>End tenancy</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    End {tenant.name}&rsquo;s tenancy? The unit will be marked vacant. This cannot
-                    be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <div>
-                  <Label className='mb-2'>Lease end date</Label>
-                  <DatePickerField
-                    name='leaseEndDate'
-                    defaultValue={tenant.lease_end_date ?? format(new Date(), 'yyyy-MM-dd')}
-                    required
-                  />
-                  {endDateError && <p className='mt-1 text-sm text-destructive'>{endDateError}</p>}
-                </div>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction type='submit' variant='destructive'>
-                    End tenancy
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </form>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+        <TenantDocuments tenantId={tenant.id} documents={documents} enabled={documentsEnabled} />
       </CardContent>
     </Card>
   );

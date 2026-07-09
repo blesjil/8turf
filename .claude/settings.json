@@ -138,11 +138,18 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code} \" http://localhost:3001/icon.svg)",
       "Bash(kill 13820 13827 13833 18914 18915)",
       "Bash(sips -s format png -z 512 512 /Users/blesjil/Documents/Jill/apps/8turf/app/icon.svg --out icon.png)",
-      "Bash(sips -s format png -z 512 512 /Users/blesjil/Documents/Jill/apps/8turf/app/icon.svg --out /Users/blesjil/Documents/Jill/apps/8turf/app/icon.png)"
+      "Bash(sips -s format png -z 512 512 /Users/blesjil/Documents/Jill/apps/8turf/app/icon.svg --out /Users/blesjil/Documents/Jill/apps/8turf/app/icon.png)",
+      "Bash(curl -s https://8turf.vercel.app/)",
+      "Bash(psql postgresql://postgres:postgres@127.0.0.1:54342/postgres -c '\\\\d tenant_documents')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\" http://localhost:3001/dashboard)",
+      "Bash(curl -s -o /dev/null -w \"logged-out: %{http_code}\\\\n\" http://localhost:3001/api/tenants/x/documents/y/download)",
+      "Bash(lsof -nP -iTCP:53682 -sTCP:LISTEN)",
+      "Bash(kill 19469)",
+      "Bash(kill 19468 19467)",
+      "mcp__plugin_playwright_playwright__browser_file_upload",
+      "Bash(curl -s http://localhost:3001/properties/0fcc2aef-7e72-4920-a3dc-688595776a13/units/afb12f82-2e11-4d75-943c-1a36282ba987 -o /dev/null)"
     ],
-    "additionalDirectories": [
-      "/tmp"
-    ]
+    "additionalDirectories": ["/tmp"]
   },
   "hooks": {
     "PostToolUse": [

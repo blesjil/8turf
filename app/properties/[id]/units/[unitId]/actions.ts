@@ -6,6 +6,8 @@ import { auth } from '@/lib/auth';
 import { ownerScope } from '@/lib/access';
 import { query, queryOne } from '@/lib/db';
 import { sendPaymentReceipt } from '@/lib/mail';
+import { findAuthorizedTenant, findAuthorizedDocument } from '@/lib/tenants';
+import { isDriveConfigured, uploadFileToDrive, deleteDriveFile } from '@/lib/drive';
 import {
   updateUnitSchema,
   assignTenantSchema,
@@ -15,6 +17,7 @@ import {
   updatePaymentSchema,
   recordUnitExpenseSchema,
   updateUnitExpenseSchema,
+  validateDocumentFile,
 } from '@/lib/validation';
 
 export interface UnitActionResult {
@@ -195,27 +198,6 @@ export async function assignTenant(
   }
 
   redirect(`/properties/${unit.property_id}/units/${unit.id}`);
-}
-
-async function findAuthorizedTenant(tenantId: string, scope: string | null) {
-  return queryOne<{
-    id: string;
-    unit_id: string;
-    property_id: string;
-    is_active: boolean;
-    name: string;
-    email: string | null;
-    unit_label: string;
-    property_name: string;
-    lease_start_date: string;
-  }>(
-    `SELECT t.id, t.unit_id, u.property_id, t.is_active, t.name, t.email,
-            u.unit_label, p.name AS property_name, t.lease_start_date FROM tenants t
-     JOIN units u ON u.id = t.unit_id
-     JOIN properties p ON p.id = u.property_id
-     WHERE t.id = $1 AND ($2::text IS NULL OR p.user_id = $2)`,
-    [tenantId, scope],
-  );
 }
 
 export async function updateTenant(
@@ -578,4 +560,81 @@ export async function deleteUnitExpense(formData: FormData): Promise<void> {
 
   await query('DELETE FROM expenses WHERE id = $1', [expense.id]);
   redirect(`/properties/${expense.property_id}/units/${expense.unit_id}`);
+}
+
+export interface DocumentActionResult {
+  error?: string;
+}
+
+export async function uploadTenantDocument(
+  _prevState: DocumentActionResult,
+  formData: FormData,
+): Promise<DocumentActionResult> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect('/authenticate');
+
+  const tenantId = formData.get('tenantId');
+  if (typeof tenantId !== 'string' || !tenantId) {
+    return { error: 'Invalid tenant id.' };
+  }
+
+  const file = formData.get('file');
+  if (!(file instanceof File) || !file.name) {
+    return { error: 'Please choose a file to upload.' };
+  }
+  const fileError = validateDocumentFile(file);
+  if (fileError) {
+    return { error: fileError };
+  }
+
+  if (!isDriveConfigured()) {
+    return { error: 'Document storage is not configured.' };
+  }
+
+  const tenant = await findAuthorizedTenant(tenantId, ownerScope(session));
+  if (!tenant) {
+    return { error: 'Tenant not found or access denied.' };
+  }
+
+  let driveFileId: string | null;
+  try {
+    driveFileId = await uploadFileToDrive(file, tenant.id);
+  } catch (err) {
+    console.error('Failed to upload tenant document to Google Drive:', err);
+    return { error: 'Failed to upload to Google Drive. Please try again.' };
+  }
+  if (!driveFileId) {
+    return { error: 'Document storage is not configured.' };
+  }
+
+  await query(
+    `INSERT INTO tenant_documents (id, tenant_id, drive_file_id, file_name, mime_type, size_bytes)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [crypto.randomUUID(), tenant.id, driveFileId, file.name, file.type, file.size],
+  );
+
+  redirect(`/properties/${tenant.property_id}/units/${tenant.unit_id}`);
+}
+
+export async function deleteTenantDocument(formData: FormData): Promise<void> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect('/authenticate');
+
+  const id = formData.get('id');
+  if (typeof id !== 'string') return;
+
+  const doc = await findAuthorizedDocument(id, ownerScope(session));
+  if (!doc) return;
+
+  // Drive first: if it fails the row survives and the user can retry
+  // (deleteDriveFile tolerates 404, so a retry after partial success works).
+  try {
+    await deleteDriveFile(doc.drive_file_id);
+  } catch (err) {
+    console.error('Failed to delete tenant document from Google Drive:', err);
+    return;
+  }
+
+  await query('DELETE FROM tenant_documents WHERE id = $1', [doc.id]);
+  redirect(`/properties/${doc.property_id}/units/${doc.unit_id}`);
 }

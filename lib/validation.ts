@@ -181,3 +181,27 @@ export const recordUnitExpenseSchema = expenseBaseSchema.extend({
 export const updateUnitExpenseSchema = expenseBaseSchema.extend({
   id: z.string().min(1, 'Expense id is required'),
 });
+
+// Tenant document uploads (stored in Google Drive). Keep in sync with the
+// serverActions.bodySizeLimit in next.config.ts.
+export const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
+
+export const ALLOWED_DOCUMENT_MIME_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'application/zip',
+  'application/x-zip-compressed', // Windows browsers report zips with this type
+];
+
+// Returns an error message, or null when the file is acceptable.
+export function validateDocumentFile(file: { size: number; type: string }): string | null {
+  if (file.size === 0) return 'The selected file is empty.';
+  if (file.size > MAX_DOCUMENT_BYTES) return 'File is too large (max 10MB).';
+  if (!ALLOWED_DOCUMENT_MIME_TYPES.includes(file.type)) {
+    return 'Only PDF, image, and ZIP files (JPG, PNG, WebP, HEIC, ZIP) are allowed.';
+  }
+  return null;
+}

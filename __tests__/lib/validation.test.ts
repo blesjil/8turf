@@ -6,6 +6,8 @@ import {
   createUnitSchema,
   assignTenantSchema,
   recordPaymentSchema,
+  validateDocumentFile,
+  MAX_DOCUMENT_BYTES,
 } from '@/lib/validation';
 
 describe('createUserSchema', () => {
@@ -195,5 +197,39 @@ describe('recordPaymentSchema', () => {
     if (!result.success) {
       expect(result.error.flatten().fieldErrors.periodEnd).toBeTruthy();
     }
+  });
+});
+
+describe('validateDocumentFile', () => {
+  it('accepts a small PDF', () => {
+    expect(validateDocumentFile({ size: 1024, type: 'application/pdf' })).toBeNull();
+  });
+
+  it('accepts an image at exactly the size limit', () => {
+    expect(validateDocumentFile({ size: MAX_DOCUMENT_BYTES, type: 'image/jpeg' })).toBeNull();
+  });
+
+  it('rejects an empty file', () => {
+    expect(validateDocumentFile({ size: 0, type: 'application/pdf' })).toMatch(/empty/);
+  });
+
+  it('rejects a file over the size limit', () => {
+    expect(validateDocumentFile({ size: MAX_DOCUMENT_BYTES + 1, type: 'application/pdf' })).toMatch(
+      /too large/,
+    );
+  });
+
+  it('accepts a zip archive', () => {
+    expect(validateDocumentFile({ size: 1024, type: 'application/zip' })).toBeNull();
+  });
+
+  it('accepts a zip archive with the Windows mime type', () => {
+    expect(validateDocumentFile({ size: 1024, type: 'application/x-zip-compressed' })).toBeNull();
+  });
+
+  it('rejects a disallowed mime type', () => {
+    expect(validateDocumentFile({ size: 1024, type: 'application/x-msdownload' })).toMatch(
+      /Only PDF, image, and ZIP files/,
+    );
   });
 });

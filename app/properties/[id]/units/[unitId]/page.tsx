@@ -9,6 +9,8 @@ import { formatCents } from '@/lib/money';
 import { formatDate, formatPeriod } from '@/lib/format-date';
 import { UnitActions } from './unit-actions';
 import { TenantCard, type Tenant } from '@/components/tenant-card';
+import { type TenantDocument } from '@/components/tenant-documents';
+import { isDriveConfigured } from '@/lib/drive';
 import { PaymentLedger, type Payment } from '@/components/payment-ledger';
 import { PaymentStatusBadge } from '@/components/payment-status-badge';
 import {
@@ -61,6 +63,15 @@ export default async function UnitDetail({ params }: { params: Params }) {
   );
 
   const pastTenants = tenantHistory.filter((t) => !t.is_active);
+
+  const tenantDocuments = activeTenant
+    ? await query<TenantDocument>(
+        `SELECT id, file_name, mime_type, size_bytes::text,
+                to_char(created_at, 'YYYY-MM-DD') AS created_at
+         FROM tenant_documents WHERE tenant_id = $1 ORDER BY created_at DESC, file_name`,
+        [activeTenant.id],
+      )
+    : [];
 
   const expenses = await query<Expense>(
     `SELECT id, category, amount, expense_date, remarks FROM expenses
@@ -121,7 +132,13 @@ export default async function UnitDetail({ params }: { params: Params }) {
 
       <div className='mb-10'>
         <h2 className='mb-4 text-xl font-semibold tracking-tight'>Current Tenant</h2>
-        <TenantCard unitId={unit.id} tenant={activeTenant} askingRent={unit.rent_amount} />
+        <TenantCard
+          unitId={unit.id}
+          tenant={activeTenant}
+          askingRent={unit.rent_amount}
+          documents={tenantDocuments}
+          documentsEnabled={isDriveConfigured()}
+        />
       </div>
 
       {activeTenant && (
