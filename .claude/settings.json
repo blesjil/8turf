@@ -108,11 +108,30 @@
       "Read(//Users/blesjil/.claude/**)",
       "Bash(find /Users/blesjil/Documents/Jill/apps/8turf/.claude -iname \"*code-review*\" 2>/dev/null; find /Users/blesjil/.claude/commands -iname \"*code-review*\" 2>/dev/null)",
       "Bash(git -C /Users/blesjil/Documents/Jill/apps/8turf diff -- __tests__/lib/validation.test.ts lib/validation.ts)",
-      "Bash(psql \"postgresql://postgres:postgres@127.0.0.1:54342/postgres\" -c \"select version_number from supabase_migrations.schema_migrations order by 1 desc limit 5;\")"
+      "Bash(psql \"postgresql://postgres:postgres@127.0.0.1:54342/postgres\" -c \"select version_number from supabase_migrations.schema_migrations order by 1 desc limit 5;\")",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl -s http://localhost:3001)",
+      "Bash(bun test:run lib/validation.test.ts)",
+      "Bash(bun test-validation-debug.js)",
+      "Bash(pkill -f \"bun dev\")",
+      "WebFetch(domain:semaphore.co)",
+      "WebSearch",
+      "Bash(psql postgresql://postgres:postgres@127.0.0.1:54342/postgres -f supabase/migrations/0007_reminder_channel.sql)",
+      "Bash(psql postgresql://postgres:postgres@127.0.0.1:54342/postgres -c \"select column_name, column_default from information_schema.columns where table_name='payment_reminders' and column_name='channel'; select channel, count\\(*\\) from payment_reminders group by channel;\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/payments)",
+      "Bash(lsof -ti:3001)",
+      "Bash(kill 11382)",
+      "Bash(ps -o pid,ppid,command -p 11382)",
+      "Bash(kill 11379 11380 11382)",
+      "Bash(vercel env *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://8turf.vercel.app/payments)",
+      "Bash(psql postgresql://postgres:postgres@127.0.0.1:54342/postgres -c '\\\\d tenants')",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/)",
+      "Bash(grep -iA2 -B2 'password\\\\|login\\\\|admin\\\\|credential')",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
     ],
-    "additionalDirectories": [
-      "/tmp"
-    ]
+    "additionalDirectories": ["/tmp"]
   },
   "hooks": {
     "PostToolUse": [
