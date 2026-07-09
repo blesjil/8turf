@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { formatCents } from '@/lib/money';
-import { creditsByPeriod } from '@/lib/payment-status';
+import { creditsByPeriod, RENT_COVERING_PAYMENT_TYPES } from '@/lib/payment-status';
 import { PaymentsTabs } from '@/components/payments-tabs';
 import { FinancialPeriodPicker } from '@/components/financial-period-picker';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -88,8 +88,9 @@ export default async function FinancialReportPage({
       period_end: string;
     }>(
       `SELECT unit_id, amount, period_start, period_end FROM rent_payments
-       WHERE unit_id = ANY($1) AND period_start <= $2 AND period_end >= $3`,
-      [unitIds, windowEnd, windowStart],
+       WHERE unit_id = ANY($1) AND period_start <= $2 AND period_end >= $3
+         AND payment_type = ANY($4)`,
+      [unitIds, windowEnd, windowStart, RENT_COVERING_PAYMENT_TYPES],
     );
     for (const p of payments) {
       for (const [creditPeriod, credit] of creditsByPeriod(p)) {

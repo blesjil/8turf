@@ -196,9 +196,10 @@ async function findAuthorizedTenant(tenantId: string, scope: string | null) {
     email: string | null;
     unit_label: string;
     property_name: string;
+    lease_start_date: string;
   }>(
     `SELECT t.id, t.unit_id, u.property_id, t.is_active, t.name, t.email,
-            u.unit_label, p.name AS property_name FROM tenants t
+            u.unit_label, p.name AS property_name, t.lease_start_date FROM tenants t
      JOIN units u ON u.id = t.unit_id
      JOIN properties p ON p.id = u.property_id
      WHERE t.id = $1 AND ($2::text IS NULL OR p.user_id = $2)`,
@@ -248,7 +249,11 @@ export async function updateTenant(
   redirect(`/properties/${tenant.property_id}/units/${tenant.unit_id}`);
 }
 
-export async function endTenancy(formData: FormData): Promise<void> {
+export interface EndTenancyResult {
+  error?: string;
+}
+
+export async function endTenancy(formData: FormData): Promise<EndTenancyResult> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect('/authenticate');
 
@@ -256,10 +261,18 @@ export async function endTenancy(formData: FormData): Promise<void> {
     id: formData.get('id'),
     leaseEndDate: formData.get('leaseEndDate'),
   });
-  if (!parsed.success) return;
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors.leaseEndDate?.[0] ?? 'Invalid input.' };
+  }
 
   const tenant = await findAuthorizedTenant(parsed.data.id, ownerScope(session));
-  if (!tenant) return;
+  if (!tenant) {
+    return { error: 'Tenant not found or access denied.' };
+  }
+
+  if (parsed.data.leaseEndDate < tenant.lease_start_date) {
+    return { error: 'Lease end must be on or after lease start.' };
+  }
 
   await query('UPDATE tenants SET is_active = false, lease_end_date = $1 WHERE id = $2', [
     parsed.data.leaseEndDate,

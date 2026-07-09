@@ -11,10 +11,9 @@ import {
   LOCKOUT_MS,
   MAX_ATTEMPTS,
   clearAttempts,
-  getLockRemainingMs,
   lockoutMessage,
   normalizeEmail,
-  recordFailedAttempt,
+  registerAttempt,
 } from '@/lib/login-lockout';
 
 beforeEach(() => {
@@ -39,45 +38,40 @@ describe('normalizeEmail', () => {
   });
 });
 
-describe('getLockRemainingMs', () => {
-  it('returns 0 when no active lock row exists', async () => {
-    queryOne.mockResolvedValue(null);
-    await expect(getLockRemainingMs('a@b.c')).resolves.toBe(0);
-    expect(queryOne).toHaveBeenCalledWith(expect.stringContaining('locked_until > now()'), [
-      'a@b.c',
-    ]);
-  });
-
-  it('returns the remaining milliseconds of an active lock', async () => {
-    queryOne.mockResolvedValue({ remaining_ms: 42_000 });
-    await expect(getLockRemainingMs('a@b.c')).resolves.toBe(42_000);
-  });
-
-  it('never returns a negative value', async () => {
-    queryOne.mockResolvedValue({ remaining_ms: -5 });
-    await expect(getLockRemainingMs('a@b.c')).resolves.toBe(0);
-  });
-});
-
-describe('recordFailedAttempt', () => {
-  it('issues a single atomic upsert keyed by email', async () => {
-    execute.mockResolvedValue(1);
-    await recordFailedAttempt('a@b.c');
-    expect(execute).toHaveBeenCalledTimes(1);
-    const [sql, params] = execute.mock.calls[0];
+describe('registerAttempt', () => {
+  it('issues a single atomic upsert keyed by email and reports unlocked when below threshold', async () => {
+    queryOne.mockResolvedValue({ remaining_ms: null });
+    await expect(registerAttempt('a@b.c')).resolves.toEqual({ locked: false, remainingMs: 0 });
+    expect(queryOne).toHaveBeenCalledTimes(1);
+    const [sql, params] = queryOne.mock.calls[0];
     expect(sql).toMatch(/insert into login_attempts/);
     expect(sql).toMatch(/on conflict \(email\) do update/);
     expect(params).toEqual(['a@b.c', MAX_ATTEMPTS, LOCKOUT_MS / 1000]);
   });
 
-  it('locks at MAX_ATTEMPTS and restarts the count after an expired lock', async () => {
-    execute.mockResolvedValue(1);
-    await recordFailedAttempt('a@b.c');
-    const [sql] = execute.mock.calls[0];
+  it('reports locked with remaining time once the threshold is reached', async () => {
+    queryOne.mockResolvedValue({ remaining_ms: 42_000 });
+    await expect(registerAttempt('a@b.c')).resolves.toEqual({
+      locked: true,
+      remainingMs: 42_000,
+    });
+  });
+
+  it('never returns a negative remaining time', async () => {
+    queryOne.mockResolvedValue({ remaining_ms: -5 });
+    await expect(registerAttempt('a@b.c')).resolves.toEqual({ locked: false, remainingMs: 0 });
+  });
+
+  it('locks at MAX_ATTEMPTS, restarts the count after an expired lock, and leaves an active lock untouched', async () => {
+    queryOne.mockResolvedValue({ remaining_ms: null });
+    await registerAttempt('a@b.c');
+    const [sql] = queryOne.mock.calls[0];
     // lock is applied when the incremented count reaches the threshold
     expect(sql).toMatch(/>= \$2 then now\(\) \+ make_interval/);
     // an expired lock restarts the counter at 1 instead of incrementing
     expect(sql).toMatch(/locked_until < now\(\) then 1/);
+    // a row already under an active lock is left untouched (no re-increment)
+    expect(sql).toMatch(/login_attempts\.locked_until > now\(\) then login_attempts\.failed_count/);
   });
 });
 

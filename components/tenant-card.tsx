@@ -215,7 +215,10 @@ export function TenantCard({
                     return;
                   }
                   formData.set('id', tenant.id);
-                  await endTenancy(formData);
+                  const result = await endTenancy(formData);
+                  if (result?.error) {
+                    setEndDateError(result.error);
+                  }
                 }}
                 className='grid gap-4'
               >

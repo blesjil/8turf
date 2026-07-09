@@ -87,7 +87,31 @@
       "Bash(curl -s -H 'Cookie: better-auth.session_token=4c2861f4ad5548a0bea35b3305975faeadmin.-VQgqJwk8uvJLdY5d7wFyIUE7ApMoWkOvveViCTdOyY' http://localhost:3001/api/auth/get-session)",
       "Bash(curl -s -H 'Cookie: better-auth.session_token=4c2861f4ad5548a0bea35b3305975faeadmin.%2BVQgqJwk8uvJLdY5d7wFyIUE7ApMoWkOvveViCTdOyY%3D' http://localhost:3001/dashboard)",
       "Bash(curl -s -H 'Cookie: better-auth.session_token=4c2861f4ad5548a0bea35b3305975faeadmin.%2BVQgqJwk8uvJLdY5d7wFyIUE7ApMoWkOvveViCTdOyY%3D' http://localhost:3001/properties/0fcc2aef-7e72-4920-a3dc-688595776a13)",
-      "WebFetch(domain:www.better-auth.com)"
+      "WebFetch(domain:www.better-auth.com)",
+      "Bash(vercel --prod)",
+      "Bash(curl -s -o /dev/null -w \"Status: %{http_code}\\\\n\" https://8turf.vercel.app/)",
+      "Bash(vercel logs *)",
+      "Bash(vercel inspect *)",
+      "Bash(vercel ls *)",
+      "Bash(nohup bun dev > /tmp/8turf-dev.log 2>&1 & disown; sleep 5; tail -40 /tmp/8turf-dev.log)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{time_total}s\\\\n\" http://localhost:3001/)",
+      "Bash(psql \"postgresql://postgres:postgres@127.0.0.1:54342/postgres\" -c \"\\\\dt\")",
+      "Bash(/usr/bin/curl -s -o /dev/null -w \"/dashboard: %{http_code} %{time_total}s\\\\n\" http://localhost:3001/dashboard)",
+      "Bash(/usr/bin/curl -s -o /dev/null -w \"/payments: %{http_code} %{time_total}s\\\\n\" http://localhost:3001/payments)",
+      "Bash(/usr/bin/curl -s -o /dev/null -w \"/financial-report: %{http_code} %{time_total}s\\\\n\" http://localhost:3001/financial-report)",
+      "Bash(/usr/bin/curl -s -o /dev/null -w \"/admin/users: %{http_code} %{time_total}s\\\\n\" http://localhost:3001/admin/users)",
+      "Bash(/usr/bin/curl -s -o /dev/null -w \"/properties/archived: %{http_code} %{time_total}s\\\\n\" http://localhost:3001/properties/archived)",
+      "Bash(supabase db *)",
+      "Skill(code-review)",
+      "Skill(code-review:*)",
+      "Bash(find ~/.claude -iname \"*.md\" -path \"*code-review*\" 2>/dev/null | grep -v node_modules)",
+      "Read(//Users/blesjil/.claude/**)",
+      "Bash(find /Users/blesjil/Documents/Jill/apps/8turf/.claude -iname \"*code-review*\" 2>/dev/null; find /Users/blesjil/.claude/commands -iname \"*code-review*\" 2>/dev/null)",
+      "Bash(git -C /Users/blesjil/Documents/Jill/apps/8turf diff -- __tests__/lib/validation.test.ts lib/validation.ts)",
+      "Bash(psql \"postgresql://postgres:postgres@127.0.0.1:54342/postgres\" -c \"select version_number from supabase_migrations.schema_migrations order by 1 desc limit 5;\")"
+    ],
+    "additionalDirectories": [
+      "/tmp"
     ]
   },
   "hooks": {

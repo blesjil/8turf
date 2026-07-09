@@ -129,6 +129,20 @@ describe('assignTenantSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('rejects a lease end date before the lease start date', () => {
+    const result = assignTenantSchema.safeParse({
+      unitId: 'unit-1',
+      name: 'Jane Tenant',
+      rentAmount: '150000',
+      leaseStartDate: '2026-07-15',
+      leaseEndDate: '2026-07-10',
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.leaseEndDate).toBeTruthy();
+    }
+  });
 });
 
 describe('recordPaymentSchema', () => {

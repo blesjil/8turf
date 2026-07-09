@@ -53,25 +53,38 @@ const optionalDateField = z
   .optional()
   .or(z.literal(''));
 
-export const assignTenantSchema = z.object({
-  unitId: z.string().min(1, 'Unit id is required'),
-  name: z.string().min(1, 'Name is required').max(200, 'Name is too long'),
-  email: z.string().email('Invalid email address').optional().or(z.literal('')),
-  phone: z.string().max(50, 'Phone is too long').optional().or(z.literal('')),
-  rentAmount: centsField,
-  leaseStartDate: dateField,
-  leaseEndDate: optionalDateField,
-});
+const leaseRangeCheck = {
+  check: (data: { leaseStartDate: string; leaseEndDate?: string }) =>
+    !data.leaseEndDate || data.leaseEndDate >= data.leaseStartDate,
+  options: {
+    message: 'Lease end must be on or after lease start',
+    path: ['leaseEndDate'],
+  },
+};
 
-export const updateTenantSchema = z.object({
-  id: z.string().min(1, 'Tenant id is required'),
-  name: z.string().min(1, 'Name is required').max(200, 'Name is too long'),
-  email: z.string().email('Invalid email address').optional().or(z.literal('')),
-  phone: z.string().max(50, 'Phone is too long').optional().or(z.literal('')),
-  rentAmount: centsField,
-  leaseStartDate: dateField,
-  leaseEndDate: optionalDateField,
-});
+export const assignTenantSchema = z
+  .object({
+    unitId: z.string().min(1, 'Unit id is required'),
+    name: z.string().min(1, 'Name is required').max(200, 'Name is too long'),
+    email: z.string().email('Invalid email address').optional().or(z.literal('')),
+    phone: z.string().max(50, 'Phone is too long').optional().or(z.literal('')),
+    rentAmount: centsField,
+    leaseStartDate: dateField,
+    leaseEndDate: optionalDateField,
+  })
+  .refine(leaseRangeCheck.check, leaseRangeCheck.options);
+
+export const updateTenantSchema = z
+  .object({
+    id: z.string().min(1, 'Tenant id is required'),
+    name: z.string().min(1, 'Name is required').max(200, 'Name is too long'),
+    email: z.string().email('Invalid email address').optional().or(z.literal('')),
+    phone: z.string().max(50, 'Phone is too long').optional().or(z.literal('')),
+    rentAmount: centsField,
+    leaseStartDate: dateField,
+    leaseEndDate: optionalDateField,
+  })
+  .refine(leaseRangeCheck.check, leaseRangeCheck.options);
 
 export const endTenancySchema = z.object({
   id: z.string().min(1, 'Tenant id is required'),

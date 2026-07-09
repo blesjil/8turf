@@ -4,13 +4,7 @@ import { nextCookies } from 'better-auth/next-js';
 import { admin } from 'better-auth/plugins';
 
 import { pool } from './db';
-import {
-  clearAttempts,
-  getLockRemainingMs,
-  lockoutMessage,
-  normalizeEmail,
-  recordFailedAttempt,
-} from './login-lockout';
+import { clearAttempts, lockoutMessage, normalizeEmail, registerAttempt } from './login-lockout';
 
 export const auth = betterAuth({
   database: pool,
@@ -31,18 +25,20 @@ export const auth = betterAuth({
       if (ctx.path !== '/sign-in/email') return;
       const email = normalizeEmail(ctx.body?.email);
       if (!email) return;
-      const remaining = await getLockRemainingMs(email);
-      if (remaining > 0) {
-        throw new APIError('TOO_MANY_REQUESTS', { message: lockoutMessage(remaining) });
+      // Consume the attempt atomically before checking the password, so
+      // concurrent requests for the same email serialize on the DB row lock
+      // instead of all slipping past the lock check before any of them
+      // records a failure. Cleared on success in the `after` hook below.
+      const { locked, remainingMs } = await registerAttempt(email);
+      if (locked) {
+        throw new APIError('TOO_MANY_REQUESTS', { message: lockoutMessage(remainingMs) });
       }
     }),
     after: createAuthMiddleware(async (ctx) => {
       if (ctx.path !== '/sign-in/email') return;
       const email = normalizeEmail(ctx.body?.email);
       if (!email) return;
-      if (ctx.context.returned instanceof APIError) {
-        await recordFailedAttempt(email);
-      } else {
+      if (!(ctx.context.returned instanceof APIError)) {
         await clearAttempts(email);
       }
     }),
