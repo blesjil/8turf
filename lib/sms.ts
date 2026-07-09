@@ -25,6 +25,12 @@ function formatPhp(cents: number): string {
   return `Php ${formatCents(cents).replace(/^\D+/, '')}`;
 }
 
+// Error messages below embed raw Semaphore response text and end up in server
+// logs; strip the API key in case the API ever echoes submitted params back.
+function redactApiKey(text: string): string {
+  return semaphoreApiKey ? text.replaceAll(semaphoreApiKey, '[redacted]') : text;
+}
+
 interface SemaphoreMessage {
   message_id?: number;
   recipient?: string;
@@ -62,14 +68,16 @@ export async function sendSmsPaymentReminder(
     body,
   });
   if (!res.ok) {
-    throw new Error(`Semaphore send failed (HTTP ${res.status}): ${await res.text()}`);
+    throw new Error(
+      `Semaphore send failed (HTTP ${res.status}): ${redactApiKey(await res.text())}`,
+    );
   }
 
   // Success responses are an array of queued message objects; anything else
   // (e.g. a validation-error object) means the message was not accepted.
   const data: unknown = await res.json();
   if (!Array.isArray(data) || data.length === 0) {
-    throw new Error(`Semaphore rejected the message: ${JSON.stringify(data)}`);
+    throw new Error(`Semaphore rejected the message: ${redactApiKey(JSON.stringify(data))}`);
   }
   const failed = (data as SemaphoreMessage[]).find(
     (m) => m.status === 'Failed' || m.status === 'Refunded',
