@@ -18,18 +18,18 @@ import { Button } from '@/components/ui/button';
 export function RemindAllButton({
   period,
   monthLabel,
-  unpaidWithEmail,
-  unpaidWithoutEmail,
+  unpaidWithContact,
+  unpaidWithoutContact,
 }: {
   period: string;
   monthLabel: string;
-  unpaidWithEmail: number;
-  unpaidWithoutEmail: number;
+  unpaidWithContact: number;
+  unpaidWithoutContact: number;
 }) {
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<BulkReminderResult | null>(null);
 
-  if (unpaidWithEmail === 0) return null;
+  if (unpaidWithContact === 0) return null;
 
   function sendAll() {
     setResult(null);
@@ -44,7 +44,7 @@ export function RemindAllButton({
       ? result.error
       : [
           `Sent ${result.sent} reminder${result.sent === 1 ? '' : 's'}`,
-          result.skippedNoEmail > 0 ? `${result.skippedNoEmail} without email` : null,
+          result.skippedNoContact > 0 ? `${result.skippedNoContact} without contact info` : null,
           result.failed > 0 ? `${result.failed} failed` : null,
         ]
           .filter(Boolean)
@@ -56,16 +56,16 @@ export function RemindAllButton({
         <AlertDialogTrigger
           render={<Button type='button' variant='outline' size='sm' disabled={pending} />}
         >
-          {pending ? 'Sending reminders…' : `Remind all unpaid (${unpaidWithEmail})`}
+          {pending ? 'Sending reminders…' : `Remind all unpaid (${unpaidWithContact})`}
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Send reminders to all unpaid tenants?</AlertDialogTitle>
             <AlertDialogDescription>
-              This emails a rent reminder to {unpaidWithEmail} tenant
-              {unpaidWithEmail === 1 ? '' : 's'} with unpaid or partial dues for {monthLabel}.
-              {unpaidWithoutEmail > 0 &&
-                ` ${unpaidWithoutEmail} unpaid tenant${unpaidWithoutEmail === 1 ? ' has' : 's have'} no email and will be skipped.`}
+              This sends an email and/or SMS rent reminder to {unpaidWithContact} tenant
+              {unpaidWithContact === 1 ? '' : 's'} with unpaid or partial dues for {monthLabel}.
+              {unpaidWithoutContact > 0 &&
+                ` ${unpaidWithoutContact} unpaid tenant${unpaidWithoutContact === 1 ? ' has' : 's have'} no email or phone and will be skipped.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

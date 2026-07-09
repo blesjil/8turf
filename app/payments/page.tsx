@@ -51,23 +51,26 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
   );
   const allRows = [...activeRows, ...inactiveRows];
 
-  const lastRemindedByTenant = new Map<string, string>();
+  const lastRemindedByTenant = new Map<string, { date: string; channel: string }>();
   if (activeRows.length > 0) {
-    const reminders = await query<{ tenant_id: string; sent_at: Date }>(
-      `SELECT DISTINCT ON (tenant_id) tenant_id, sent_at FROM payment_reminders
+    const reminders = await query<{ tenant_id: string; sent_at: Date; channel: string }>(
+      `SELECT DISTINCT ON (tenant_id) tenant_id, sent_at, channel FROM payment_reminders
        WHERE period = $1 AND tenant_id = ANY($2)
        ORDER BY tenant_id, sent_at DESC`,
       [period, activeRows.map((r) => r.tenantId!)],
     );
     for (const r of reminders) {
-      lastRemindedByTenant.set(r.tenant_id, format(r.sent_at, 'MMM d, yyyy'));
+      lastRemindedByTenant.set(r.tenant_id, {
+        date: format(r.sent_at, 'MMM d, yyyy'),
+        channel: r.channel,
+      });
     }
   }
 
   const unpaidRows = activeRows.filter(
     (r) => (paidByTenant.get(r.tenantId!) ?? 0) < (r.rentAmount ?? 0),
   );
-  const unpaidWithEmail = unpaidRows.filter((r) => r.tenantEmail).length;
+  const unpaidWithContact = unpaidRows.filter((r) => r.tenantEmail || r.tenantPhone).length;
 
   const totalDue = activeRows.reduce((sum, r) => sum + (r.rentAmount ?? 0), 0);
   const totalCollected = activeRows.reduce(
@@ -90,8 +93,8 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
           <RemindAllButton
             period={period}
             monthLabel={formatPeriod(period)}
-            unpaidWithEmail={unpaidWithEmail}
-            unpaidWithoutEmail={unpaidRows.length - unpaidWithEmail}
+            unpaidWithContact={unpaidWithContact}
+            unpaidWithoutContact={unpaidRows.length - unpaidWithContact}
           />
         </div>
       </div>
@@ -161,14 +164,16 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                         <TableCell className='text-right'>
                           {active &&
                             status !== 'paid' &&
-                            (r.tenantEmail ? (
+                            (r.tenantEmail || r.tenantPhone ? (
                               <SendReminderButton
                                 tenantId={r.tenantId!}
                                 period={period}
-                                lastRemindedAt={lastRemindedByTenant.get(r.tenantId!) ?? null}
+                                lastReminded={lastRemindedByTenant.get(r.tenantId!) ?? null}
                               />
                             ) : (
-                              <span className='text-xs text-muted-foreground'>No email</span>
+                              <span className='text-xs text-muted-foreground'>
+                                No email or phone
+                              </span>
                             ))}
                         </TableCell>
                       </TableRow>

@@ -15,14 +15,20 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 
+const CHANNEL_LABELS: Record<string, string> = {
+  email: 'Email',
+  sms: 'SMS',
+  both: 'Email + SMS',
+};
+
 export function SendReminderButton({
   tenantId,
   period,
-  lastRemindedAt,
+  lastReminded,
 }: {
   tenantId: string;
   period: string;
-  lastRemindedAt: string | null;
+  lastReminded: { date: string; channel: string } | null;
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -38,10 +44,13 @@ export function SendReminderButton({
   }
 
   const label = pending ? 'Sending…' : 'Remind';
+  const channelLabel = lastReminded
+    ? (CHANNEL_LABELS[lastReminded.channel] ?? lastReminded.channel)
+    : null;
 
   return (
     <div className='flex flex-col items-end gap-0.5'>
-      {lastRemindedAt ? (
+      {lastReminded ? (
         <AlertDialog>
           <AlertDialogTrigger
             render={<Button type='button' variant='outline' size='xs' disabled={pending} />}
@@ -52,7 +61,8 @@ export function SendReminderButton({
             <AlertDialogHeader>
               <AlertDialogTitle>Send another reminder?</AlertDialogTitle>
               <AlertDialogDescription>
-                This tenant was already reminded on {lastRemindedAt} for this month.
+                This tenant was already reminded on {lastReminded.date} via {channelLabel} for this
+                month.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -67,8 +77,10 @@ export function SendReminderButton({
         </Button>
       )}
       {sentNow && !pending && <span className='text-xs text-muted-foreground'>Reminder sent</span>}
-      {!sentNow && lastRemindedAt && (
-        <span className='text-xs text-muted-foreground'>Reminded {lastRemindedAt}</span>
+      {!sentNow && lastReminded && (
+        <span className='text-xs text-muted-foreground'>
+          Reminded {lastReminded.date} · {channelLabel}
+        </span>
       )}
       {error && <span className='text-xs text-destructive'>{error}</span>}
     </div>

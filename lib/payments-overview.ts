@@ -10,6 +10,7 @@ export interface OverviewRow {
   tenantId: string | null;
   tenantName: string | null;
   tenantEmail: string | null;
+  tenantPhone: string | null;
   rentAmount: number | null;
   leaseStartDate: string | null;
   leaseEndDate: string | null;
@@ -34,7 +35,7 @@ export async function getPaymentsOverview(
   const rows = await query<OverviewRow>(
     `SELECT p.id as "propertyId", p.name as "propertyName",
             u.id as "unitId", u.unit_label as "unitLabel",
-            t.id as "tenantId", t.name as "tenantName", t.email as "tenantEmail",
+            t.id as "tenantId", t.name as "tenantName", t.email as "tenantEmail", t.phone as "tenantPhone",
             t.rent_amount as "rentAmount", t.lease_start_date as "leaseStartDate", t.lease_end_date as "leaseEndDate"
      FROM units u
      LEFT JOIN tenants t ON t.unit_id = u.id
@@ -70,6 +71,7 @@ export async function getPaymentsOverview(
         tenantId: null,
         tenantName: null,
         tenantEmail: null,
+        tenantPhone: null,
         rentAmount: null,
         leaseStartDate: null,
         leaseEndDate: null,

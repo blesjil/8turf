@@ -6,7 +6,8 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
 import { ownerScope } from '@/lib/access';
 import { query } from '@/lib/db';
-import { sendPaymentReminder } from '@/lib/mail';
+import { sendPaymentReminder, type PaymentReminderDetails } from '@/lib/mail';
+import { sendSmsPaymentReminder } from '@/lib/sms';
 import { getPaymentsOverview, type OverviewRow } from '@/lib/payments-overview';
 import { formatPeriod } from '@/lib/format-date';
 
@@ -18,16 +19,29 @@ export interface ReminderResult {
 export interface BulkReminderResult {
   ok: boolean;
   sent: number;
-  skippedNoEmail: number;
+  skippedNoContact: number;
   failed: number;
   error?: string;
 }
 
-const NOT_CONFIGURED = 'Email is not configured (GMAIL_USER/GMAIL_APP_PASSWORD missing).';
+const NOT_CONFIGURED =
+  'No reminder channel is configured (GMAIL_USER/GMAIL_APP_PASSWORD and SEMAPHORE_API_KEY missing).';
 
-async function emailReminder(row: OverviewRow, paid: number, period: string): Promise<boolean> {
+interface SendOutcome {
+  /** At least one channel delivered the reminder. */
+  sent: boolean;
+  /** Every applicable channel was unconfigured (nothing was even attempted). */
+  nothingConfigured: boolean;
+  /** A configured channel threw while sending. */
+  anyFailed: boolean;
+}
+
+// Sends the reminder over every channel the tenant has contact details for
+// (email and/or SMS), then logs one payment_reminders row recording which
+// channels actually succeeded.
+async function sendReminder(row: OverviewRow, paid: number, period: string): Promise<SendOutcome> {
   const rentAmount = row.rentAmount ?? 0;
-  const configured = await sendPaymentReminder(row.tenantEmail!, {
+  const details: PaymentReminderDetails = {
     tenantName: row.tenantName!,
     propertyName: row.propertyName,
     unitLabel: row.unitLabel,
@@ -35,15 +49,47 @@ async function emailReminder(row: OverviewRow, paid: number, period: string): Pr
     rentAmount,
     amountPaid: paid,
     amountDue: rentAmount - paid,
-  });
-  if (configured) {
+  };
+
+  let emailSent = false;
+  let smsSent = false;
+  let attempted = 0;
+  let anyFailed = false;
+
+  if (row.tenantEmail) {
+    try {
+      emailSent = await sendPaymentReminder(row.tenantEmail, details);
+      if (emailSent) attempted++;
+    } catch (error) {
+      console.error('Failed to send payment reminder email:', error);
+      attempted++;
+      anyFailed = true;
+    }
+  }
+  if (row.tenantPhone) {
+    try {
+      smsSent = await sendSmsPaymentReminder(row.tenantPhone, details);
+      if (smsSent) attempted++;
+    } catch (error) {
+      console.error('Failed to send payment reminder SMS:', error);
+      attempted++;
+      anyFailed = true;
+    }
+  }
+
+  if (emailSent || smsSent) {
+    const channel = emailSent && smsSent ? 'both' : emailSent ? 'email' : 'sms';
+    const sentTo = [emailSent ? row.tenantEmail : null, smsSent ? row.tenantPhone : null]
+      .filter(Boolean)
+      .join(', ');
     await query(
-      `INSERT INTO payment_reminders (id, tenant_id, period, sent_to, amount_due)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [crypto.randomUUID(), row.tenantId, period, row.tenantEmail, rentAmount - paid],
+      `INSERT INTO payment_reminders (id, tenant_id, period, sent_to, amount_due, channel)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [crypto.randomUUID(), row.tenantId, period, sentTo, rentAmount - paid, channel],
     );
   }
-  return configured;
+
+  return { sent: emailSent || smsSent, nothingConfigured: attempted === 0, anyFailed };
 }
 
 export async function sendDueReminder(tenantId: string, period: string): Promise<ReminderResult> {
@@ -61,20 +107,18 @@ export async function sendDueReminder(tenantId: string, period: string): Promise
   if (!row) {
     return { ok: false, error: 'Tenant not found or access denied.' };
   }
-  if (!row.tenantEmail) {
-    return { ok: false, error: 'This tenant has no email address on file.' };
+  if (!row.tenantEmail && !row.tenantPhone) {
+    return { ok: false, error: 'This tenant has no email address or phone number on file.' };
   }
   const paid = paidByTenant.get(tenantId) ?? 0;
   if (paid >= (row.rentAmount ?? 0)) {
     return { ok: false, error: 'This tenant has no outstanding balance for this month.' };
   }
 
-  try {
-    const configured = await emailReminder(row, paid, period);
-    if (!configured) return { ok: false, error: NOT_CONFIGURED };
-  } catch (error) {
-    console.error('Failed to send payment reminder email:', error);
-    return { ok: false, error: 'Failed to send the reminder email. Please try again.' };
+  const outcome = await sendReminder(row, paid, period);
+  if (!outcome.sent) {
+    if (outcome.nothingConfigured) return { ok: false, error: NOT_CONFIGURED };
+    return { ok: false, error: 'Failed to send the reminder. Please try again.' };
   }
 
   revalidatePath('/payments');
@@ -86,7 +130,7 @@ export async function sendAllDueReminders(period: string): Promise<BulkReminderR
   if (!session) redirect('/authenticate');
 
   if (!/^\d{4}-\d{2}$/.test(period)) {
-    return { ok: false, sent: 0, skippedNoEmail: 0, failed: 0, error: 'Invalid request.' };
+    return { ok: false, sent: 0, skippedNoContact: 0, failed: 0, error: 'Invalid request.' };
   }
 
   const { activeRows, paidByTenant } = await getPaymentsOverview(period, ownerScope(session));
@@ -95,25 +139,23 @@ export async function sendAllDueReminders(period: string): Promise<BulkReminderR
   );
 
   let sent = 0;
-  let skippedNoEmail = 0;
+  let skippedNoContact = 0;
   let failed = 0;
   for (const row of unpaid) {
-    if (!row.tenantEmail) {
-      skippedNoEmail++;
+    if (!row.tenantEmail && !row.tenantPhone) {
+      skippedNoContact++;
       continue;
     }
-    try {
-      const configured = await emailReminder(row, paidByTenant.get(row.tenantId!) ?? 0, period);
-      if (!configured) {
-        return { ok: false, sent, skippedNoEmail, failed, error: NOT_CONFIGURED };
-      }
+    const outcome = await sendReminder(row, paidByTenant.get(row.tenantId!) ?? 0, period);
+    if (outcome.sent) {
       sent++;
-    } catch (error) {
-      console.error('Failed to send payment reminder email:', error);
+    } else if (outcome.nothingConfigured) {
+      return { ok: false, sent, skippedNoContact, failed, error: NOT_CONFIGURED };
+    } else {
       failed++;
     }
   }
 
   if (sent > 0) revalidatePath('/payments');
-  return { ok: failed === 0, sent, skippedNoEmail, failed };
+  return { ok: failed === 0, sent, skippedNoContact, failed };
 }
