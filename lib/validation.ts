@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+const isValidPhilippinePhone = (value: string) => {
+  if (!value) return true;
+  // Remove spaces, dashes, and parentheses for validation
+  const cleaned = value.replace(/[\s\-().]/g, '');
+  // Accept: 09XXXXXXXXX (11 digits total) or +639XXXXXXXXX (12 chars)
+  return /^(09\d{9}|\+639\d{9})$/.test(cleaned);
+};
+
 export const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   name: z.string().min(1, 'Name is required').max(200, 'Name is too long'),
@@ -53,6 +61,23 @@ const optionalDateField = z
   .optional()
   .or(z.literal(''));
 
+const optionalPhPhone = z
+  .union([
+    z
+      .string()
+      .max(50, 'Phone is too long')
+      .refine(isValidPhilippinePhone, 'Must be a valid Philippine phone number'),
+    z.literal(''),
+  ])
+  .optional();
+
+const occupantsField = z
+  .array(
+    z.string().trim().min(1, 'Occupant name cannot be empty').max(100, 'Occupant name is too long'),
+  )
+  .max(10, 'At most 10 occupants')
+  .optional();
+
 const leaseRangeCheck = {
   check: (data: { leaseStartDate: string; leaseEndDate?: string }) =>
     !data.leaseEndDate || data.leaseEndDate >= data.leaseStartDate,
@@ -66,8 +91,11 @@ export const assignTenantSchema = z
   .object({
     unitId: z.string().min(1, 'Unit id is required'),
     name: z.string().min(1, 'Name is required').max(200, 'Name is too long'),
-    email: z.string().email('Invalid email address').optional().or(z.literal('')),
-    phone: z.string().max(50, 'Phone is too long').optional().or(z.literal('')),
+    email: z.union([z.string().email('Invalid email address'), z.literal('')]).optional(),
+    phone: optionalPhPhone,
+    occupants: occupantsField,
+    emergencyContactName: z.string().max(200, 'Name is too long').optional().or(z.literal('')),
+    emergencyContactPhone: optionalPhPhone,
     rentAmount: centsField,
     leaseStartDate: dateField,
     leaseEndDate: optionalDateField,
@@ -78,8 +106,11 @@ export const updateTenantSchema = z
   .object({
     id: z.string().min(1, 'Tenant id is required'),
     name: z.string().min(1, 'Name is required').max(200, 'Name is too long'),
-    email: z.string().email('Invalid email address').optional().or(z.literal('')),
-    phone: z.string().max(50, 'Phone is too long').optional().or(z.literal('')),
+    email: z.union([z.string().email('Invalid email address'), z.literal('')]).optional(),
+    phone: optionalPhPhone,
+    occupants: occupantsField,
+    emergencyContactName: z.string().max(200, 'Name is too long').optional().or(z.literal('')),
+    emergencyContactPhone: optionalPhPhone,
     rentAmount: centsField,
     leaseStartDate: dateField,
     leaseEndDate: optionalDateField,

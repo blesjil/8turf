@@ -47,13 +47,15 @@ export default async function UnitDetail({ params }: { params: Params }) {
   if (!unit) notFound();
 
   const activeTenant = await queryOne<Tenant>(
-    `SELECT id, name, email, phone, rent_amount, lease_start_date, lease_end_date, is_active
+    `SELECT id, name, email, phone, rent_amount, lease_start_date, lease_end_date, is_active,
+            occupants, emergency_contact_name, emergency_contact_phone
      FROM tenants WHERE unit_id = $1 AND is_active`,
     [unit.id],
   );
 
   const tenantHistory = await query<Tenant>(
-    `SELECT id, name, email, phone, rent_amount, lease_start_date, lease_end_date, is_active
+    `SELECT id, name, email, phone, rent_amount, lease_start_date, lease_end_date, is_active,
+            occupants, emergency_contact_name, emergency_contact_phone
      FROM tenants WHERE unit_id = $1 ORDER BY lease_start_date DESC`,
     [unit.id],
   );

@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import { format } from 'date-fns';
+import { PlusIcon, XIcon } from 'lucide-react';
 import { formatCents } from '@/lib/money';
 import { formatDate } from '@/lib/format-date';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,69 @@ export interface Tenant {
   lease_start_date: string;
   lease_end_date: string | null;
   is_active: boolean;
+  occupants: string[];
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+}
+
+const MAX_OCCUPANTS = 10;
+
+function OccupantsField({ initial, error }: { initial?: string[]; error?: string[] }) {
+  const [rows, setRows] = useState<{ key: number; value: string }[]>(() =>
+    (initial ?? []).map((value, i) => ({ key: i, value })),
+  );
+  const [nextKey, setNextKey] = useState((initial ?? []).length);
+
+  const addRow = () => {
+    setRows((prev) => [...prev, { key: nextKey, value: '' }]);
+    setNextKey((k) => k + 1);
+  };
+
+  return (
+    <div className='sm:col-span-2'>
+      <Label className='mb-2'>
+        Other occupants <span className='font-normal text-muted-foreground'>(optional)</span>
+      </Label>
+      {rows.length > 0 && (
+        <div className='mb-2 space-y-2'>
+          {rows.map((row, i) => (
+            <div key={row.key} className='flex items-center gap-2'>
+              <Input
+                name='occupants'
+                value={row.value}
+                placeholder='Occupant name'
+                aria-label={`Occupant ${i + 1}`}
+                onChange={(e) => {
+                  const value = e.currentTarget.value;
+                  setRows((prev) => prev.map((r) => (r.key === row.key ? { ...r, value } : r)));
+                }}
+              />
+              <Button
+                type='button'
+                variant='ghost'
+                size='icon-lg'
+                className='shrink-0'
+                onClick={() => setRows((prev) => prev.filter((r) => r.key !== row.key))}
+              >
+                <XIcon />
+                <span className='sr-only'>Remove occupant {i + 1}</span>
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+      <Button
+        type='button'
+        variant='outline'
+        size='sm'
+        onClick={addRow}
+        disabled={rows.length >= MAX_OCCUPANTS}
+      >
+        <PlusIcon /> Add occupant
+      </Button>
+      <FieldError messages={error} />
+    </div>
+  );
 }
 
 function FieldError({ messages }: { messages?: string[] }) {
@@ -47,33 +111,40 @@ function TenantFormFields({
   state,
   tenant,
   defaultRentAmount,
+  formData,
 }: {
   state: TenantActionResult;
   tenant?: Tenant | null;
   defaultRentAmount?: number;
+  formData?: Record<string, string>;
 }) {
   const prefillRent = tenant?.rent_amount ?? defaultRentAmount;
+
+  const getValue = (key: string, defaultVal: string = '') => {
+    return formData?.[key] ?? (tenant?.[key as keyof Tenant] as string) ?? defaultVal;
+  };
+
   return (
     <div className='grid gap-4 sm:grid-cols-2'>
       <div>
         <Label htmlFor='tenant-name' className='mb-2'>
           Name
         </Label>
-        <Input id='tenant-name' name='name' defaultValue={tenant?.name} required />
+        <Input id='tenant-name' name='name' defaultValue={getValue('name')} required />
         <FieldError messages={state.error?.name} />
       </div>
       <div>
         <Label htmlFor='tenant-email' className='mb-2'>
           Email <span className='font-normal text-muted-foreground'>(optional)</span>
         </Label>
-        <Input id='tenant-email' name='email' type='email' defaultValue={tenant?.email ?? ''} />
+        <Input id='tenant-email' name='email' type='email' defaultValue={getValue('email')} />
         <FieldError messages={state.error?.email} />
       </div>
       <div>
         <Label htmlFor='tenant-phone' className='mb-2'>
           Phone <span className='font-normal text-muted-foreground'>(optional)</span>
         </Label>
-        <Input id='tenant-phone' name='phone' defaultValue={tenant?.phone ?? ''} />
+        <Input id='tenant-phone' name='phone' defaultValue={getValue('phone')} />
         <FieldError messages={state.error?.phone} />
       </div>
       <div>
@@ -86,7 +157,13 @@ function TenantFormFields({
           type='number'
           step='0.01'
           min='0'
-          defaultValue={prefillRent != null ? (prefillRent / 100).toFixed(2) : undefined}
+          defaultValue={
+            formData?.rentAmountDollars != null
+              ? formData.rentAmountDollars
+              : prefillRent != null
+                ? (prefillRent / 100).toFixed(2)
+                : undefined
+          }
           required
           onChange={(e) => {
             const cents = Math.round(parseFloat(e.currentTarget.value || '0') * 100);
@@ -101,15 +178,48 @@ function TenantFormFields({
       </div>
       <div>
         <Label className='mb-2'>Lease start</Label>
-        <DatePickerField name='leaseStartDate' defaultValue={tenant?.lease_start_date} required />
+        <DatePickerField
+          name='leaseStartDate'
+          defaultValue={getValue('leaseStartDate', tenant?.lease_start_date)}
+          required
+        />
         <FieldError messages={state.error?.leaseStartDate} />
       </div>
       <div>
         <Label className='mb-2'>
           Lease end <span className='font-normal text-muted-foreground'>(optional)</span>
         </Label>
-        <DatePickerField name='leaseEndDate' defaultValue={tenant?.lease_end_date ?? undefined} />
+        <DatePickerField
+          name='leaseEndDate'
+          defaultValue={formData?.leaseEndDate ?? tenant?.lease_end_date ?? undefined}
+        />
         <FieldError messages={state.error?.leaseEndDate} />
+      </div>
+      <OccupantsField initial={tenant?.occupants} error={state.error?.occupants} />
+      <div>
+        <Label htmlFor='tenant-emergency-name' className='mb-2'>
+          Emergency contact <span className='font-normal text-muted-foreground'>(optional)</span>
+        </Label>
+        <Input
+          id='tenant-emergency-name'
+          name='emergencyContactName'
+          placeholder='Contact person'
+          defaultValue={getValue('emergencyContactName', tenant?.emergency_contact_name ?? '')}
+        />
+        <FieldError messages={state.error?.emergencyContactName} />
+      </div>
+      <div>
+        <Label htmlFor='tenant-emergency-phone' className='mb-2'>
+          Emergency phone <span className='font-normal text-muted-foreground'>(optional)</span>
+        </Label>
+        <Input
+          id='tenant-emergency-phone'
+          name='emergencyContactPhone'
+          type='tel'
+          placeholder='09XX XXX XXXX'
+          defaultValue={getValue('emergencyContactPhone', tenant?.emergency_contact_phone ?? '')}
+        />
+        <FieldError messages={state.error?.emergencyContactPhone} />
       </div>
     </div>
   );
@@ -134,6 +244,26 @@ export function TenantCard({
   );
   const [isEditing, setIsEditing] = useState(false);
   const [endDateError, setEndDateError] = useState<string | null>(null);
+  const [lastAssignFormData, setLastAssignFormData] = useState<Record<string, string>>({});
+  const [lastUpdateFormData, setLastUpdateFormData] = useState<Record<string, string>>({});
+
+  const handleAssignSubmit = async (formData: FormData) => {
+    const data: Record<string, string> = {};
+    formData.forEach((value, key) => {
+      if (typeof value === 'string') data[key] = value;
+    });
+    setLastAssignFormData(data);
+    await assignAction(formData);
+  };
+
+  const handleUpdateSubmit = async (formData: FormData) => {
+    const data: Record<string, string> = {};
+    formData.forEach((value, key) => {
+      if (typeof value === 'string') data[key] = value;
+    });
+    setLastUpdateFormData(data);
+    await updateAction(formData);
+  };
 
   if (!tenant) {
     return (
@@ -142,12 +272,16 @@ export function TenantCard({
           <CardTitle>No tenant assigned</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={assignAction} className='space-y-4'>
+          <form action={handleAssignSubmit} className='space-y-4'>
             <input type='hidden' name='unitId' value={unitId} />
             {assignState.error?.general && (
               <p className='text-sm text-destructive'>{assignState.error.general}</p>
             )}
-            <TenantFormFields state={assignState} defaultRentAmount={askingRent} />
+            <TenantFormFields
+              state={assignState}
+              defaultRentAmount={askingRent}
+              formData={lastAssignFormData}
+            />
             <Button type='submit' disabled={assignPending}>
               {assignPending ? 'Assigning…' : 'Assign tenant'}
             </Button>
@@ -164,17 +298,24 @@ export function TenantCard({
           <CardTitle>Edit tenant</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={updateAction} className='space-y-4'>
+          <form action={handleUpdateSubmit} className='space-y-4'>
             <input type='hidden' name='id' value={tenant.id} />
             {updateState.error?.general && (
               <p className='text-sm text-destructive'>{updateState.error.general}</p>
             )}
-            <TenantFormFields state={updateState} tenant={tenant} />
+            <TenantFormFields state={updateState} tenant={tenant} formData={lastUpdateFormData} />
             <div className='flex gap-2'>
               <Button type='submit' disabled={updatePending}>
                 {updatePending ? 'Saving…' : 'Save changes'}
               </Button>
-              <Button type='button' variant='outline' onClick={() => setIsEditing(false)}>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() => {
+                  setIsEditing(false);
+                  setLastUpdateFormData({});
+                }}
+              >
                 Cancel
               </Button>
             </div>
@@ -197,6 +338,17 @@ export function TenantCard({
             {formatDate(tenant.lease_start_date)} to{' '}
             {tenant.lease_end_date ? formatDate(tenant.lease_end_date) : 'ongoing'}
           </p>
+          {tenant.occupants?.length > 0 && (
+            <p className='text-sm text-muted-foreground'>With: {tenant.occupants.join(', ')}</p>
+          )}
+          {(tenant.emergency_contact_name || tenant.emergency_contact_phone) && (
+            <p className='text-sm text-muted-foreground'>
+              Emergency:{' '}
+              {[tenant.emergency_contact_name, tenant.emergency_contact_phone]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+          )}
         </div>
         <div className='flex shrink-0 items-center gap-2'>
           <Button type='button' variant='outline' size='sm' onClick={() => setIsEditing(true)}>

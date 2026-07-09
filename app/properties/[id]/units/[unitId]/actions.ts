@@ -126,6 +126,9 @@ export interface TenantActionResult {
     name?: string[];
     email?: string[];
     phone?: string[];
+    occupants?: string[];
+    emergencyContactName?: string[];
+    emergencyContactPhone?: string[];
     rentAmount?: string[];
     leaseStartDate?: string[];
     leaseEndDate?: string[];
@@ -145,6 +148,11 @@ export async function assignTenant(
     name: formData.get('name'),
     email: formData.get('email'),
     phone: formData.get('phone'),
+    occupants: formData
+      .getAll('occupants')
+      .filter((v): v is string => typeof v === 'string' && v.trim() !== ''),
+    emergencyContactName: formData.get('emergencyContactName'),
+    emergencyContactPhone: formData.get('emergencyContactPhone'),
     rentAmount: formData.get('rentAmount'),
     leaseStartDate: formData.get('leaseStartDate'),
     leaseEndDate: formData.get('leaseEndDate'),
@@ -161,8 +169,8 @@ export async function assignTenant(
   const id = crypto.randomUUID();
   try {
     await query(
-      `INSERT INTO tenants (id, unit_id, name, email, phone, rent_amount, lease_start_date, lease_end_date)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      `INSERT INTO tenants (id, unit_id, name, email, phone, rent_amount, lease_start_date, lease_end_date, occupants, emergency_contact_name, emergency_contact_phone)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
         id,
         unit.id,
@@ -172,6 +180,9 @@ export async function assignTenant(
         parsed.data.rentAmount,
         parsed.data.leaseStartDate,
         parsed.data.leaseEndDate || null,
+        JSON.stringify(parsed.data.occupants ?? []),
+        parsed.data.emergencyContactName || null,
+        parsed.data.emergencyContactPhone || null,
       ],
     );
   } catch (err) {
@@ -219,6 +230,11 @@ export async function updateTenant(
     name: formData.get('name'),
     email: formData.get('email'),
     phone: formData.get('phone'),
+    occupants: formData
+      .getAll('occupants')
+      .filter((v): v is string => typeof v === 'string' && v.trim() !== ''),
+    emergencyContactName: formData.get('emergencyContactName'),
+    emergencyContactPhone: formData.get('emergencyContactPhone'),
     rentAmount: formData.get('rentAmount'),
     leaseStartDate: formData.get('leaseStartDate'),
     leaseEndDate: formData.get('leaseEndDate'),
@@ -233,8 +249,9 @@ export async function updateTenant(
   }
 
   await query(
-    `UPDATE tenants SET name = $1, email = $2, phone = $3, rent_amount = $4, lease_start_date = $5, lease_end_date = $6
-     WHERE id = $7`,
+    `UPDATE tenants SET name = $1, email = $2, phone = $3, rent_amount = $4, lease_start_date = $5, lease_end_date = $6,
+       occupants = $7, emergency_contact_name = $8, emergency_contact_phone = $9
+     WHERE id = $10`,
     [
       parsed.data.name,
       parsed.data.email || null,
@@ -242,6 +259,9 @@ export async function updateTenant(
       parsed.data.rentAmount,
       parsed.data.leaseStartDate,
       parsed.data.leaseEndDate || null,
+      JSON.stringify(parsed.data.occupants ?? []),
+      parsed.data.emergencyContactName || null,
+      parsed.data.emergencyContactPhone || null,
       tenant.id,
     ],
   );
