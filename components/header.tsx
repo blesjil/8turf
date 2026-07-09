@@ -71,7 +71,7 @@ export function Header({ user }: HeaderProps) {
         <div className='flex items-center gap-6'>
           <Link href={user ? '/dashboard' : '/'} className='flex items-center gap-2'>
             <BrandMark />
-            <span className='text-base font-semibold tracking-tight'>8turf</span>
+            <span className='text-base font-semibold tracking-tight'>8TURF</span>
           </Link>
           {user && (
             <nav className='hidden items-center gap-1 sm:flex'>

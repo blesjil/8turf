@@ -51,7 +51,7 @@ export async function sendSmsPaymentReminder(
   const message = [
     `Hi ${details.tenantName}, friendly reminder: your rent for ${details.monthLabel}`,
     `at ${details.propertyName} Unit ${details.unitLabel} has a balance of ${formatPhp(details.amountDue)}.`,
-    'Kindly disregard if already settled. - 8Turf Apartments',
+    'Kindly disregard if already settled. - 8TURF Apartments',
   ].join(' ');
 
   const body = new URLSearchParams({

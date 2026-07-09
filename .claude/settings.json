@@ -129,9 +129,20 @@
       "Bash(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/)",
       "Bash(grep -iA2 -B2 'password\\\\|login\\\\|admin\\\\|credential')",
       "Skill(update-config)",
-      "Skill(update-config:*)"
+      "Skill(update-config:*)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' https://8turf.vercel.app/)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' https://8turf.vercel.app/authenticate)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/icon.svg)",
+      "Bash(curl -s http://localhost:3001/icon.svg)",
+      "Bash(curl -s \"http://localhost:3001/icon.svg?icon.5ff10958.svg\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} \" http://localhost:3001/icon.svg)",
+      "Bash(kill 13820 13827 13833 18914 18915)",
+      "Bash(sips -s format png -z 512 512 /Users/blesjil/Documents/Jill/apps/8turf/app/icon.svg --out icon.png)",
+      "Bash(sips -s format png -z 512 512 /Users/blesjil/Documents/Jill/apps/8turf/app/icon.svg --out /Users/blesjil/Documents/Jill/apps/8turf/app/icon.png)"
     ],
-    "additionalDirectories": ["/tmp"]
+    "additionalDirectories": [
+      "/tmp"
+    ]
   },
   "hooks": {
     "PostToolUse": [

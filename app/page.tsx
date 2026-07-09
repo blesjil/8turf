@@ -7,7 +7,7 @@ export default function Home() {
     <div className='flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-8'>
       <main className='max-w-md text-center'>
         <BrandMark className='mx-auto mb-6 size-12 rounded-xl text-2xl' />
-        <h1 className='mb-3 text-4xl font-semibold tracking-tight'>8turf</h1>
+        <h1 className='mb-3 text-4xl font-semibold tracking-tight'>8TURF</h1>
         <p className='mb-8 text-balance text-muted-foreground'>
           Track your properties, units, tenants, and rent payments in one place.
         </p>

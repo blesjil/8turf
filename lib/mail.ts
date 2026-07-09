@@ -85,7 +85,7 @@ export async function sendPaymentReceipt(
   `;
 
   await transporter.sendMail({
-    from: `"8Turf Apartments" <${gmailUser}>`,
+    from: `"8TURF Apartments" <${gmailUser}>`,
     to,
     subject: `Payment received — ${formatCents(details.amount)} (${months.join(', ')})`,
     text,
@@ -151,7 +151,7 @@ export async function sendPaymentReminder(
   `;
 
   await transporter.sendMail({
-    from: `"8Turf Apartments" <${gmailUser}>`,
+    from: `"8TURF Apartments" <${gmailUser}>`,
     to,
     subject: `Rent reminder — ${formatCents(details.amountDue)} due for ${details.monthLabel}`,
     text,
@@ -180,8 +180,8 @@ export async function sendTemporaryPassword(
 
   const signInUrl = process.env.BETTER_AUTH_URL;
   const intro = details.isNewAccount
-    ? 'An account has been created for you on 8Turf Apartments.'
-    : 'Your 8Turf Apartments password has been reset.';
+    ? 'An account has been created for you on 8TURF Apartments.'
+    : 'Your 8TURF Apartments password has been reset.';
 
   const text = [
     `Hi ${details.name},`,
@@ -214,11 +214,11 @@ export async function sendTemporaryPassword(
   `;
 
   await transporter.sendMail({
-    from: `"8Turf Apartments" <${gmailUser}>`,
+    from: `"8TURF Apartments" <${gmailUser}>`,
     to,
     subject: details.isNewAccount
-      ? 'Your 8Turf Apartments account'
-      : 'Your 8Turf Apartments password was reset',
+      ? 'Your 8TURF Apartments account'
+      : 'Your 8TURF Apartments password was reset',
     text,
     html,
   });
