@@ -97,6 +97,7 @@ export const assignTenantSchema = z
     emergencyContactName: z.string().max(200, 'Name is too long').optional().or(z.literal('')),
     emergencyContactPhone: optionalPhPhone,
     rentAmount: centsField,
+    depositAmount: centsField,
     leaseStartDate: dateField,
     leaseEndDate: optionalDateField,
   })
@@ -112,6 +113,7 @@ export const updateTenantSchema = z
     emergencyContactName: z.string().max(200, 'Name is too long').optional().or(z.literal('')),
     emergencyContactPhone: optionalPhPhone,
     rentAmount: centsField,
+    depositAmount: centsField,
     leaseStartDate: dateField,
     leaseEndDate: optionalDateField,
   })

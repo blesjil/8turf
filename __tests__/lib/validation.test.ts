@@ -5,6 +5,7 @@ import {
   createPropertySchema,
   createUnitSchema,
   assignTenantSchema,
+  updateTenantSchema,
   recordPaymentSchema,
   validateDocumentFile,
   MAX_DOCUMENT_BYTES,
@@ -116,10 +117,14 @@ describe('assignTenantSchema', () => {
       email: '',
       phone: '',
       rentAmount: '150000',
+      depositAmount: '150000',
       leaseStartDate: '2026-01-01',
       leaseEndDate: '',
     });
     expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.depositAmount).toBe(150000);
+    }
   });
 
   it('rejects a malformed lease start date', () => {
@@ -127,6 +132,7 @@ describe('assignTenantSchema', () => {
       unitId: 'unit-1',
       name: 'Jane Tenant',
       rentAmount: '150000',
+      depositAmount: '150000',
       leaseStartDate: '01/01/2026',
     });
     expect(result.success).toBe(false);
@@ -137,6 +143,7 @@ describe('assignTenantSchema', () => {
       unitId: 'unit-1',
       name: 'Jane Tenant',
       rentAmount: '150000',
+      depositAmount: '150000',
       leaseStartDate: '2026-07-15',
       leaseEndDate: '2026-07-10',
     });
@@ -144,6 +151,57 @@ describe('assignTenantSchema', () => {
     if (!result.success) {
       expect(result.error.flatten().fieldErrors.leaseEndDate).toBeTruthy();
     }
+  });
+
+  it('rejects a missing deposit amount', () => {
+    const result = assignTenantSchema.safeParse({
+      unitId: 'unit-1',
+      name: 'Jane Tenant',
+      rentAmount: '150000',
+      leaseStartDate: '2026-01-01',
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.depositAmount).toBeTruthy();
+    }
+  });
+
+  it('rejects a negative deposit amount', () => {
+    const result = assignTenantSchema.safeParse({
+      unitId: 'unit-1',
+      name: 'Jane Tenant',
+      rentAmount: '150000',
+      depositAmount: '-100',
+      leaseStartDate: '2026-01-01',
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('updateTenantSchema', () => {
+  it('accepts an updated tenant with a deposit differing from rent', () => {
+    const result = updateTenantSchema.safeParse({
+      id: 'tenant-1',
+      name: 'Jane Tenant',
+      rentAmount: '180000',
+      depositAmount: '150000',
+      leaseStartDate: '2026-01-01',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.depositAmount).toBe(150000);
+    }
+  });
+
+  it('rejects a fractional-cents deposit amount', () => {
+    const result = updateTenantSchema.safeParse({
+      id: 'tenant-1',
+      name: 'Jane Tenant',
+      rentAmount: '150000',
+      depositAmount: '1500.5',
+      leaseStartDate: '2026-01-01',
+    });
+    expect(result.success).toBe(false);
   });
 });
 

@@ -35,6 +35,7 @@ export interface Tenant {
   email: string | null;
   phone: string | null;
   rent_amount: number;
+  deposit_amount: number;
   lease_start_date: string;
   lease_end_date: string | null;
   is_active: boolean;
@@ -120,6 +121,7 @@ function TenantFormFields({
   formData?: Record<string, string>;
 }) {
   const prefillRent = tenant?.rent_amount ?? defaultRentAmount;
+  const prefillDeposit = tenant?.deposit_amount ?? prefillRent;
 
   const getValue = (key: string, defaultVal: string = '') => {
     return formData?.[key] ?? (tenant?.[key as keyof Tenant] as string) ?? defaultVal;
@@ -176,6 +178,35 @@ function TenantFormFields({
         />
         <input type='hidden' name='rentAmount' defaultValue={prefillRent} />
         <FieldError messages={state.error?.rentAmount} />
+      </div>
+      <div>
+        <Label htmlFor='tenant-deposit' className='mb-2'>
+          Deposit (₱)
+        </Label>
+        <Input
+          id='tenant-deposit'
+          name='depositAmountDollars'
+          type='number'
+          step='0.01'
+          min='0'
+          defaultValue={
+            formData?.depositAmountDollars != null
+              ? formData.depositAmountDollars
+              : prefillDeposit != null
+                ? (prefillDeposit / 100).toFixed(2)
+                : undefined
+          }
+          required
+          onChange={(e) => {
+            const cents = Math.round(parseFloat(e.currentTarget.value || '0') * 100);
+            const hidden = e.currentTarget.form?.elements.namedItem(
+              'depositAmount',
+            ) as HTMLInputElement | null;
+            if (hidden) hidden.value = String(cents);
+          }}
+        />
+        <input type='hidden' name='depositAmount' defaultValue={prefillDeposit} />
+        <FieldError messages={state.error?.depositAmount} />
       </div>
       <div>
         <Label className='mb-2'>Lease start</Label>
@@ -347,7 +378,9 @@ export function TenantCard({
               {tenant.email || 'No email'} · {tenant.phone || 'No phone'}
             </p>
             <p className='text-sm text-muted-foreground'>
-              Rent: <span className='font-mono'>{formatCents(tenant.rent_amount)}</span>/mo · Lease:{' '}
+              Rent: <span className='font-mono'>{formatCents(tenant.rent_amount)}</span>/mo ·
+              Deposit: <span className='font-mono'>{formatCents(tenant.deposit_amount)}</span> ·
+              Lease:{' '}
               {formatDate(tenant.lease_start_date)} to{' '}
               {tenant.lease_end_date ? formatDate(tenant.lease_end_date) : 'ongoing'}
             </p>

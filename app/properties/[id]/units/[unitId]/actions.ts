@@ -133,6 +133,7 @@ export interface TenantActionResult {
     emergencyContactName?: string[];
     emergencyContactPhone?: string[];
     rentAmount?: string[];
+    depositAmount?: string[];
     leaseStartDate?: string[];
     leaseEndDate?: string[];
     general?: string;
@@ -157,6 +158,7 @@ export async function assignTenant(
     emergencyContactName: formData.get('emergencyContactName'),
     emergencyContactPhone: formData.get('emergencyContactPhone'),
     rentAmount: formData.get('rentAmount'),
+    depositAmount: formData.get('depositAmount'),
     leaseStartDate: formData.get('leaseStartDate'),
     leaseEndDate: formData.get('leaseEndDate'),
   });
@@ -172,8 +174,8 @@ export async function assignTenant(
   const id = crypto.randomUUID();
   try {
     await query(
-      `INSERT INTO tenants (id, unit_id, name, email, phone, rent_amount, lease_start_date, lease_end_date, occupants, emergency_contact_name, emergency_contact_phone)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      `INSERT INTO tenants (id, unit_id, name, email, phone, rent_amount, deposit_amount, lease_start_date, lease_end_date, occupants, emergency_contact_name, emergency_contact_phone)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
       [
         id,
         unit.id,
@@ -181,6 +183,7 @@ export async function assignTenant(
         parsed.data.email || null,
         parsed.data.phone || null,
         parsed.data.rentAmount,
+        parsed.data.depositAmount,
         parsed.data.leaseStartDate,
         parsed.data.leaseEndDate || null,
         JSON.stringify(parsed.data.occupants ?? []),
@@ -218,6 +221,7 @@ export async function updateTenant(
     emergencyContactName: formData.get('emergencyContactName'),
     emergencyContactPhone: formData.get('emergencyContactPhone'),
     rentAmount: formData.get('rentAmount'),
+    depositAmount: formData.get('depositAmount'),
     leaseStartDate: formData.get('leaseStartDate'),
     leaseEndDate: formData.get('leaseEndDate'),
   });
@@ -231,14 +235,15 @@ export async function updateTenant(
   }
 
   await query(
-    `UPDATE tenants SET name = $1, email = $2, phone = $3, rent_amount = $4, lease_start_date = $5, lease_end_date = $6,
-       occupants = $7, emergency_contact_name = $8, emergency_contact_phone = $9
-     WHERE id = $10`,
+    `UPDATE tenants SET name = $1, email = $2, phone = $3, rent_amount = $4, deposit_amount = $5, lease_start_date = $6, lease_end_date = $7,
+       occupants = $8, emergency_contact_name = $9, emergency_contact_phone = $10
+     WHERE id = $11`,
     [
       parsed.data.name,
       parsed.data.email || null,
       parsed.data.phone || null,
       parsed.data.rentAmount,
+      parsed.data.depositAmount,
       parsed.data.leaseStartDate,
       parsed.data.leaseEndDate || null,
       JSON.stringify(parsed.data.occupants ?? []),
