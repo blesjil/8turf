@@ -8,6 +8,7 @@ import { query, queryOne } from '@/lib/db';
 import { formatCents } from '@/lib/money';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/kpi-card';
+import { PageContainer } from '@/components/page-container';
 import { PropertyActions } from './property-actions';
 import { UnitList, type UnitListItem } from '@/components/unit-list';
 import { ExpenseList, type Expense } from '@/components/expense-list';
@@ -71,7 +72,7 @@ export default async function PropertyDetail({
   const rentRoll = units.reduce((sum, u) => sum + u.rentAmount, 0);
 
   return (
-    <div className='mx-auto max-w-4xl p-4 sm:p-8'>
+    <PageContainer>
       <Link
         href='/dashboard'
         className='mb-4 inline-block text-sm font-medium text-primary hover:underline'
@@ -146,6 +147,6 @@ export default async function PropertyDetail({
           deleteAction={deletePropertyExpense}
         />
       </div>
-    </div>
+    </PageContainer>
   );
 }

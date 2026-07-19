@@ -7,6 +7,7 @@ import { PromoteButton } from './promote-button';
 import { ResetPasswordButton } from './reset-password-button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { PageContainer } from '@/components/page-container';
 import {
   Table,
   TableBody,
@@ -46,7 +47,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
   const page = clampPage(rawPage, totalPages);
 
   return (
-    <div className='mx-auto max-w-4xl space-y-8 p-4 sm:p-8'>
+    <PageContainer className='space-y-8'>
       <div>
         <h1 className='font-heading text-2xl font-semibold tracking-tight'>Manage Users</h1>
         <p className='text-sm text-muted-foreground'>
@@ -92,6 +93,6 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: S
         </div>
       </Card>
       <PaginationNav page={page} totalPages={totalPages} basePath='/admin/users' />
-    </div>
+    </PageContainer>
   );
 }

@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { unarchiveProperty } from '../actions';
 import { Button } from '@/components/ui/button';
+import { PageContainer } from '@/components/page-container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PAGE_SIZE, PaginationNav, clampPage, paginate } from '@/components/ui/pagination';
 
@@ -42,7 +43,7 @@ export default async function ArchivedPropertiesPage({
   const page = clampPage(rawPage, totalPages);
 
   return (
-    <div className='mx-auto max-w-4xl p-4 sm:p-8'>
+    <PageContainer>
       <Link
         href='/dashboard'
         className='mb-4 inline-block text-sm font-medium text-primary hover:underline'
@@ -87,6 +88,6 @@ export default async function ArchivedPropertiesPage({
         </ul>
       )}
       <PaginationNav page={page} totalPages={totalPages} basePath='/properties/archived' />
-    </div>
+    </PageContainer>
   );
 }

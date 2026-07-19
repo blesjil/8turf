@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { ownerScope } from '@/lib/access';
 import { queryOne } from '@/lib/db';
 import { NewUnitForm } from './new-unit-form';
+import { PageContainer } from '@/components/page-container';
 
 type Params = Promise<{ id: string }>;
 
@@ -20,9 +21,11 @@ export default async function NewUnitPage({ params }: { params: Params }) {
   if (!property) notFound();
 
   return (
-    <div className='mx-auto max-w-lg p-4 sm:p-8'>
-      <h1 className='mb-6 font-heading text-2xl font-semibold tracking-tight'>Add Unit</h1>
-      <NewUnitForm propertyId={property.id} />
-    </div>
+    <PageContainer>
+      <div className='max-w-lg'>
+        <h1 className='mb-6 font-heading text-2xl font-semibold tracking-tight'>Add Unit</h1>
+        <NewUnitForm propertyId={property.id} />
+      </div>
+    </PageContainer>
   );
 }

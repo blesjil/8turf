@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { ownerScope } from '@/lib/access';
 import { queryOne } from '@/lib/db';
 import { EditUnitForm } from './edit-unit-form';
+import { PageContainer } from '@/components/page-container';
 
 type Params = Promise<{ id: string; unitId: string }>;
 
@@ -31,16 +32,18 @@ export default async function EditUnitPage({ params }: { params: Params }) {
   if (!unit) notFound();
 
   return (
-    <div className='mx-auto max-w-lg p-4 sm:p-8'>
-      <h1 className='mb-6 font-heading text-2xl font-semibold tracking-tight'>Edit Unit</h1>
-      <EditUnitForm
-        id={unit.id}
-        propertyId={id}
-        unitLabel={unit.unit_label}
-        bedrooms={unit.bedrooms}
-        bathrooms={unit.bathrooms}
-        rentAmount={unit.rent_amount}
-      />
-    </div>
+    <PageContainer>
+      <div className='max-w-lg'>
+        <h1 className='mb-6 font-heading text-2xl font-semibold tracking-tight'>Edit Unit</h1>
+        <EditUnitForm
+          id={unit.id}
+          propertyId={id}
+          unitLabel={unit.unit_label}
+          bedrooms={unit.bedrooms}
+          bathrooms={unit.bathrooms}
+          rentAmount={unit.rent_amount}
+        />
+      </div>
+    </PageContainer>
   );
 }

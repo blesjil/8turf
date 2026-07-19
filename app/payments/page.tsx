@@ -22,6 +22,7 @@ import { KpiCard } from '@/components/kpi-card';
 import { MonthPicker } from '@/components/month-picker';
 import { PaymentStatusFilter } from '@/components/payment-status-filter';
 import { PaymentsTabs } from '@/components/payments-tabs';
+import { PageContainer } from '@/components/page-container';
 import { SendReminderButton } from '@/components/send-reminder-button';
 import { RemindAllButton } from '@/components/remind-all-button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -85,7 +86,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
   const page = clampPage(rawPage, totalPages);
 
   return (
-    <div className='mx-auto max-w-6xl p-4 sm:p-8'>
+    <PageContainer>
       <PaymentsTabs active='payments' isAdmin={session.user.role === 'admin'} />
 
       <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>
@@ -232,6 +233,6 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
           )}
         </>
       )}
-    </div>
+    </PageContainer>
   );
 }

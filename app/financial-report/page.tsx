@@ -8,6 +8,7 @@ import { formatCents } from '@/lib/money';
 import { creditsByPeriod, RENT_COVERING_PAYMENT_TYPES } from '@/lib/payment-status';
 import { PaymentsTabs } from '@/components/payments-tabs';
 import { FinancialPeriodPicker } from '@/components/financial-period-picker';
+import { PageContainer } from '@/components/page-container';
 import {
   buildPropertyGroups,
   summarizeFinancialReport,
@@ -115,7 +116,7 @@ export default async function FinancialReportPage({
   const totals = summarizeFinancialReport(propertyGroups);
 
   return (
-    <div className='mx-auto max-w-6xl p-4 sm:p-8'>
+    <PageContainer>
       <PaymentsTabs active='financial-report' isAdmin />
 
       <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>
@@ -225,6 +226,6 @@ export default async function FinancialReportPage({
           ))}
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

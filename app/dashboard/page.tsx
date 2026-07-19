@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { PropertyList, type PropertyListItem } from '@/components/property-list';
 import { HealthStrip } from '@/components/health-strip';
 import { KpiCard } from '@/components/kpi-card';
+import { PageContainer } from '@/components/page-container';
 import { PAGE_SIZE, PaginationNav, clampPage, paginate } from '@/components/ui/pagination';
 
 type SearchParams = Promise<{ page?: string }>;
@@ -89,7 +90,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Search
   const page = clampPage(rawPage, totalPages);
 
   return (
-    <div className='mx-auto max-w-6xl p-4 sm:p-8'>
+    <PageContainer>
       <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>
         <div>
           <h1 className='font-heading text-2xl font-semibold tracking-tight'>Portfolio</h1>
@@ -151,6 +152,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Search
 
       <PropertyList properties={paginate(properties, page)} />
       <PaginationNav page={page} totalPages={totalPages} basePath='/dashboard' />
-    </div>
+    </PageContainer>
   );
 }

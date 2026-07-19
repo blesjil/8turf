@@ -20,6 +20,7 @@ import {
   isLeaseActiveForPeriod,
 } from '@/lib/payment-status';
 import { ExpenseList, type Expense } from '@/components/expense-list';
+import { PageContainer } from '@/components/page-container';
 import { recordUnitExpense, updateUnitExpense, deleteUnitExpense } from './actions';
 
 type Params = Promise<{ id: string; unitId: string }>;
@@ -107,7 +108,7 @@ export default async function UnitDetail({ params }: { params: Params }) {
       : null;
 
   return (
-    <div className='mx-auto max-w-4xl p-4 sm:p-8'>
+    <PageContainer>
       <Link
         href={`/properties/${unit.property_id}`}
         className='mb-4 inline-block text-sm font-medium text-primary hover:underline'
@@ -196,6 +197,6 @@ export default async function UnitDetail({ params }: { params: Params }) {
           </ul>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }
