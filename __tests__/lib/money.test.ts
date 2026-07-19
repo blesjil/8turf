@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dollarsToCents, formatCents } from '@/lib/money';
+import { centsFromFormData, dollarsToCents, formatCents } from '@/lib/money';
 
 describe('dollarsToCents', () => {
   it('converts a whole dollar string to cents', () => {
@@ -21,6 +21,23 @@ describe('dollarsToCents', () => {
   it('returns NaN for non-numeric input', () => {
     expect(dollarsToCents('abc')).toBeNaN();
     expect(dollarsToCents('')).toBeNaN();
+  });
+});
+
+describe('centsFromFormData', () => {
+  it('uses the visible dollar field as the authoritative value', () => {
+    const formData = new FormData();
+    formData.set('amount', '0');
+    formData.set('amountDollars', '12500');
+
+    expect(centsFromFormData(formData, 'amount', 'amountDollars')).toBe(1_250_000);
+  });
+
+  it('falls back to the cents field when the visible field is absent', () => {
+    const formData = new FormData();
+    formData.set('amount', '500000');
+
+    expect(centsFromFormData(formData, 'amount', 'amountDollars')).toBe('500000');
   });
 });
 

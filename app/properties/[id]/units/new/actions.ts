@@ -5,6 +5,7 @@ import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { ownerScope } from '@/lib/access';
 import { query, queryOne } from '@/lib/db';
+import { centsFromFormData } from '@/lib/money';
 import { createUnitSchema } from '@/lib/validation';
 
 export interface UnitActionResult {
@@ -29,7 +30,7 @@ export async function createUnit(
     unitLabel: formData.get('unitLabel'),
     bedrooms: formData.get('bedrooms'),
     bathrooms: formData.get('bathrooms'),
-    rentAmount: formData.get('rentAmount'),
+    rentAmount: centsFromFormData(formData, 'rentAmount', 'rentAmountDollars'),
   });
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors };

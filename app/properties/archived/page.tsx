@@ -50,7 +50,9 @@ export default async function ArchivedPropertiesPage({
         &larr; Back to Properties
       </Link>
 
-      <h1 className='mb-6 text-2xl font-semibold tracking-tight'>Archived Properties</h1>
+      <h1 className='mb-6 font-heading text-2xl font-semibold tracking-tight'>
+        Archived Properties
+      </h1>
 
       {properties.length === 0 ? (
         <Card className='py-8 text-center'>

@@ -10,7 +10,15 @@ import { formatPeriod } from '@/lib/format-date';
 import { computePaymentStatus } from '@/lib/payment-status';
 import { getPaymentsOverview } from '@/lib/payments-overview';
 import { filterRowsByStatus, parseStatusFilter, summarizePayments } from '@/lib/payments-summary';
+import {
+  BanknoteIcon,
+  Building2Icon,
+  TriangleAlertIcon,
+  UsersIcon,
+  WalletIcon,
+} from 'lucide-react';
 import { PaymentStatusBadge } from '@/components/payment-status-badge';
+import { KpiCard } from '@/components/kpi-card';
 import { MonthPicker } from '@/components/month-picker';
 import { PaymentStatusFilter } from '@/components/payment-status-filter';
 import { PaymentsTabs } from '@/components/payments-tabs';
@@ -28,17 +36,6 @@ import {
 import { PAGE_SIZE, PaginationNav, clampPage, paginate } from '@/components/ui/pagination';
 
 type SearchParams = Promise<{ month?: string; status?: string; page?: string }>;
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <Card className='gap-1 py-4'>
-      <CardHeader className='gap-1'>
-        <CardDescription>{label}</CardDescription>
-        <CardTitle className='font-mono text-2xl tabular-nums'>{value}</CardTitle>
-      </CardHeader>
-    </Card>
-  );
-}
 
 export default async function PaymentsPage({ searchParams }: { searchParams: SearchParams }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -92,7 +89,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
       <PaymentsTabs active='payments' isAdmin={session.user.role === 'admin'} />
 
       <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>
-        <h1 className='text-2xl font-semibold tracking-tight'>Payments Overview</h1>
+        <h1 className='font-heading text-2xl font-semibold tracking-tight'>Payments Overview</h1>
         <div className='flex flex-wrap items-center gap-2'>
           <MonthPicker value={period} />
           <PaymentStatusFilter period={period} value={filter} />
@@ -114,12 +111,37 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
         </Card>
       ) : (
         <>
-          <div className='mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5'>
-            <StatCard label='Active leases' value={String(summary.activeLeases)} />
-            <StatCard label='Unpaid leases' value={String(summary.unpaidLeases)} />
-            <StatCard label='Vacant units' value={String(summary.vacantUnits)} />
-            <StatCard label='Rent collected' value={formatCents(summary.totalCollected)} />
-            <StatCard label='Outstanding' value={formatCents(summary.outstanding)} />
+          <div className='mb-6 grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-5'>
+            <KpiCard
+              label='Active leases'
+              value={String(summary.activeLeases)}
+              icon={<UsersIcon />}
+              tone='green'
+            />
+            <KpiCard
+              label='Unpaid leases'
+              value={String(summary.unpaidLeases)}
+              icon={<TriangleAlertIcon />}
+              tone='amber'
+            />
+            <KpiCard
+              label='Vacant units'
+              value={String(summary.vacantUnits)}
+              icon={<Building2Icon />}
+              tone='red'
+            />
+            <KpiCard
+              label='Rent collected'
+              value={formatCents(summary.totalCollected)}
+              icon={<WalletIcon />}
+              tone='green'
+            />
+            <KpiCard
+              label='Outstanding'
+              value={formatCents(summary.outstanding)}
+              icon={<BanknoteIcon />}
+              tone='amber'
+            />
           </div>
 
           {allRows.length === 0 ? (

@@ -5,6 +5,7 @@ import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { isAdmin, ownerScope } from '@/lib/access';
 import { execute, query, queryOne } from '@/lib/db';
+import { centsFromFormData } from '@/lib/money';
 import {
   createPropertySchema,
   updatePropertySchema,
@@ -173,7 +174,7 @@ export async function recordPropertyExpense(
   const parsed = recordPropertyExpenseSchema.safeParse({
     propertyId: formData.get('propertyId'),
     category: formData.get('category'),
-    amount: formData.get('amount'),
+    amount: centsFromFormData(formData, 'amount', 'amountDollars'),
     expenseDate: formData.get('expenseDate'),
     remarks: formData.get('remarks') ?? '',
   });
@@ -216,7 +217,7 @@ export async function updatePropertyExpense(
   const parsed = updatePropertyExpenseSchema.safeParse({
     id: formData.get('id'),
     category: formData.get('category'),
-    amount: formData.get('amount'),
+    amount: centsFromFormData(formData, 'amount', 'amountDollars'),
     expenseDate: formData.get('expenseDate'),
     remarks: formData.get('remarks') ?? '',
   });

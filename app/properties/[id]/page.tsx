@@ -1,10 +1,13 @@
 import { redirect, notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import Link from 'next/link';
+import { Building2Icon, DoorOpenIcon, UsersIcon, WalletIcon } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { isAdmin, ownerScope } from '@/lib/access';
 import { query, queryOne } from '@/lib/db';
+import { formatCents } from '@/lib/money';
 import { Button } from '@/components/ui/button';
+import { KpiCard } from '@/components/kpi-card';
 import { PropertyActions } from './property-actions';
 import { UnitList, type UnitListItem } from '@/components/unit-list';
 import { ExpenseList, type Expense } from '@/components/expense-list';
@@ -62,6 +65,11 @@ export default async function PropertyDetail({
   const totalPages = Math.ceil(units.length / PAGE_SIZE);
   const page = clampPage(rawPage, totalPages);
 
+  // Direct aggregates over the full (unpaginated) unit set — no invented metrics.
+  const occupiedUnits = units.filter((u) => u.tenantName).length;
+  const vacantUnits = units.length - occupiedUnits;
+  const rentRoll = units.reduce((sum, u) => sum + u.rentAmount, 0);
+
   return (
     <div className='mx-auto max-w-4xl p-4 sm:p-8'>
       <Link
@@ -73,7 +81,7 @@ export default async function PropertyDetail({
 
       <div className='mb-8 flex flex-wrap items-start justify-between gap-3'>
         <div>
-          <h1 className='text-3xl font-semibold tracking-tight'>{property.name}</h1>
+          <h1 className='font-heading text-3xl font-semibold tracking-tight'>{property.name}</h1>
           <p className='text-muted-foreground'>{property.address}</p>
           {property.ownerName && (
             <p className='mt-1 text-sm text-muted-foreground'>Owned by {property.ownerName}</p>
@@ -82,8 +90,38 @@ export default async function PropertyDetail({
         <PropertyActions propertyId={property.id} isAdmin={session.user.role === 'admin'} />
       </div>
 
+      {units.length > 0 && (
+        <div className='mb-8 grid grid-cols-2 gap-3.5 lg:grid-cols-4'>
+          <KpiCard
+            label='Units'
+            value={String(units.length)}
+            icon={<Building2Icon />}
+            tone='blue'
+          />
+          <KpiCard
+            label='Occupied'
+            value={String(occupiedUnits)}
+            icon={<UsersIcon />}
+            tone='green'
+          />
+          <KpiCard
+            label='Vacant'
+            value={String(vacantUnits)}
+            icon={<DoorOpenIcon />}
+            tone='amber'
+          />
+          <KpiCard
+            label='Rent roll'
+            value={formatCents(rentRoll)}
+            foot='asking, all units'
+            icon={<WalletIcon />}
+            tone='green'
+          />
+        </div>
+      )}
+
       <div className='mb-4 flex items-center justify-between'>
-        <h2 className='text-xl font-semibold tracking-tight'>Units</h2>
+        <h2 className='font-heading text-xl font-semibold tracking-tight'>Units</h2>
         <Button
           nativeButton={false}
           render={<Link href={`/properties/${property.id}/units/new`} />}
@@ -96,7 +134,9 @@ export default async function PropertyDetail({
       <PaginationNav page={page} totalPages={totalPages} basePath={`/properties/${property.id}`} />
 
       <div className='mt-10'>
-        <h2 className='mb-4 text-xl font-semibold tracking-tight'>Property Expenses</h2>
+        <h2 className='mb-4 font-heading text-xl font-semibold tracking-tight'>
+          Property Expenses
+        </h2>
         <ExpenseList
           parentIdField='propertyId'
           parentId={property.id}

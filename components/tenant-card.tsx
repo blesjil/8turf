@@ -380,8 +380,7 @@ export function TenantCard({
             <p className='text-sm text-muted-foreground'>
               Rent: <span className='font-mono'>{formatCents(tenant.rent_amount)}</span>/mo ·
               Deposit: <span className='font-mono'>{formatCents(tenant.deposit_amount)}</span> ·
-              Lease:{' '}
-              {formatDate(tenant.lease_start_date)} to{' '}
+              Lease: {formatDate(tenant.lease_start_date)} to{' '}
               {tenant.lease_end_date ? formatDate(tenant.lease_end_date) : 'ongoing'}
             </p>
             {tenant.occupants?.length > 0 && (

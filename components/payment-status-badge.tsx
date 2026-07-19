@@ -1,14 +1,15 @@
 import type { PaymentStatus } from '@/lib/payment-status';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Badge, type badgeVariants } from '@/components/ui/badge';
+import type { VariantProps } from 'class-variance-authority';
 
 type BadgeStatus = PaymentStatus | 'inactive';
+type BadgeVariant = VariantProps<typeof badgeVariants>['variant'];
 
-const STYLES: Record<BadgeStatus, string> = {
-  paid: 'bg-success-muted text-success',
-  partial: 'bg-warning-muted text-warning',
-  unpaid: 'bg-danger-muted text-destructive',
-  inactive: 'bg-muted text-muted-foreground',
+const VARIANTS: Record<BadgeStatus, BadgeVariant> = {
+  paid: 'success',
+  partial: 'warning',
+  unpaid: 'destructive',
+  inactive: 'neutral',
 };
 
 const LABELS: Record<BadgeStatus, string> = {
@@ -20,7 +21,7 @@ const LABELS: Record<BadgeStatus, string> = {
 
 export function PaymentStatusBadge({ status }: { status: BadgeStatus }) {
   return (
-    <Badge variant='secondary' className={cn('gap-1.5', STYLES[status])}>
+    <Badge variant={VARIANTS[status]} className='gap-1.5'>
       <span aria-hidden className='size-1.5 rounded-full bg-current' />
       {LABELS[status]}
     </Badge>

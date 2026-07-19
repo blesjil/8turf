@@ -13,6 +13,8 @@ import {
   summarizeFinancialReport,
   type UnitRow,
 } from '@/lib/financial-report';
+import { ReceiptIcon, TrendingUpIcon, WalletIcon } from 'lucide-react';
+import { KpiCard } from '@/components/kpi-card';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import {
@@ -26,24 +28,6 @@ import {
 } from '@/components/ui/table';
 
 type SearchParams = Promise<{ mode?: string; month?: string; year?: string }>;
-
-function StatCard({ label, value, sign }: { label: string; value: string; sign?: number }) {
-  return (
-    <Card className='gap-1 py-4'>
-      <CardHeader className='gap-1'>
-        <CardDescription>{label}</CardDescription>
-        <CardTitle
-          className={cn(
-            'font-mono text-2xl tabular-nums',
-            sign !== undefined && (sign >= 0 ? 'text-success' : 'text-destructive'),
-          )}
-        >
-          {value}
-        </CardTitle>
-      </CardHeader>
-    </Card>
-  );
-}
 
 export default async function FinancialReportPage({
   searchParams,
@@ -135,7 +119,7 @@ export default async function FinancialReportPage({
       <PaymentsTabs active='financial-report' isAdmin />
 
       <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>
-        <h1 className='text-2xl font-semibold tracking-tight'>Financial Report</h1>
+        <h1 className='font-heading text-2xl font-semibold tracking-tight'>Financial Report</h1>
         <FinancialPeriodPicker mode={mode} month={month} year={year} />
       </div>
 
@@ -148,13 +132,24 @@ export default async function FinancialReportPage({
         </Card>
       ) : (
         <div className='flex flex-col gap-8'>
-          <div className='grid grid-cols-1 gap-4 sm:grid-cols-3'>
-            <StatCard label='Gross income' value={formatCents(totals.grossIncome)} />
-            <StatCard label='Expenses' value={formatCents(totals.totalExpenses)} />
-            <StatCard
+          <div className='grid grid-cols-1 gap-3.5 sm:grid-cols-3'>
+            <KpiCard
+              label='Gross income'
+              value={formatCents(totals.grossIncome)}
+              icon={<WalletIcon />}
+              tone='green'
+            />
+            <KpiCard
+              label='Expenses'
+              value={formatCents(totals.totalExpenses)}
+              icon={<ReceiptIcon />}
+              tone='amber'
+            />
+            <KpiCard
               label='Net income'
               value={formatCents(totals.netIncome)}
-              sign={totals.netIncome}
+              icon={<TrendingUpIcon />}
+              tone={totals.netIncome >= 0 ? 'green' : 'red'}
             />
           </div>
           {propertyGroups.map((group) => (

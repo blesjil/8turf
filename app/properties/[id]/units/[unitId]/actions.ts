@@ -5,6 +5,7 @@ import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { ownerScope } from '@/lib/access';
 import { query, queryOne } from '@/lib/db';
+import { centsFromFormData } from '@/lib/money';
 import { sendPaymentReceipt } from '@/lib/mail';
 import { findAuthorizedTenant, findAuthorizedDocument } from '@/lib/tenants';
 import { isDriveConfigured, uploadFileToDrive, deleteDriveFile } from '@/lib/drive';
@@ -51,7 +52,7 @@ export async function updateUnit(
     unitLabel: formData.get('unitLabel'),
     bedrooms: formData.get('bedrooms'),
     bathrooms: formData.get('bathrooms'),
-    rentAmount: formData.get('rentAmount'),
+    rentAmount: centsFromFormData(formData, 'rentAmount', 'rentAmountDollars'),
   });
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors };
@@ -157,8 +158,8 @@ export async function assignTenant(
       .filter((v): v is string => typeof v === 'string' && v.trim() !== ''),
     emergencyContactName: formData.get('emergencyContactName'),
     emergencyContactPhone: formData.get('emergencyContactPhone'),
-    rentAmount: formData.get('rentAmount'),
-    depositAmount: formData.get('depositAmount'),
+    rentAmount: centsFromFormData(formData, 'rentAmount', 'rentAmountDollars'),
+    depositAmount: centsFromFormData(formData, 'depositAmount', 'depositAmountDollars'),
     leaseStartDate: formData.get('leaseStartDate'),
     leaseEndDate: formData.get('leaseEndDate'),
   });
@@ -220,8 +221,8 @@ export async function updateTenant(
       .filter((v): v is string => typeof v === 'string' && v.trim() !== ''),
     emergencyContactName: formData.get('emergencyContactName'),
     emergencyContactPhone: formData.get('emergencyContactPhone'),
-    rentAmount: formData.get('rentAmount'),
-    depositAmount: formData.get('depositAmount'),
+    rentAmount: centsFromFormData(formData, 'rentAmount', 'rentAmountDollars'),
+    depositAmount: centsFromFormData(formData, 'depositAmount', 'depositAmountDollars'),
     leaseStartDate: formData.get('leaseStartDate'),
     leaseEndDate: formData.get('leaseEndDate'),
   });
@@ -311,7 +312,7 @@ export async function recordPayment(
 
   const parsed = recordPaymentSchema.safeParse({
     tenantId: formData.get('tenantId'),
-    amount: formData.get('amount'),
+    amount: centsFromFormData(formData, 'amount', 'amountDollars'),
     periodStart: formData.get('periodStart'),
     periodEnd: formData.get('periodEnd'),
     paidDate: formData.get('paidDate'),
@@ -399,7 +400,7 @@ export async function updatePayment(
 
   const parsed = updatePaymentSchema.safeParse({
     id: formData.get('id'),
-    amount: formData.get('amount'),
+    amount: centsFromFormData(formData, 'amount', 'amountDollars'),
     periodStart: formData.get('periodStart'),
     periodEnd: formData.get('periodEnd'),
     paidDate: formData.get('paidDate'),
@@ -485,7 +486,7 @@ export async function recordUnitExpense(
   const parsed = recordUnitExpenseSchema.safeParse({
     unitId: formData.get('unitId'),
     category: formData.get('category'),
-    amount: formData.get('amount'),
+    amount: centsFromFormData(formData, 'amount', 'amountDollars'),
     expenseDate: formData.get('expenseDate'),
     remarks: formData.get('remarks') ?? '',
   });
@@ -526,7 +527,7 @@ export async function updateUnitExpense(
   const parsed = updateUnitExpenseSchema.safeParse({
     id: formData.get('id'),
     category: formData.get('category'),
-    amount: formData.get('amount'),
+    amount: centsFromFormData(formData, 'amount', 'amountDollars'),
     expenseDate: formData.get('expenseDate'),
     remarks: formData.get('remarks') ?? '',
   });

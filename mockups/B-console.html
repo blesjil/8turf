@@ -1,0 +1,1122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>8TURF · Console — Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #fbfbfa;
+        --panel: #ffffff;
+        --panel-2: #f6f7f5;
+        --ink: #111813;
+        --ink-2: #5b655d;
+        --ink-3: #8b948c;
+        --green: #1f7a52;
+        --green-d: #155c3c;
+        --green-100: #e7f2ec;
+        --green-50: #f1f8f4;
+        --blue: #2563a8;
+        --blue-100: #e6eef7;
+        --amber: #b4791e;
+        --amber-100: #fbf0dc;
+        --red: #c33b3b;
+        --red-100: #fbe9e7;
+        --line: #eaece9;
+        --line-2: #f1f3f0;
+        --shadow: 0 1px 2px rgba(16, 24, 19, 0.04), 0 8px 24px -16px rgba(16, 24, 19, 0.18);
+        --disp: 'Inter Tight', system-ui, sans-serif;
+        --sans: 'Inter', system-ui, sans-serif;
+        --mono: 'JetBrains Mono', ui-monospace, monospace;
+        --r: 14px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 15px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .mono {
+        font-family: var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        min-height: 100vh;
+      }
+      .side {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        background: var(--panel);
+        border-right: 1px solid var(--line);
+        padding: 18px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 8px;
+      }
+      .brand .chip {
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        background: var(--green);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-family: var(--mono);
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .brand b {
+        font-family: var(--disp);
+        font-weight: 700;
+        font-size: 18px;
+        letter-spacing: -0.01em;
+      }
+      .search {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 8px 11px;
+        color: var(--ink-3);
+        font-size: 13.5px;
+      }
+      .search svg {
+        width: 15px;
+        height: 15px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+      }
+      .search kbd {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 11px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 1px 6px;
+        color: var(--ink-3);
+      }
+      .nav {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .nav .lbl {
+        font-size: 10.5px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        padding: 10px 10px 4px;
+        font-weight: 600;
+      }
+      .nav a {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 8px 10px;
+        border-radius: 9px;
+        color: var(--ink-2);
+        font-weight: 500;
+        font-size: 14px;
+      }
+      .nav a svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.7;
+        opacity: 0.8;
+      }
+      .nav a .badge {
+        margin-left: auto;
+        font-size: 11px;
+        font-weight: 600;
+        background: var(--red-100);
+        color: var(--red);
+        padding: 1px 7px;
+        border-radius: 999px;
+      }
+      .nav a:hover {
+        background: var(--panel-2);
+        color: var(--ink);
+      }
+      .nav a.on {
+        background: var(--green-50);
+        color: var(--green-d);
+      }
+      .nav a.on svg {
+        opacity: 1;
+        color: var(--green);
+      }
+      .upsell {
+        margin-top: auto;
+        background: linear-gradient(160deg, var(--green-50), #fff);
+        border: 1px solid var(--green-100);
+        border-radius: 12px;
+        padding: 14px;
+      }
+      .upsell b {
+        font-family: var(--disp);
+        font-size: 14px;
+        display: block;
+      }
+      .upsell p {
+        margin: 4px 0 10px;
+        font-size: 12.5px;
+        color: var(--ink-2);
+      }
+      .upsell button {
+        width: 100%;
+        border: none;
+        background: var(--green);
+        color: #fff;
+        padding: 8px;
+        border-radius: 8px;
+        font: inherit;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+      }
+
+      .main {
+        min-width: 0;
+      }
+      .head {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: rgba(251, 251, 250, 0.85);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--line);
+        padding: 14px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .head .l h1 {
+        font-family: var(--disp);
+        font-weight: 600;
+        font-size: 20px;
+        margin: 0;
+        letter-spacing: -0.01em;
+      }
+      .head .l p {
+        margin: 2px 0 0;
+        color: var(--ink-3);
+        font-size: 13px;
+      }
+      .head .r {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .seg {
+        display: flex;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 2px;
+      }
+      .seg button {
+        border: none;
+        background: none;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink-2);
+        padding: 6px 12px;
+        border-radius: 7px;
+        cursor: pointer;
+      }
+      .seg button.on {
+        background: #fff;
+        color: var(--ink);
+        box-shadow: var(--shadow);
+      }
+      .btn {
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink);
+        padding: 8px 13px;
+        border-radius: 9px;
+        font: inherit;
+        font-size: 13.5px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        box-shadow: var(--shadow);
+      }
+      .btn svg {
+        width: 15px;
+        height: 15px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.9;
+      }
+      .btn.pri {
+        background: var(--green);
+        border-color: var(--green);
+        color: #fff;
+      }
+      .btn.pri:hover {
+        background: var(--green-d);
+      }
+      .iconbtn {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        border: 1px solid var(--line);
+        background: #fff;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        box-shadow: var(--shadow);
+      }
+      .iconbtn svg {
+        width: 17px;
+        height: 17px;
+        stroke: var(--ink-2);
+        fill: none;
+        stroke-width: 1.8;
+      }
+      .ava {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--green), var(--blue));
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-weight: 600;
+        font-size: 13px;
+      }
+
+      .wrap {
+        padding: 22px 28px 44px;
+        max-width: 1200px;
+      }
+
+      /* SIGNATURE: portfolio health strip */
+      .health {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--r);
+        padding: 16px 20px;
+        box-shadow: var(--shadow);
+        flex-wrap: wrap;
+      }
+      .health .title {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 150px;
+      }
+      .health .title span {
+        font-size: 12px;
+        color: var(--ink-3);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .health .title b {
+        font-family: var(--disp);
+        font-size: 20px;
+      }
+      .hstrip {
+        flex: 1;
+        min-width: 220px;
+        display: flex;
+        height: 26px;
+        border-radius: 8px;
+        overflow: hidden;
+        gap: 2px;
+      }
+      .hstrip i {
+        display: block;
+        height: 100%;
+      }
+      .hstrip i.g {
+        background: var(--green);
+      }
+      .hstrip i.gg {
+        background: #43a877;
+      }
+      .hstrip i.a {
+        background: var(--amber);
+      }
+      .hstrip i.r {
+        background: var(--red);
+      }
+      .hstrip i.v {
+        background: #d7dbd6;
+      }
+      .hleg {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        font-size: 12.5px;
+        color: var(--ink-2);
+      }
+      .hleg span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .d {
+        width: 9px;
+        height: 9px;
+        border-radius: 3px;
+      }
+
+      .kpis {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-top: 14px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--r);
+        box-shadow: var(--shadow);
+      }
+      .kpi {
+        padding: 16px 18px;
+      }
+      .kpi .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .kpi .k {
+        font-size: 12.5px;
+        color: var(--ink-2);
+        font-weight: 600;
+      }
+      .kpi .ic {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+      }
+      .kpi .ic svg {
+        width: 16px;
+        height: 16px;
+        stroke-width: 1.9;
+        fill: none;
+      }
+      .ic.g {
+        background: var(--green-100);
+      }
+      .ic.g svg {
+        stroke: var(--green-d);
+      }
+      .ic.b {
+        background: var(--blue-100);
+      }
+      .ic.b svg {
+        stroke: var(--blue);
+      }
+      .ic.a {
+        background: var(--amber-100);
+      }
+      .ic.a svg {
+        stroke: var(--amber);
+      }
+      .ic.r {
+        background: var(--red-100);
+      }
+      .ic.r svg {
+        stroke: var(--red);
+      }
+      .kpi .v {
+        font-family: var(--disp);
+        font-weight: 600;
+        font-size: 28px;
+        margin: 10px 0 2px;
+        font-variant-numeric: tabular-nums;
+      }
+      .kpi .foot {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12.5px;
+        color: var(--ink-2);
+      }
+      .chg {
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+      }
+      .chg.up {
+        color: var(--green-d);
+      }
+      .chg.dn {
+        color: var(--red);
+      }
+      .spark {
+        margin-left: auto;
+      }
+
+      .sec {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 30px 0 12px;
+      }
+      .sec h2 {
+        font-family: var(--disp);
+        font-weight: 600;
+        font-size: 17px;
+        margin: 0;
+      }
+      .sec .rr {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .chip2 {
+        font-size: 12.5px;
+        font-weight: 500;
+        color: var(--ink-2);
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 5px 11px;
+        cursor: pointer;
+      }
+      .chip2.on {
+        background: var(--green);
+        color: #fff;
+        border-color: var(--green);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .pcard {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 13px;
+        transition: 0.15s;
+      }
+      .pcard:hover {
+        border-color: #cfe0d6;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px -18px rgba(16, 24, 19, 0.35);
+      }
+      .pcard .ph {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .pcard .thumb {
+        width: 44px;
+        height: 44px;
+        border-radius: 11px;
+        flex: none;
+        display: grid;
+        place-items: center;
+        font-family: var(--disp);
+        font-weight: 700;
+        font-size: 15px;
+        color: #fff;
+      }
+      .pcard b {
+        font-family: var(--disp);
+        font-weight: 600;
+        font-size: 15.5px;
+        display: block;
+        line-height: 1.2;
+      }
+      .pcard .loc {
+        font-size: 12.5px;
+        color: var(--ink-3);
+      }
+      .status {
+        font-size: 11.5px;
+        font-weight: 600;
+        padding: 3px 9px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+      }
+      .status.ok {
+        background: var(--green-100);
+        color: var(--green-d);
+      }
+      .status.due {
+        background: var(--amber-100);
+        color: var(--amber);
+      }
+      .status.late {
+        background: var(--red-100);
+        color: var(--red);
+      }
+      .metarow {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .metarow .m {
+        flex: 1;
+      }
+      .metarow .m .lab {
+        font-size: 11.5px;
+        color: var(--ink-3);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .metarow .m .val {
+        font-family: var(--disp);
+        font-weight: 600;
+        font-size: 18px;
+        margin-top: 3px;
+        font-variant-numeric: tabular-nums;
+      }
+      .occbar {
+        height: 7px;
+        border-radius: 999px;
+        background: var(--panel-2);
+        overflow: hidden;
+      }
+      .occbar i {
+        display: block;
+        height: 100%;
+        background: var(--green);
+        border-radius: 999px;
+      }
+      .occbar.low i {
+        background: var(--amber);
+      }
+      .occbar.bad i {
+        background: var(--red);
+      }
+      .occlab {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: var(--ink-2);
+        margin-bottom: 6px;
+      }
+
+      .mtop {
+        display: none;
+      }
+      @media (max-width: 1080px) {
+        .kpis {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 860px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+        .side {
+          position: fixed;
+          inset: 0 auto 0 0;
+          width: 250px;
+          transform: translateX(-100%);
+          transition: transform 0.2s;
+          z-index: 40;
+          box-shadow: 0 0 40px rgba(0, 0, 0, 0.2);
+        }
+        .side.open {
+          transform: none;
+        }
+        .scrim {
+          position: fixed;
+          inset: 0;
+          background: rgba(16, 24, 19, 0.4);
+          opacity: 0;
+          pointer-events: none;
+          transition: 0.2s;
+          z-index: 30;
+        }
+        .scrim.on {
+          opacity: 1;
+          pointer-events: auto;
+        }
+        .mtop {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 18px;
+          border-bottom: 1px solid var(--line);
+          background: #fff;
+        }
+        .head {
+          padding: 12px 18px;
+        }
+        .head .seg {
+          display: none;
+        }
+      }
+      @media (max-width: 640px) {
+        .kpis {
+          grid-template-columns: 1fr 1fr;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .wrap {
+          padding: 16px 16px 40px;
+        }
+        .head .l h1 {
+          font-size: 18px;
+        }
+        .head .r .btn span {
+          display: none;
+        }
+      }
+      button:focus-visible,
+      a:focus-visible {
+        outline: 2px solid var(--green);
+        outline-offset: 2px;
+        border-radius: 8px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="side" id="side">
+        <div class="brand">
+          <div class="chip">8</div>
+          <b>8TURF</b>
+        </div>
+        <div class="search">
+          <svg viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7" />
+            <path d="M21 21l-4-4" /></svg
+          >Search…<kbd>⌘K</kbd>
+        </div>
+        <nav class="nav">
+          <span class="lbl">Overview</span>
+          <a class="on" href="#"
+            ><svg viewBox="0 0 24 24">
+              <rect x="3" y="3" width="8" height="8" rx="2" />
+              <rect x="13" y="3" width="8" height="5" rx="2" />
+              <rect x="13" y="10" width="8" height="11" rx="2" />
+              <rect x="3" y="13" width="8" height="8" rx="2" /></svg
+            >Dashboard</a
+          >
+          <a href="#"
+            ><svg viewBox="0 0 24 24">
+              <path d="M3 21V9l9-6 9 6v12" />
+              <path d="M9 21v-6h6v6" /></svg
+            >Properties</a
+          >
+          <a href="#"
+            ><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10" /></svg>Units</a
+          >
+          <span class="lbl">Money</span>
+          <a href="#"
+            ><svg viewBox="0 0 24 24">
+              <rect x="2" y="6" width="20" height="13" rx="2" />
+              <path d="M2 10h20" /></svg
+            >Payments<span class="badge">9</span></a
+          >
+          <a href="#"
+            ><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M8 15l3-4 3 3 4-6" /></svg>Reports</a
+          >
+          <a href="#"
+            ><svg viewBox="0 0 24 24">
+              <path d="M12 2v4m0 12v4M5 5l2.5 2.5M16.5 16.5L19 19M2 12h4m12 0h4" /></svg
+            >Expenses</a
+          >
+          <span class="lbl">People</span>
+          <a href="#"
+            ><svg viewBox="0 0 24 24">
+              <circle cx="9" cy="8" r="3" />
+              <path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 6m5 8a5 5 0 0 0-4-5" /></svg
+            >Tenants</a
+          >
+          <a href="#"
+            ><svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19 12a7 7 0 0 0-.1-1l2-1.6-2-3.4-2.3 1a7 7 0 0 0-1.7-1L16.5 2h-4l-.4 2.4a7 7 0 0 0-1.7 1l-2.3-1-2 3.4L5 10a7 7 0 0 0 0 2l-2 1.6 2 3.4 2.3-1a7 7 0 0 0 1.7 1L11.5 22h4"
+              /></svg
+            >Settings</a
+          >
+        </nav>
+        <div class="upsell">
+          <b>Add your accountant</b>
+          <p>Invite your team with role-based access.</p>
+          <button>Invite teammate</button>
+        </div>
+      </aside>
+      <div class="scrim" id="scrim" onclick="closeNav()"></div>
+
+      <main class="main">
+        <div class="mtop">
+          <button class="iconbtn" onclick="openNav()" aria-label="Menu">
+            <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+          </button>
+          <div class="brand" style="padding: 0">
+            <div class="chip" style="width: 28px; height: 28px; font-size: 14px">8</div>
+            <b style="font-size: 16px">8TURF</b>
+          </div>
+          <div class="ava">JP</div>
+        </div>
+
+        <header class="head">
+          <div class="l">
+            <h1>Portfolio</h1>
+            <p>5 properties · 52 units · July 2026</p>
+          </div>
+          <div class="r">
+            <div class="seg">
+              <button>Day</button><button class="on">Month</button><button>Quarter</button>
+            </div>
+            <button class="iconbtn" aria-label="Notifications">
+              <svg viewBox="0 0 24 24">
+                <path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 21a2 2 0 0 0 4 0" />
+              </svg>
+            </button>
+            <button class="btn pri">
+              <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg><span>New property</span>
+            </button>
+            <div class="ava" title="Jill Palattao">JP</div>
+          </div>
+        </header>
+
+        <div class="wrap">
+          <!-- SIGNATURE health strip -->
+          <div class="health">
+            <div class="title"><span>Collection health</span><b>52 units</b></div>
+            <div
+              class="hstrip"
+              role="img"
+              aria-label="42 paid, 4 partially paid, 6 due, 3 overdue, 5 vacant"
+            >
+              <i class="g" style="flex: 42"></i><i class="gg" style="flex: 4"></i
+              ><i class="a" style="flex: 6"></i><i class="r" style="flex: 3"></i
+              ><i class="v" style="flex: 5"></i>
+            </div>
+            <div class="hleg">
+              <span><i class="d" style="background: var(--green)"></i>42 paid</span>
+              <span><i class="d" style="background: #43a877"></i>4 partial</span>
+              <span><i class="d" style="background: var(--amber)"></i>6 due</span>
+              <span><i class="d" style="background: var(--red)"></i>3 overdue</span>
+              <span><i class="d" style="background: #d7dbd6"></i>5 vacant</span>
+            </div>
+          </div>
+
+          <section class="kpis">
+            <div class="card kpi">
+              <div class="top">
+                <span class="k">Rent collected</span
+                ><span class="ic g"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="M12 3v18M8 7h6a2.5 2.5 0 0 1 0 5H8m0 0h7a2.5 2.5 0 0 1 0 5H8" /></svg
+                ></span>
+              </div>
+              <div class="v">₱4.21M</div>
+              <div class="foot">
+                <span class="chg up">▲ 6.4%</span> vs June
+                <svg class="spark" width="64" height="22" viewBox="0 0 64 22" fill="none">
+                  <polyline
+                    points="0,16 10,15 20,17 30,11 40,12 52,6 64,4"
+                    stroke="#1f7a52"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div class="card kpi">
+              <div class="top">
+                <span class="k">Occupancy</span
+                ><span class="ic b"
+                  ><svg viewBox="0 0 24 24"><path d="M3 21V9l9-6 9 6v12" /></svg
+                ></span>
+              </div>
+              <div class="v">88%</div>
+              <div class="foot">
+                <span class="chg up">▲ 2 units</span> occupied
+                <svg class="spark" width="64" height="22" viewBox="0 0 64 22" fill="none">
+                  <polyline
+                    points="0,14 12,13 24,13 36,10 48,9 64,7"
+                    stroke="#2563A8"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div class="card kpi">
+              <div class="top">
+                <span class="k">Outstanding</span
+                ><span class="ic a"
+                  ><svg viewBox="0 0 24 24">
+                    <path
+                      d="M12 8v5M12 16h.01M10.3 3.9 2.6 17a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"
+                    /></svg
+                ></span>
+              </div>
+              <div class="v">₱312K</div>
+              <div class="foot">
+                <span class="chg dn">9 units</span> pending
+                <svg class="spark" width="64" height="22" viewBox="0 0 64 22" fill="none">
+                  <polyline
+                    points="0,6 12,9 24,8 36,12 48,11 64,14"
+                    stroke="#B4791E"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div class="card kpi">
+              <div class="top">
+                <span class="k">Overdue &gt; 30d</span
+                ><span class="ic r"
+                  ><svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7v5l3 2" /></svg
+                ></span>
+              </div>
+              <div class="v">₱96K</div>
+              <div class="foot">
+                <span class="chg dn">3 units</span> · send reminder
+                <svg class="spark" width="64" height="22" viewBox="0 0 64 22" fill="none">
+                  <polyline
+                    points="0,10 12,8 24,11 36,9 48,7 64,5"
+                    stroke="#C33B3B"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+            </div>
+          </section>
+
+          <div class="sec">
+            <h2>Properties</h2>
+            <div class="rr">
+              <span class="chip2 on">All</span><span class="chip2">Needs attention</span
+              ><span class="chip2">Fully paid</span>
+            </div>
+          </div>
+
+          <section class="grid">
+            <!-- card -->
+            <article class="card pcard">
+              <div class="ph">
+                <div class="thumb" style="background: linear-gradient(135deg, #1f7a52, #155c3c)">
+                  MC
+                </div>
+                <div><b>Maple Court</b><span class="loc">Quezon City</span></div>
+                <span class="status ok">On track</span>
+              </div>
+              <div class="metarow">
+                <div class="m">
+                  <div class="lab">Collected</div>
+                  <div class="val">₱1.25M</div>
+                </div>
+                <div class="m">
+                  <div class="lab">Units</div>
+                  <div class="val">12</div>
+                </div>
+              </div>
+              <div>
+                <div class="occlab"><span>Occupancy</span><span>92%</span></div>
+                <div class="occbar"><i style="width: 92%"></i></div>
+              </div>
+            </article>
+
+            <article class="card pcard">
+              <div class="ph">
+                <div class="thumb" style="background: linear-gradient(135deg, #2563a8, #1b4d84)">
+                  RH
+                </div>
+                <div><b>Rizal Heights</b><span class="loc">Mandaluyong</span></div>
+                <span class="status ok">Paid</span>
+              </div>
+              <div class="metarow">
+                <div class="m">
+                  <div class="lab">Collected</div>
+                  <div class="val">₱720K</div>
+                </div>
+                <div class="m">
+                  <div class="lab">Units</div>
+                  <div class="val">8</div>
+                </div>
+              </div>
+              <div>
+                <div class="occlab"><span>Occupancy</span><span>100%</span></div>
+                <div class="occbar"><i style="width: 100%"></i></div>
+              </div>
+            </article>
+
+            <article class="card pcard">
+              <div class="ph">
+                <div class="thumb" style="background: linear-gradient(135deg, #b4791e, #8a5c12)">
+                  BR
+                </div>
+                <div><b>Bonifacio Row</b><span class="loc">Taguig</span></div>
+                <span class="status due">2 due</span>
+              </div>
+              <div class="metarow">
+                <div class="m">
+                  <div class="lab">Collected</div>
+                  <div class="val">₱1.41M</div>
+                </div>
+                <div class="m">
+                  <div class="lab">Units</div>
+                  <div class="val">16</div>
+                </div>
+              </div>
+              <div>
+                <div class="occlab"><span>Occupancy</span><span>81%</span></div>
+                <div class="occbar low"><i style="width: 81%"></i></div>
+              </div>
+            </article>
+
+            <article class="card pcard">
+              <div class="ph">
+                <div class="thumb" style="background: linear-gradient(135deg, #3a7d63, #245845)">
+                  AF
+                </div>
+                <div><b>Aurora Flats</b><span class="loc">San Juan</span></div>
+                <span class="status ok">On track</span>
+              </div>
+              <div class="metarow">
+                <div class="m">
+                  <div class="lab">Collected</div>
+                  <div class="val">₱540K</div>
+                </div>
+                <div class="m">
+                  <div class="lab">Units</div>
+                  <div class="val">6</div>
+                </div>
+              </div>
+              <div>
+                <div class="occlab"><span>Occupancy</span><span>100%</span></div>
+                <div class="occbar"><i style="width: 100%"></i></div>
+              </div>
+            </article>
+
+            <article class="card pcard">
+              <div class="ph">
+                <div class="thumb" style="background: linear-gradient(135deg, #c33b3b, #992d2d)">
+                  LT
+                </div>
+                <div><b>Lakeshore Terraces</b><span class="loc">Pasig</span></div>
+                <span class="status late">3 overdue</span>
+              </div>
+              <div class="metarow">
+                <div class="m">
+                  <div class="lab">Collected</div>
+                  <div class="val">₱289K</div>
+                </div>
+                <div class="m">
+                  <div class="lab">Units</div>
+                  <div class="val">10</div>
+                </div>
+              </div>
+              <div>
+                <div class="occlab"><span>Occupancy</span><span>70%</span></div>
+                <div class="occbar bad"><i style="width: 70%"></i></div>
+              </div>
+            </article>
+
+            <article
+              class="card pcard"
+              style="
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                border-style: dashed;
+                color: var(--ink-3);
+                cursor: pointer;
+              "
+            >
+              <div
+                class="iconbtn"
+                style="pointer-events: none; box-shadow: none; border-color: var(--line)"
+              >
+                <svg viewBox="0 0 24 24" style="stroke: var(--green)">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </div>
+              <div>
+                <b style="font-family: var(--disp); color: var(--ink)">Add a property</b>
+                <div class="loc">Track units, rent &amp; expenses</div>
+              </div>
+            </article>
+          </section>
+        </div>
+      </main>
+    </div>
+    <script>
+      function openNav() {
+        document.getElementById('side').classList.add('open');
+        document.getElementById('scrim').classList.add('on');
+      }
+      function closeNav() {
+        document.getElementById('side').classList.remove('open');
+        document.getElementById('scrim').classList.remove('on');
+      }
+    </script>
+  </body>
+</html>

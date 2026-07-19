@@ -75,8 +75,12 @@ bun run build    # Build for production
 bun start        # Start production server
 bun run lint     # Run ESLint
 bun test         # Run Vitest unit tests
+bun run test:e2e # Run Playwright E2E tests (requires local Supabase + Chromium)
 supabase db reset # Recreate the local database from migrations
 ```
+
+Install Playwright's pinned browser once with `bunx playwright install chromium`. The E2E command
+uses an isolated `8turf_e2e` database and does not reset the normal local development database.
 
 ## Project Structure
 

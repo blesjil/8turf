@@ -21,7 +21,7 @@ export default async function EditPropertyPage({ params }: { params: Params }) {
 
   return (
     <div className='mx-auto max-w-lg p-4 sm:p-8'>
-      <h1 className='mb-6 text-2xl font-semibold tracking-tight'>Edit Property</h1>
+      <h1 className='mb-6 font-heading text-2xl font-semibold tracking-tight'>Edit Property</h1>
       <EditPropertyForm id={property.id} name={property.name} address={property.address} />
     </div>
   );

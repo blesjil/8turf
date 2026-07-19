@@ -10,6 +10,8 @@
     "format": "oxfmt",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:setup": "bun run e2e/setup-db.ts",
     "test:rls": "bun run scripts/verify-rls-migration.ts",
     "create-admin": "bun run scripts/create-admin.ts",
     "get-drive-token": "bun run scripts/get-drive-token.ts"
@@ -35,6 +37,7 @@
     "zod": "^4.3.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",

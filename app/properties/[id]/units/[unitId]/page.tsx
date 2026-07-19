@@ -131,7 +131,7 @@ export default async function UnitDetail({ params }: { params: Params }) {
       </div>
 
       <div className='mb-10'>
-        <h2 className='mb-4 text-xl font-semibold tracking-tight'>Current Tenant</h2>
+        <h2 className='mb-4 font-heading text-xl font-semibold tracking-tight'>Current Tenant</h2>
         <TenantCard
           unitId={unit.id}
           tenant={activeTenant}
@@ -144,7 +144,7 @@ export default async function UnitDetail({ params }: { params: Params }) {
       {activeTenant && (
         <div className='mb-10'>
           <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
-            <h2 className='text-xl font-semibold tracking-tight'>Payment Ledger</h2>
+            <h2 className='font-heading text-xl font-semibold tracking-tight'>Payment Ledger</h2>
             {currentStatus && (
               <div className='flex items-center gap-2 text-sm text-muted-foreground'>
                 <span>This month ({formatPeriod(currentPeriod)}):</span>
@@ -162,7 +162,7 @@ export default async function UnitDetail({ params }: { params: Params }) {
       )}
 
       <div className='mb-10'>
-        <h2 className='mb-4 text-xl font-semibold tracking-tight'>Unit Expenses</h2>
+        <h2 className='mb-4 font-heading text-xl font-semibold tracking-tight'>Unit Expenses</h2>
         <ExpenseList
           parentIdField='unitId'
           parentId={unit.id}
@@ -175,7 +175,9 @@ export default async function UnitDetail({ params }: { params: Params }) {
 
       {pastTenants.length > 0 && (
         <div>
-          <h2 className='mb-4 text-xl font-semibold tracking-tight'>Tenancy History</h2>
+          <h2 className='mb-4 font-heading text-xl font-semibold tracking-tight'>
+            Tenancy History
+          </h2>
           <ul className='space-y-6'>
             {pastTenants.map((t) => (
               <li key={t.id}>
