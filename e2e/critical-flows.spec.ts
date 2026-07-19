@@ -22,10 +22,14 @@ test('landlord can manage a property from sign-in through rent collection', asyn
   await test.step('admin can create a property', async () => {
     await page.getByRole('button', { name: 'New property' }).click();
     await page.getByLabel('Name').fill('E2E Apartments');
-    await page.getByLabel('Address').fill('123 Test Street');
+    await page
+      .getByLabel('Address')
+      .fill('Block 1 Lot 8 Vista Del Rio Subdivision Brgy. Alimanao, Penablanca, Cagayan');
     await page.getByRole('button', { name: 'Create property' }).click();
     await expect(page.getByRole('heading', { name: 'E2E Apartments' })).toBeVisible();
-    await expect(page.getByText('123 Test Street')).toBeVisible();
+    await expect(
+      page.getByText('Block 1 Lot 8 Vista Del Rio Subdivision Brgy. Alimanao, Penablanca, Cagayan'),
+    ).toBeVisible();
   });
 
   await test.step('admin can add a unit', async () => {
@@ -75,5 +79,31 @@ test('landlord can manage a property from sign-in through rent collection', asyn
     await expect(
       page.getByRole('link', { name: /E2E Apartments/ }).getByText('1 partial', { exact: true }),
     ).toBeVisible();
+  });
+
+  await test.step('property addresses fit within a mobile viewport', async () => {
+    for (const width of [320, 390, 500, 640]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto('/dashboard');
+
+      const propertyCard = page.getByRole('link', { name: /E2E Apartments/ });
+      const address = propertyCard.getByText(
+        'Block 1 Lot 8 Vista Del Rio Subdivision Brgy. Alimanao, Penablanca, Cagayan',
+      );
+
+      await expect(propertyCard).toBeVisible();
+      await expect(address).toBeVisible();
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      ).toBe(true);
+      expect(
+        await propertyCard.evaluate(
+          (element) => element.getBoundingClientRect().right <= window.innerWidth,
+        ),
+      ).toBe(true);
+      expect(await address.evaluate((element) => getComputedStyle(element).whiteSpace)).toBe(
+        'normal',
+      );
+    }
   });
 });

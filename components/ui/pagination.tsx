@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-export const PAGE_SIZE = 15;
+export const PAGE_SIZE = 20;
 
 export function clampPage(raw: string | undefined, totalPages: number): number {
   const parsed = Number.parseInt(raw ?? '1', 10);

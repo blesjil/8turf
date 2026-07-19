@@ -67,15 +67,15 @@ export function PropertyList({ properties }: { properties: PropertyListItem[] })
   }
 
   return (
-    <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+    <div className='grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
       {properties.map((property) => {
         const status = statusFor(property);
         const pct =
           property.unitCount > 0 ? Math.round((property.occupied / property.unitCount) * 100) : 0;
         return (
-          <Link key={property.id} href={`/properties/${property.id}`} className='group'>
-            <Card className='h-full gap-3.5 px-4 transition-all group-hover:-translate-y-0.5 group-hover:border-primary/30'>
-              <div className='flex items-center gap-3'>
+          <Link key={property.id} href={`/properties/${property.id}`} className='group min-w-0'>
+            <Card className='h-full min-w-0 max-w-full gap-3.5 px-4 transition-all group-hover:-translate-y-0.5 group-hover:border-primary/30'>
+              <div className='flex min-w-0 items-start gap-3'>
                 <span
                   className='grid size-11 shrink-0 place-items-center rounded-xl font-heading text-sm font-bold text-white'
                   style={{ background: thumbFor(property.id) }}
@@ -83,11 +83,11 @@ export function PropertyList({ properties }: { properties: PropertyListItem[] })
                 >
                   {initials(property.name)}
                 </span>
-                <div className='min-w-0'>
+                <div className='min-w-0 flex-1'>
                   <div className='truncate font-heading text-[15.5px] font-semibold group-hover:text-primary'>
                     {property.name}
                   </div>
-                  <div className='truncate text-[12.5px] text-muted-foreground'>
+                  <div className='wrap-break-word text-[12.5px] text-muted-foreground sm:line-clamp-2'>
                     {property.address}
                   </div>
                 </div>
