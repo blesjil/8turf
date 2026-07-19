@@ -10,6 +10,7 @@
     "format": "oxfmt",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:rls": "bun run scripts/verify-rls-migration.ts",
     "create-admin": "bun run scripts/create-admin.ts",
     "get-drive-token": "bun run scripts/get-drive-token.ts"
   },
@@ -45,6 +46,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/coverage-v8": "4.0.17",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "jsdom": "^27.4.0",

@@ -49,6 +49,13 @@ describe('rowStatus', () => {
   it('returns unpaid when nothing is paid', () => {
     expect(rowStatus(row({ tenantId: 'unpaidTenant' }), paid)).toBe('unpaid');
   });
+
+  it('treats a null rent amount as zero (rentAmount ?? 0 branch)', () => {
+    // A paying tenant against zero rent reads as fully paid.
+    expect(rowStatus(row({ tenantId: 'paidTenant', rentAmount: null }), paid)).toBe('paid');
+    // No payment against zero rent still reads as unpaid (totalPaid <= 0).
+    expect(rowStatus(row({ tenantId: 'unpaidTenant', rentAmount: null }), paid)).toBe('unpaid');
+  });
 });
 
 describe('filterRowsByStatus', () => {
@@ -107,6 +114,17 @@ describe('summarizePayments', () => {
 
     expect(summary.totalCollected).toBe(140000); // 100000 capped + 40000
     expect(summary.outstanding).toBe(60000); // due 200000 - collected 140000
+  });
+
+  it('treats a null rent on an active row as zero due (rentAmount ?? 0)', () => {
+    const summary = summarizePayments(
+      [row({ tenantId: 'paidTenant', rentAmount: null })],
+      [],
+      paid,
+    );
+    expect(summary.unpaidLeases).toBe(0); // paid 100000 ≥ due 0
+    expect(summary.totalCollected).toBe(0); // min(paid, 0) = 0
+    expect(summary.outstanding).toBe(0);
   });
 
   it('returns zeros for an empty month', () => {

@@ -86,6 +86,7 @@ export async function getPaymentsOverview(
         tenantName: null,
         tenantEmail: null,
         tenantPhone: null,
+        isActive: false,
         rentAmount: null,
         leaseStartDate: null,
         leaseEndDate: null,

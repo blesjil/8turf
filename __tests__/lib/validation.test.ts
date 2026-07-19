@@ -291,3 +291,47 @@ describe('validateDocumentFile', () => {
     );
   });
 });
+
+describe('Philippine phone validation', () => {
+  const base = {
+    unitId: 'u1',
+    name: 'Ana',
+    rentAmount: 100000,
+    depositAmount: 100000,
+    leaseStartDate: '2026-07-01',
+  };
+
+  it.each(['09171234567', '+639171234567', '0917-123-4567', '(0917) 123 4567'])(
+    'accepts valid PH number %s',
+    (phone) => {
+      expect(assignTenantSchema.safeParse({ ...base, phone }).success).toBe(true);
+    },
+  );
+
+  it.each(['12345', '9171234567', '+6391712345', '08171234567'])(
+    'rejects invalid PH number %s',
+    (phone) => {
+      const result = assignTenantSchema.safeParse({ ...base, phone });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.flatten().fieldErrors.phone?.[0]).toMatch(/valid Philippine phone/);
+      }
+    },
+  );
+
+  it('treats an empty phone as valid (optional)', () => {
+    expect(assignTenantSchema.safeParse({ ...base, phone: '' }).success).toBe(true);
+  });
+
+  it('rejects a lease end before the lease start', () => {
+    const result = assignTenantSchema.safeParse({
+      ...base,
+      leaseStartDate: '2026-07-01',
+      leaseEndDate: '2026-06-01',
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.leaseEndDate?.[0]).toMatch(/on or after/);
+    }
+  });
+});

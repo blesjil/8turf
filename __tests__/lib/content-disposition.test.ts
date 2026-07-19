@@ -25,6 +25,15 @@ describe('contentDispositionAttachment', () => {
     expect(header).toContain('filename="weirdname.pdf"');
   });
 
+  it('percent-encodes RFC-5987-reserved characters in the UTF-8 field', () => {
+    // ' ( ) * are left alone by encodeURIComponent but are not valid in the
+    // ext-value token, so they must be manually percent-encoded.
+    const header = contentDispositionAttachment("re'ce(i)pt*.pdf");
+    expect(header).toContain("filename*=UTF-8''re%27ce%28i%29pt%2A.pdf");
+    // Fallback keeps them since they are printable ASCII.
+    expect(header).toContain(`filename="re'ce(i)pt*.pdf"`);
+  });
+
   it('is constructible as a real HTTP header', () => {
     const name = 'Screenshot 2026-07-09 at 1.48.18 PM.png';
     expect(
