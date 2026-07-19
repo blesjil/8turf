@@ -10,6 +10,7 @@ const navigation = [
   { href: '/#apartments', label: 'Apartments' },
   { href: '/#commercial', label: 'Commercial' },
   { href: '/#contact', label: 'Contact' },
+  { href: '/authenticate', label: 'Log in' },
 ];
 
 export function BrandMark({ className }: { className?: string }) {
@@ -95,12 +96,6 @@ export function Header() {
               {item.label}
             </Link>
           ))}
-          <Link
-            href='/authenticate'
-            className='ml-3 inline-flex h-10 items-center justify-center rounded-lg border border-border bg-card px-4 text-sm font-semibold shadow-[var(--shadow-card)] transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
-          >
-            Log in
-          </Link>
         </nav>
 
         <button
@@ -133,13 +128,6 @@ export function Header() {
               {item.label}
             </Link>
           ))}
-          <Link
-            href='/authenticate'
-            className='mt-2 inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-card)] transition-colors hover:bg-[color-mix(in_oklch,var(--primary),black_14%)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
-            onClick={closeMenu}
-          >
-            Log in
-          </Link>
         </div>
       </nav>
     </header>
