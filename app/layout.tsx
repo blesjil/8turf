@@ -1,18 +1,24 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Inter, Inter_Tight, JetBrains_Mono } from 'next/font/google';
 import { headers } from 'next/headers';
 import './globals.css';
+import { AppShell } from '@/components/app-shell';
 import { Header } from '@/components/header';
 import { IdleLogout } from '@/components/idle-logout';
 import { auth } from '@/lib/auth';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const inter = Inter({
+  variable: '--font-sans',
   subsets: ['latin'],
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const interTight = Inter_Tight({
+  variable: '--font-heading',
+  subsets: ['latin'],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: '--font-mono',
   subsets: ['latin'],
 });
 
@@ -31,11 +37,20 @@ export default async function RootLayout({
   });
 
   return (
-    <html lang='en' className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html
+      lang='en'
+      className={`${inter.variable} ${interTight.variable} ${jetbrainsMono.variable}`}
+    >
       <body className='antialiased'>
-        <Header user={session?.user} />
+        {session?.user ? (
+          <AppShell user={session.user}>{children}</AppShell>
+        ) : (
+          <>
+            <Header />
+            {children}
+          </>
+        )}
         {session && <IdleLogout />}
-        {children}
       </body>
     </html>
   );

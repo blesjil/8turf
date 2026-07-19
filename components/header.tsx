@@ -1,28 +1,5 @@
-'use client';
-
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { signOut } from '@/lib/auth-client';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-
-interface HeaderProps {
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-    role?: string | null;
-  };
-}
 
 export function BrandMark({ className }: { className?: string }) {
   return (
@@ -38,99 +15,18 @@ export function BrandMark({ className }: { className?: string }) {
   );
 }
 
-function NavLink({
-  href,
-  match,
-  children,
-}: {
-  href: string;
-  match?: string[];
-  children: React.ReactNode;
-}) {
-  const pathname = usePathname();
-  const active = [href, ...(match ?? [])].some(
-    (p) => pathname === p || pathname.startsWith(`${p}/`),
-  );
+/**
+ * Minimal public header for logged-out pages (landing, /authenticate).
+ * Authenticated navigation lives in `components/app-shell.tsx`.
+ */
+export function Header() {
   return (
-    <Link
-      href={href}
-      className={cn(
-        'rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors',
-        active ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground',
-      )}
-    >
-      {children}
-    </Link>
-  );
-}
-
-export function Header({ user }: HeaderProps) {
-  return (
-    <header className='sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur supports-backdrop-filter:bg-background/75'>
-      <div className='mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6'>
-        <div className='flex items-center gap-6'>
-          <Link href={user ? '/dashboard' : '/'} className='flex items-center gap-2'>
-            <BrandMark />
-            <span className='text-base font-semibold tracking-tight'>8TURF</span>
-          </Link>
-          {user && (
-            <nav className='hidden items-center gap-1 sm:flex'>
-              <NavLink href='/dashboard'>Properties</NavLink>
-              <NavLink href='/payments' match={['/financial-report']}>
-                Financials
-              </NavLink>
-            </nav>
-          )}
-        </div>
-        {user && (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={<Button variant='outline' size='sm' />}
-              className='max-w-48'
-            >
-              <span className='truncate'>{user.name}</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end' className='w-56'>
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>
-                  <div className='grid gap-0.5'>
-                    <span className='truncate font-medium'>{user.name}</span>
-                    <span className='truncate text-xs font-normal text-muted-foreground'>
-                      {user.email}
-                    </span>
-                  </div>
-                </DropdownMenuLabel>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem render={<Link href='/dashboard' />}>Properties</DropdownMenuItem>
-              <DropdownMenuItem render={<Link href='/payments' />}>Financials</DropdownMenuItem>
-              {user.role === 'admin' && (
-                <>
-                  <DropdownMenuItem render={<Link href='/properties/archived' />}>
-                    Archived properties
-                  </DropdownMenuItem>
-                  <DropdownMenuItem render={<Link href='/admin/users' />}>
-                    Manage users
-                  </DropdownMenuItem>
-                </>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() =>
-                  signOut({
-                    fetchOptions: {
-                      onSuccess: () => {
-                        window.location.href = '/';
-                      },
-                    },
-                  })
-                }
-              >
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+    <header className='sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md supports-backdrop-filter:bg-background/75'>
+      <div className='mx-auto flex h-14 max-w-6xl items-center px-4 sm:px-6'>
+        <Link href='/' className='flex items-center gap-2'>
+          <BrandMark />
+          <span className='font-heading text-base font-bold tracking-tight'>8TURF</span>
+        </Link>
       </div>
     </header>
   );
