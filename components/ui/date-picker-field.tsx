@@ -28,6 +28,10 @@ export function DatePickerField({
   const [open, setOpen] = useState(false);
   const iso = selected ? format(selected, 'yyyy-MM-dd') : '';
 
+  const currentYear = new Date().getFullYear();
+  const startMonth = new Date(currentYear - 5, 0);
+  const endMonth = new Date(currentYear + 5, 11);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <input type='hidden' name={name} value={iso} required={required} />
@@ -49,6 +53,9 @@ export function DatePickerField({
       <PopoverContent className='w-auto p-0'>
         <Calendar
           mode='single'
+          captionLayout='dropdown'
+          startMonth={startMonth}
+          endMonth={endMonth}
           selected={selected}
           defaultMonth={selected}
           onSelect={(d) => {
