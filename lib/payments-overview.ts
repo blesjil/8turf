@@ -11,6 +11,7 @@ export interface OverviewRow {
   tenantName: string | null;
   tenantEmail: string | null;
   tenantPhone: string | null;
+  isActive: boolean;
   rentAmount: number | null;
   leaseStartDate: string | null;
   leaseEndDate: string | null;
@@ -25,6 +26,18 @@ export interface PaymentsOverview {
   paidByTenant: Map<string, number>;
 }
 
+// A unit holds one occupant per month, but overlapping lease ranges (e.g. a
+// tenant moves out mid-month as the next moves in) can make several tenant rows
+// "cover" the same month, which used to render the unit twice. Collapse them to
+// the real occupant: the current tenant (is_active) wins, then the most recent
+// lease.
+export function pickOccupant(covering: OverviewRow[]): OverviewRow {
+  return covering.reduce((best, r) => {
+    if (r.isActive !== best.isActive) return r.isActive ? r : best;
+    return (r.leaseStartDate ?? '') > (best.leaseStartDate ?? '') ? r : best;
+  });
+}
+
 // The per-month paid/unpaid math shared by the Payments Overview page and the
 // due-reminder actions, so the status a reminder is based on can't drift from
 // what the table shows.
@@ -36,6 +49,7 @@ export async function getPaymentsOverview(
     `SELECT p.id as "propertyId", p.name as "propertyName",
             u.id as "unitId", u.unit_label as "unitLabel",
             t.id as "tenantId", t.name as "tenantName", t.email as "tenantEmail", t.phone as "tenantPhone",
+            coalesce(t.is_active, false) as "isActive",
             t.rent_amount as "rentAmount", t.lease_start_date as "leaseStartDate", t.lease_end_date as "leaseEndDate"
      FROM units u
      LEFT JOIN tenants t ON t.unit_id = u.id
@@ -64,7 +78,7 @@ export async function getPaymentsOverview(
   for (const unitRows of rowsByUnit.values()) {
     const covering = unitRows.filter(isActive);
     if (covering.length > 0) {
-      activeRows.push(...covering);
+      activeRows.push(pickOccupant(covering));
     } else {
       inactiveRows.push({
         ...unitRows[0],

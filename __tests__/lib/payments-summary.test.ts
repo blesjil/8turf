@@ -18,6 +18,7 @@ function row(overrides: Partial<OverviewRow> = {}): OverviewRow {
     tenantName: 'Tenant',
     tenantEmail: null,
     tenantPhone: null,
+    isActive: true,
     rentAmount: 100000,
     leaseStartDate: '2026-01-01',
     leaseEndDate: null,
