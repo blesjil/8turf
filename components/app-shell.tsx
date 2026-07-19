@@ -37,7 +37,7 @@ interface NavGroup {
   items: NavItem[];
 }
 
-function buildGroups(isAdmin: boolean): NavGroup[] {
+export function buildGroups(isAdmin: boolean): NavGroup[] {
   const groups: NavGroup[] = [
     {
       label: 'Overview',
@@ -47,7 +47,9 @@ function buildGroups(isAdmin: boolean): NavGroup[] {
       label: 'Money',
       items: [
         { href: '/payments', label: 'Payments', icon: CreditCardIcon },
-        { href: '/financial-report', label: 'Financial Report', icon: LineChartIcon },
+        ...(isAdmin
+          ? [{ href: '/financial-report', label: 'Financial Report', icon: LineChartIcon }]
+          : []),
       ],
     },
   ];
