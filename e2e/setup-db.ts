@@ -1,7 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Client } from 'pg';
-import { E2E_EMAIL, E2E_PASSWORD } from './test-user';
+import { E2E_EMAIL, E2E_PASSWORD, E2E_USER_EMAIL, E2E_USER_PASSWORD } from './test-user';
 
 const adminURL =
   process.env.E2E_ADMIN_DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54342/postgres';
@@ -57,6 +57,15 @@ await auth.api.createUser({
     name: 'E2E Admin',
     password: E2E_PASSWORD,
     role: 'admin',
+  },
+});
+
+await auth.api.createUser({
+  body: {
+    email: E2E_USER_EMAIL,
+    name: 'E2E Owner',
+    password: E2E_USER_PASSWORD,
+    role: 'user',
   },
 });
 

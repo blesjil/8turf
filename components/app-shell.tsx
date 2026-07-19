@@ -10,6 +10,7 @@ import {
   LineChartIcon,
   LogOutIcon,
   MenuIcon,
+  ContactRoundIcon,
   UsersIcon,
   XIcon,
   type LucideIcon,
@@ -50,6 +51,17 @@ export function buildGroups(isAdmin: boolean): NavGroup[] {
         ...(isAdmin
           ? [{ href: '/financial-report', label: 'Financial Report', icon: LineChartIcon }]
           : []),
+      ],
+    },
+    {
+      label: 'Maintenance',
+      items: [
+        {
+          href: '/maintenance/contacts',
+          label: 'Contacts',
+          icon: ContactRoundIcon,
+          match: ['/maintenance'],
+        },
       ],
     },
   ];

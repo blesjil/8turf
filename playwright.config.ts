@@ -24,7 +24,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `bun run test:e2e:setup && bun run --bun next dev --port ${port}`,
+    command: `bun run test:e2e:setup && bun run --bun next dev --webpack --port ${port}`,
     url: baseURL,
     reuseExistingServer: false,
     timeout: 120_000,
@@ -32,6 +32,7 @@ export default defineConfig({
     stderr: 'pipe',
     env: {
       ...process.env,
+      NEXT_DIST_DIR: '.next-e2e',
       DATABASE_URL: databaseURL,
       BETTER_AUTH_SECRET: '8turf-e2e-secret-at-least-32-characters',
       BETTER_AUTH_URL: baseURL,

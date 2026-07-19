@@ -9,6 +9,8 @@ import {
   recordPaymentSchema,
   validateDocumentFile,
   MAX_DOCUMENT_BYTES,
+  createMaintenanceContactSchema,
+  updateMaintenanceContactSchema,
 } from '@/lib/validation';
 
 describe('createUserSchema', () => {
@@ -105,6 +107,63 @@ describe('createUnitSchema', () => {
       bathrooms: '1',
       rentAmount: '-100',
     });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('maintenance contact schemas', () => {
+  const validContact = {
+    name: 'Mario Santos',
+    company: 'Santos Repairs',
+    phone: '09171234567',
+    email: '',
+    serviceArea: 'Cagayan',
+    availability: 'Mon–Sat',
+    notes: '',
+    services: ['plumber', 'handyman_repair'],
+    isPreferred: false,
+    ownerId: '',
+  };
+
+  it('accepts multiple services and a phone number', () => {
+    const result = createMaintenanceContactSchema.safeParse(validContact);
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts email as the only contact method', () => {
+    const result = createMaintenanceContactSchema.safeParse({
+      ...validContact,
+      phone: '',
+      email: 'mario@example.com',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('requires at least one service', () => {
+    const result = createMaintenanceContactSchema.safeParse({ ...validContact, services: [] });
+    expect(result.success).toBe(false);
+  });
+
+  it('requires a phone number or email address', () => {
+    const result = createMaintenanceContactSchema.safeParse({
+      ...validContact,
+      phone: '',
+      email: '',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects malformed email addresses', () => {
+    const result = createMaintenanceContactSchema.safeParse({
+      ...validContact,
+      phone: '',
+      email: 'not-an-email',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('requires an id when updating', () => {
+    const result = updateMaintenanceContactSchema.safeParse(validContact);
     expect(result.success).toBe(false);
   });
 });

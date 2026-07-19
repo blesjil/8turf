@@ -13,4 +13,9 @@ describe('app shell navigation', () => {
   it('shows the financial report to admins', () => {
     expect(navHrefs(true)).toContain('/financial-report');
   });
+
+  it('shows maintenance contacts to every signed-in user', () => {
+    expect(navHrefs(false)).toContain('/maintenance/contacts');
+    expect(navHrefs(true)).toContain('/maintenance/contacts');
+  });
 });

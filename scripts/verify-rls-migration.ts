@@ -14,7 +14,7 @@ const rollbackPath = path.join(
   '0011_enable_rls_and_lock_down_data_api.sql',
 );
 
-const expectedTables = [
+const legacyTables = [
   'account',
   'expenses',
   'login_attempts',
@@ -28,6 +28,7 @@ const expectedTables = [
   'user',
   'verification',
 ];
+const protectedTables = [...legacyTables, 'maintenance_contacts'];
 
 function databaseUrlFor(database: string) {
   const url = new URL(adminUrl);
@@ -35,7 +36,7 @@ function databaseUrlFor(database: string) {
   return url.toString();
 }
 
-async function getRlsState(client: Client) {
+async function getRlsState(client: Client, tables = protectedTables) {
   const result = await client.query<{
     table_name: string;
     rls_enabled: boolean;
@@ -53,14 +54,18 @@ async function getRlsState(client: Client) {
       and c.relname = any($1::text[])
     order by c.relname
   `,
-    [expectedTables],
+    [tables],
   );
   return result.rows;
 }
 
-function assertRlsState(rows: Awaited<ReturnType<typeof getRlsState>>, expectedEnabled: boolean) {
-  if (rows.length !== expectedTables.length) {
-    throw new Error(`Expected ${expectedTables.length} tables, found ${rows.length}`);
+function assertRlsState(
+  rows: Awaited<ReturnType<typeof getRlsState>>,
+  expectedEnabled: boolean,
+  tables = protectedTables,
+) {
+  if (rows.length !== tables.length) {
+    throw new Error(`Expected ${tables.length} tables, found ${rows.length}`);
   }
 
   for (const row of rows) {
@@ -88,7 +93,7 @@ async function assertAnonDenied(client: Client) {
       and c.relname = any($1::text[])
     order by c.relname
   `,
-    [expectedTables],
+    [protectedTables],
   );
 
   const exposed = privileges.rows.filter((row) => row.can_select);
@@ -117,6 +122,7 @@ async function assertOwnerStillWorks(client: Client) {
 
   await client.query('select count(*) from public.properties');
   await client.query('select count(*) from public.session');
+  await client.query('select count(*) from public.maintenance_contacts');
 }
 
 async function assertFunctionSearchPath(client: Client, expectedHardened: boolean) {
@@ -156,6 +162,16 @@ async function assertOwnerCrudStillWorks(client: Client) {
 
       insert into public.properties (id, user_id, name, address)
       values ('rls-property', 'rls-user', 'RLS Property', 'Verification address');
+
+      insert into public.maintenance_contacts (
+        id, user_id, name, phone, services
+      ) values (
+        'rls-contact',
+        'rls-user',
+        'RLS Plumber',
+        '09170000000',
+        array['plumber']
+      );
 
       insert into public.units (
         id, property_id, unit_label, bedrooms, bathrooms, rent_amount
@@ -246,6 +262,7 @@ async function assertOwnerCrudStillWorks(client: Client) {
       delete from public.payment_reminders where id = 'rls-reminder';
       delete from public.rent_payments where id = 'rls-payment';
       delete from public.expenses where id = 'rls-expense';
+      delete from public.maintenance_contacts where id = 'rls-contact';
       delete from public.tenants where id = 'rls-tenant';
       delete from public.units where id = 'rls-unit';
       delete from public.properties where id = 'rls-property';
@@ -287,7 +304,10 @@ async function main() {
 
       const rollbackSql = await readFile(rollbackPath, 'utf8');
       await verification.query(rollbackSql);
-      assertRlsState(await getRlsState(verification), false);
+      assertRlsState(await getRlsState(verification, legacyTables), false, legacyTables);
+      assertRlsState(await getRlsState(verification, ['maintenance_contacts']), true, [
+        'maintenance_contacts',
+      ]);
       await assertOwnerStillWorks(verification);
       await assertFunctionSearchPath(verification, false);
 
@@ -303,7 +323,7 @@ async function main() {
       await assertOwnerCrudStillWorks(verification);
 
       console.log(
-        `Verified ${migrationFiles.length} migrations, rollback, and reapply on ${expectedTables.length} RLS tables.`,
+        `Verified ${migrationFiles.length} migrations, rollback, and reapply on ${protectedTables.length} RLS tables.`,
       );
     } finally {
       await verification.end();

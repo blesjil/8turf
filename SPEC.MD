@@ -122,6 +122,20 @@ There is no unauthenticated/public area for rental data — the previous public 
 - `/payments`: pick a month (defaults to current month); see every property/unit/tenant with rent amount, amount paid, and derived status (paid/partial/unpaid) for that month, across all of the user's properties
 - Each row links through to the relevant unit detail page
 
+### 3.7 Maintenance Contacts (Authenticated)
+
+- `/maintenance/contacts` is a portfolio-wide contractor directory for plumbers, electricians,
+  carpenters, engineers, handymen, and other maintenance services.
+- Contacts store a name, optional company, one or more service tags, phone and/or email, optional
+  service area, availability, notes, and preferred status.
+- A contact requires at least one service and at least one contact method (phone or email).
+- The directory supports URL-backed search, service/preferred/status filters, pagination, quick
+  call/email actions, editing, preferred marking, archiving, and restoring.
+- Regular users can only view and mutate their own contacts. Admins can view every owner's
+  contacts, filter by owner, create contacts for an owner, and manage any contact.
+- Contacts are archived rather than hard-deleted. Maintenance issues and work orders are outside
+  the v1 scope.
+
 ## 4. Non-Functional Requirements
 
 **Performance**
@@ -293,6 +307,32 @@ create table expenses (
 | expense_date | text | Date of the expense (`YYYY-MM-DD`) |
 | remarks | text | Optional free-text remarks |
 
+#### maintenance_contacts
+
+```sql
+create table maintenance_contacts (
+  id text primary key,
+  user_id text not null references "user" (id),
+  name text not null,
+  company text,
+  phone text,
+  email text,
+  service_area text,
+  availability text,
+  notes text,
+  services text[] not null,
+  is_preferred boolean not null default false,
+  archived_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+```
+
+`services` is constrained to the application service catalog and must contain at least one value.
+The table also enforces that phone or email is present. It is owner-scoped through `user_id`,
+indexed for active owner listings and service containment, and protected from Supabase Data API
+access in the same way as the other domain tables.
+
 No table in this schema uses `ON DELETE CASCADE`. All foreign keys are the default `NO ACTION` — deleting a row with existing children is a constraint violation. This is intentional: payment history must never be silently destroyed by deleting an ancestor. See §3.2–3.3 for the archive-instead-of-delete policy this implies, and §11 for the authorization implication of `rent_payments.unit_id` being denormalized.
 
 ### 5.2 Indexes & Triggers
@@ -308,6 +348,13 @@ create index idx_rent_payments_tenant_period on rent_payments (tenant_id, period
 create index idx_rent_payments_period on rent_payments (period);
 create index idx_expenses_property_id on expenses (property_id);
 create index idx_expenses_unit_id on expenses (unit_id);
+create index idx_maintenance_contacts_owner_status
+  on maintenance_contacts (user_id, archived_at);
+create index idx_maintenance_contacts_active_owner_name
+  on maintenance_contacts (user_id, is_preferred desc, name)
+  where archived_at is null;
+create index idx_maintenance_contacts_services
+  on maintenance_contacts using gin (services);
 
 -- Auto-update updated_at: one shared plpgsql function, one trigger per table
 create function set_updated_at() returns trigger
@@ -321,7 +368,7 @@ $$;
 create trigger update_properties_timestamp
   before update on properties
   for each row execute function set_updated_at();
--- ...same trigger on units, tenants, rent_payments, expenses
+-- ...same trigger on units, tenants, rent_payments, expenses, maintenance_contacts
 ```
 
 ## 6. Backend: DB & Server Action Layer
@@ -354,6 +401,7 @@ Zod schemas replace the prior note schemas:
 - `createUnitSchema`, `updateUnitSchema`
 - `assignTenantSchema`, `updateTenantSchema`, `endTenancySchema`
 - `recordPaymentSchema`, `updatePaymentSchema`
+- `createMaintenanceContactSchema`, `updateMaintenanceContactSchema`
 
 There is no repository/DAO layer — raw SQL queries live directly inside each route's `actions.ts` and in server component data fetching, always scoped by the authorization joins described in §11. This matches the pattern already established by the prior notes feature (see `app/notes/[id]/actions.ts` for the session-check → Zod `safeParse` → typed result object pattern to replicate).
 
@@ -377,6 +425,10 @@ All mutations are Next.js Server Actions (`'use server'`), colocated in each rou
 | `recordPayment` | unit detail | Insert a `rent_payments` row; `unit_id` derived server-side from the authorized `tenant_id`, never accepted from client input |
 | `updatePayment` | unit detail | Correct an existing payment entry |
 | `deletePayment` | unit detail | Remove a payment entry |
+| `createMaintenanceContact` | `/maintenance/contacts` | Insert an owner-scoped contractor contact |
+| `updateMaintenanceContact` | `/maintenance/contacts` | Update a contact after checking owner/admin access |
+| `setMaintenanceContactPreferred` | `/maintenance/contacts` | Mark or unmark a contact as preferred |
+| `setMaintenanceContactArchived` | `/maintenance/contacts` | Archive or restore a contact without deleting it |
 
 ## 8. Frontend – Pages & Components
 

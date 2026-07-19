@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAINTENANCE_SERVICE_VALUES } from '@/lib/maintenance-contacts';
 
 const isValidPhilippinePhone = (value: string) => {
   if (!value) return true;
@@ -182,6 +183,54 @@ export const recordUnitExpenseSchema = expenseBaseSchema.extend({
 });
 export const updateUnitExpenseSchema = expenseBaseSchema.extend({
   id: z.string().min(1, 'Expense id is required'),
+});
+
+const maintenanceContactBaseSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Name is required').max(200, 'Name is too long'),
+    company: z.string().trim().max(200, 'Company is too long').optional().or(z.literal('')),
+    phone: z.string().trim().max(50, 'Phone number is too long').optional().or(z.literal('')),
+    email: z
+      .string()
+      .trim()
+      .max(320, 'Email is too long')
+      .email('Invalid email address')
+      .optional()
+      .or(z.literal('')),
+    serviceArea: z
+      .string()
+      .trim()
+      .max(300, 'Service area is too long')
+      .optional()
+      .or(z.literal('')),
+    availability: z
+      .string()
+      .trim()
+      .max(300, 'Availability is too long')
+      .optional()
+      .or(z.literal('')),
+    notes: z.string().trim().max(2000, 'Notes are too long').optional().or(z.literal('')),
+    services: z
+      .array(z.enum(MAINTENANCE_SERVICE_VALUES))
+      .min(1, 'Select at least one service')
+      .max(MAINTENANCE_SERVICE_VALUES.length),
+    isPreferred: z.coerce.boolean().default(false),
+    ownerId: z.string().trim().optional().or(z.literal('')),
+  })
+  .refine((data) => Boolean(data.phone || data.email), {
+    message: 'Add a phone number or email address',
+    path: ['phone'],
+  });
+
+export const createMaintenanceContactSchema = maintenanceContactBaseSchema;
+
+export const updateMaintenanceContactSchema = maintenanceContactBaseSchema.safeExtend({
+  id: z.string().min(1, 'Contact id is required'),
+});
+
+export const maintenanceContactStateSchema = z.object({
+  id: z.string().min(1, 'Contact id is required'),
+  value: z.enum(['true', 'false']).optional(),
 });
 
 // Tenant document uploads (stored in Google Drive). Keep in sync with the
