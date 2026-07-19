@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCentsCompact } from '@/lib/money';
+import { propertyInitials } from '@/lib/property-initials';
 
 export interface PropertyListItem {
   id: string;
@@ -26,12 +27,6 @@ const THUMBS = [
   'linear-gradient(135deg, #3a7d63, #245845)',
   'linear-gradient(135deg, #b4791e, #8a5c12)',
 ] as const;
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  const chars = parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : name.slice(0, 2);
-  return chars.toUpperCase();
-}
 
 function thumbFor(id: string): string {
   let h = 0;
@@ -81,7 +76,7 @@ export function PropertyList({ properties }: { properties: PropertyListItem[] })
                   style={{ background: thumbFor(property.id) }}
                   aria-hidden
                 >
-                  {initials(property.name)}
+                  {propertyInitials(property.name)}
                 </span>
                 <div className='min-w-0 flex-1'>
                   <div className='truncate font-heading text-[15.5px] font-semibold group-hover:text-primary'>
