@@ -3,7 +3,9 @@ import { format } from 'date-fns';
 import { E2E_EMAIL, E2E_PASSWORD } from './test-user';
 
 test('landlord can manage a property from sign-in through rent collection', async ({ page }) => {
+  test.setTimeout(90_000);
   const currentMonthStart = format(new Date(), 'yyyy-MM-01');
+  let unitUrl = '';
 
   await test.step('protected pages require authentication', async () => {
     await page.goto('/dashboard');
@@ -15,7 +17,7 @@ test('landlord can manage a property from sign-in through rent collection', asyn
     await page.getByLabel('Email').fill(E2E_EMAIL);
     await page.getByLabel('Password').fill(E2E_PASSWORD);
     await page.getByRole('button', { name: 'Sign in' }).click();
-    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page).toHaveURL(/\/dashboard$/, { timeout: 20_000 });
     await expect(page.getByRole('heading', { name: 'Portfolio' })).toBeVisible();
   });
 
@@ -39,8 +41,25 @@ test('landlord can manage a property from sign-in through rent collection', asyn
     await page.getByLabel('Bathrooms').fill('1');
     await page.getByLabel('Asking rent (₱/mo)').fill('12500');
     await page.getByRole('button', { name: 'Add unit' }).click();
+    await expect(page).toHaveURL(/\/units\/[^/]+$/, { timeout: 20_000 });
     await expect(page.getByRole('heading', { name: 'Unit A' })).toBeVisible();
     await expect(page.getByText('₱ 12,500.00/mo asking')).toBeVisible();
+    unitUrl = page.url();
+  });
+
+  await test.step('financial report shows vacancy loss for month and year filters', async () => {
+    await page.goto('/financial-report');
+    await expect(page.getByRole('heading', { name: 'Financial Report' })).toBeVisible();
+
+    const monthRow = page.getByRole('row', { name: /Unit A/ });
+    await expect(monthRow.getByRole('cell', { name: '₱ 12,500.00' })).toBeVisible();
+
+    await page.getByLabel('Report period').selectOption('year');
+    await expect(page).toHaveURL(/mode=year/);
+    const yearRow = page.getByRole('row', { name: /Unit A/ });
+    await expect(yearRow.getByRole('cell', { name: '₱ 12,500.00' })).toBeVisible();
+
+    await page.goto(unitUrl);
   });
 
   await test.step('admin can assign a tenant', async () => {
@@ -79,6 +98,11 @@ test('landlord can manage a property from sign-in through rent collection', asyn
     await expect(
       page.getByRole('link', { name: /E2E Apartments/ }).getByText('1 partial', { exact: true }),
     ).toBeVisible();
+
+    await page.goto('/financial-report');
+    const reportRow = page.getByRole('row', { name: /Unit A/ });
+    await expect(reportRow.getByRole('cell', { name: '₱ 5,000.00' })).toBeVisible();
+    await expect(reportRow.getByRole('cell', { name: '₱ 0.00' })).toHaveCount(2);
   });
 
   await test.step('property addresses fit within a mobile viewport', async () => {

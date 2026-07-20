@@ -11,10 +11,13 @@ import { FinancialPeriodPicker } from '@/components/financial-period-picker';
 import { PageContainer } from '@/components/page-container';
 import {
   buildPropertyGroups,
+  calculateVacancyLostByUnit,
+  reportPeriods,
   summarizeFinancialReport,
+  type LeaseRow,
   type UnitRow,
 } from '@/lib/financial-report';
-import { ReceiptIcon, TrendingUpIcon, WalletIcon } from 'lucide-react';
+import { Building2Icon, ReceiptIcon, TrendingUpIcon, WalletIcon } from 'lucide-react';
 import { KpiCard } from '@/components/kpi-card';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -47,7 +50,9 @@ export default async function FinancialReportPage({
 
   const rows = await query<UnitRow>(
     `SELECT p.id as "propertyId", p.name as "propertyName",
-            u.id as "unitId", u.unit_label as "unitLabel"
+            u.id as "unitId", u.unit_label as "unitLabel",
+            u.rent_amount as "rentAmount",
+            to_char(u.created_at, 'YYYY-MM') as "createdPeriod"
      FROM properties p
      JOIN units u ON u.property_id = p.id
      WHERE p.archived_at IS NULL AND u.archived_at IS NULL
@@ -60,6 +65,7 @@ export default async function FinancialReportPage({
   const incomeByUnit = new Map<string, number>();
   const expensesByUnit = new Map<string, number>();
   const expensesByProperty = new Map<string, number>();
+  let vacancyLostByUnit = new Map<string, number>();
 
   if (unitIds.length > 0) {
     const periodValue = mode === 'month' ? month : year;
@@ -105,6 +111,20 @@ export default async function FinancialReportPage({
       [propertyIds, periodValue],
     );
     for (const t of propertyExpenseTotals) expensesByProperty.set(t.property_id, t.total);
+
+    const leases = await query<LeaseRow>(
+      `SELECT unit_id as "unitId", lease_start_date as "leaseStartDate",
+              lease_end_date as "leaseEndDate"
+       FROM tenants
+       WHERE unit_id = ANY($1) AND lease_start_date <= $2
+         AND (lease_end_date IS NULL OR lease_end_date >= $3)`,
+      [unitIds, windowEnd, windowStart],
+    );
+    vacancyLostByUnit = calculateVacancyLostByUnit(
+      rows,
+      leases,
+      reportPeriods(mode, month, year),
+    );
   }
 
   const propertyGroups = buildPropertyGroups(
@@ -112,6 +132,7 @@ export default async function FinancialReportPage({
     incomeByUnit,
     expensesByUnit,
     expensesByProperty,
+    vacancyLostByUnit,
   );
   const totals = summarizeFinancialReport(propertyGroups);
 
@@ -133,7 +154,7 @@ export default async function FinancialReportPage({
         </Card>
       ) : (
         <div className='flex flex-col gap-8'>
-          <div className='grid grid-cols-1 gap-3.5 sm:grid-cols-3'>
+          <div className='grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4'>
             <KpiCard
               label='Gross income'
               value={formatCents(totals.grossIncome)}
@@ -145,6 +166,12 @@ export default async function FinancialReportPage({
               value={formatCents(totals.totalExpenses)}
               icon={<ReceiptIcon />}
               tone='amber'
+            />
+            <KpiCard
+              label='Vacancy lost'
+              value={formatCents(totals.vacancyLost)}
+              icon={<Building2Icon />}
+              tone='red'
             />
             <KpiCard
               label='Net income'
@@ -177,6 +204,7 @@ export default async function FinancialReportPage({
                         <TableHead>Unit</TableHead>
                         <TableHead className='text-right'>Income</TableHead>
                         <TableHead className='text-right'>Expenses</TableHead>
+                        <TableHead className='text-right'>Vacancy lost</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -196,6 +224,9 @@ export default async function FinancialReportPage({
                           <TableCell className='text-right font-mono tabular-nums'>
                             {formatCents(u.expenses)}
                           </TableCell>
+                          <TableCell className='text-right font-mono tabular-nums'>
+                            {formatCents(u.vacancyLost)}
+                          </TableCell>
                         </TableRow>
                       ))}
                       <TableRow>
@@ -206,6 +237,7 @@ export default async function FinancialReportPage({
                         <TableCell className='text-right font-mono tabular-nums'>
                           {formatCents(group.propertyExpenses)}
                         </TableCell>
+                        <TableCell />
                       </TableRow>
                     </TableBody>
                     <TableFooter>
@@ -216,6 +248,9 @@ export default async function FinancialReportPage({
                         </TableCell>
                         <TableCell className='text-right font-mono tabular-nums'>
                           {formatCents(group.totalExpenses)}
+                        </TableCell>
+                        <TableCell className='text-right font-mono tabular-nums'>
+                          {formatCents(group.totalVacancyLost)}
                         </TableCell>
                       </TableRow>
                     </TableFooter>

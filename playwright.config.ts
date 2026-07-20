@@ -24,7 +24,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `bun run test:e2e:setup && bun run --bun next dev --webpack --port ${port}`,
+    command: `bun run test:e2e:setup && node node_modules/next/dist/bin/next build && node node_modules/next/dist/bin/next start --port ${port}`,
     url: baseURL,
     reuseExistingServer: false,
     timeout: 120_000,
