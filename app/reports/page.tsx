@@ -53,7 +53,7 @@ export default async function ReportsDashboardPage({
     fetchCollections(scope, start, endExclusive),
   ]);
 
-  const billing = summarizeBilling(deriveCharges(leases, coveringPayments, [period], today));
+  const billing = summarizeBilling(deriveCharges(leases, coveringPayments, [period], today), today);
   const collections = summarizeCollections(collectionRows);
 
   const occupied = overview.activeRows.length;

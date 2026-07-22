@@ -1,7 +1,8 @@
 import { query } from '@/lib/db';
+import { RENT_COVERING_PAYMENT_TYPES } from '@/lib/payment-status';
 import type { Charge } from '@/lib/reports/charges';
 
-// A payment as it appears in a tenant's ledger (all types count as credits).
+// A rent-covering payment as it appears in a tenant's ledger.
 export interface LedgerPayment {
   paymentId: string;
   paidDate: string;
@@ -60,6 +61,9 @@ export function buildLedger(charges: Charge[], payments: LedgerPayment[]): Ledge
   });
 }
 
+// Only rent-covering payments (rental + advance) belong in the rent ledger —
+// deposits and reservations are money held, not rent credit, and would show a
+// false spendable balance if subtracted here.
 export function fetchLedgerPayments(
   tenantId: string,
   scope: string | null,
@@ -73,7 +77,8 @@ export function fetchLedgerPayments(
      JOIN properties p ON p.id = u.property_id
      WHERE rp.tenant_id = $1
        AND ($2::text IS NULL OR p.user_id = $2)
+       AND rp.payment_type = ANY($3)
        AND p.archived_at IS NULL AND u.archived_at IS NULL`,
-    [tenantId, scope],
+    [tenantId, scope, [...RENT_COVERING_PAYMENT_TYPES]],
   );
 }

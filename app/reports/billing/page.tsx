@@ -46,7 +46,7 @@ export default async function BillingReportPage({ searchParams }: { searchParams
     fetchCoveringPayments(scope, start, endExclusive),
   ]);
   const charges = deriveCharges(leases, payments, [period], today);
-  const summary = summarizeBilling(charges);
+  const summary = summarizeBilling(charges, today);
 
   return (
     <PageContainer>

@@ -64,7 +64,12 @@ export default async function TenantLedgerReportPage({
     const endMonth = leaseEndMonth < currentMonth ? leaseEndMonth : currentMonth;
     const periods = startMonth <= endMonth ? periodsInRange(startMonth, endMonth) : [];
 
-    const charges = deriveCharges([lease], paymentInputs, periods, today);
+    // A charge accrues on its due date — the current month's charge stays off
+    // the ledger until the anchor day arrives, so a pre-due payment correctly
+    // shows as tenant credit rather than the tenant looking like they owe early.
+    const charges = deriveCharges([lease], paymentInputs, periods, today).filter(
+      (c) => c.dueDate <= today,
+    );
     ledger = buildLedger(charges, payments);
   }
 
@@ -152,6 +157,9 @@ export default async function TenantLedgerReportPage({
               </Table>
             </div>
           </Card>
+          <p className='text-xs text-muted-foreground'>
+            Deposits and reservations are held separately and are not part of the rent balance.
+          </p>
         </div>
       )}
     </PageContainer>
