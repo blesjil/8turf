@@ -100,13 +100,7 @@ const commercialImages = [
   },
 ];
 
-function PropertyGallery({
-  images,
-  label,
-}: {
-  images: typeof apartmentImages;
-  label: string;
-}) {
+function PropertyGallery({ images, label }: { images: typeof apartmentImages; label: string }) {
   return (
     <div
       className='grid grid-cols-2 gap-2.5 sm:gap-3'
@@ -151,9 +145,7 @@ function FeatureGrid({ features }: { features: typeof apartmentFeatures }) {
             </span>
             <div>
               <h3 className='font-heading text-base font-semibold'>{feature.title}</h3>
-              <p className='mt-1 text-sm leading-6 text-muted-foreground'>
-                {feature.description}
-              </p>
+              <p className='mt-1 text-sm leading-6 text-muted-foreground'>{feature.description}</p>
             </div>
           </div>
         );
@@ -189,8 +181,8 @@ export default async function Home() {
               <span className='mt-2 block text-primary'>Space to grow.</span>
             </h1>
             <p className='mt-7 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8'>
-              Comfortable apartments and visible commercial spaces in practical locations,
-              supported by straightforward, direct-owner inquiries.
+              Comfortable apartments and visible commercial spaces in practical locations, supported
+              by straightforward, direct-owner inquiries.
             </p>
             <div className='mt-8 flex flex-col gap-3 sm:flex-row'>
               <Link
@@ -361,10 +353,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section
-        className='scroll-mt-20 px-4 py-20 sm:px-6 sm:py-24 lg:px-8'
-        id='commercial'
-      >
+      <section className='scroll-mt-20 px-4 py-20 sm:px-6 sm:py-24 lg:px-8' id='commercial'>
         <div className='mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2 lg:gap-16'>
           <div className='lg:order-2'>
             <p className='text-xs font-semibold tracking-[0.16em] text-primary uppercase'>
@@ -374,8 +363,8 @@ export default async function Home() {
               A visible and flexible address for your business
             </h2>
             <p className='mt-5 text-base leading-7 text-muted-foreground sm:text-lg'>
-              Commercial rental spaces with direct street exposure, practical access, and
-              adaptable layouts for local entrepreneurs.
+              Commercial rental spaces with direct street exposure, practical access, and adaptable
+              layouts for local entrepreneurs.
             </p>
             <div className='my-8 h-px bg-border' />
             <FeatureGrid features={commercialFeatures} />
@@ -406,8 +395,8 @@ export default async function Home() {
               Find the right space for your next move
             </h2>
             <p className='mt-5 max-w-2xl text-base leading-7 text-primary-foreground/70 sm:text-lg'>
-              Tell us which property you are interested in and your preferred viewing schedule.
-              We will reply with current availability and rental details.
+              Tell us which property you are interested in and your preferred viewing schedule. We
+              will reply with current availability and rental details.
             </p>
           </div>
           <a

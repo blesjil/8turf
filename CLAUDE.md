@@ -37,3 +37,18 @@ This is a Next.js 16 application using the App Router pattern with:
 
 - `app/` - Next.js App Router pages and layouts
 - `@/*` path alias maps to project root
+
+### Plan and Tasks
+
+When asked to **build** a feature (anything beyond a trivial one-line fix), plan
+before writing code:
+
+1. Design the approach first — do not start editing until the plan is written.
+2. Write the plan to a handover file at `docs/plans/<feature-name>.md` so another
+   agent can pick up the work without this conversation's context. Each file must
+   contain:
+   - **Context** — the goal and why the change is being made
+   - **Plan** — the implementation approach
+   - **Tasks** — a checkboxed list (`- [ ]`) of discrete steps, each naming the
+     file(s) it touches
+3. As tasks are completed, check them off (`- [x]`) in the handover file.

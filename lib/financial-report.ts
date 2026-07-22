@@ -49,10 +49,7 @@ export function reportPeriods(
   const periods =
     mode === 'month'
       ? [month]
-      : Array.from(
-          { length: 12 },
-          (_, index) => `${year}-${String(index + 1).padStart(2, '0')}`,
-        );
+      : Array.from({ length: 12 }, (_, index) => `${year}-${String(index + 1).padStart(2, '0')}`);
   return periods.filter((period) => period <= throughPeriod);
 }
 
