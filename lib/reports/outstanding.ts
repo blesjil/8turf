@@ -1,5 +1,5 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns';
-import type { Charge } from '@/lib/reports/charges';
+import { OVERDUE_GRACE_DAYS, type Charge } from '@/lib/reports/charges';
 
 export interface OutstandingRow extends Charge {
   daysOverdue: number;
@@ -34,7 +34,9 @@ export function summarizeOutstanding(rows: OutstandingRow[]): OutstandingSummary
   for (const r of rows) {
     tenants.add(r.tenantId);
     totalOutstanding += r.outstanding;
-    if (r.daysOverdue > 0) overdueOutstanding += r.outstanding;
+    // daysOverdue stays the factual day count; the overdue *bucket* honors the
+    // grace period so it matches the charge-status flag everywhere else.
+    if (r.daysOverdue > OVERDUE_GRACE_DAYS) overdueOutstanding += r.outstanding;
     else currentOutstanding += r.outstanding;
   }
   return {

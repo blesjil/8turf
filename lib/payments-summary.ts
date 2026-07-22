@@ -1,5 +1,5 @@
 import { computePaymentStatus, type PaymentStatus } from '@/lib/payment-status';
-import { anchorDueDate } from '@/lib/reports/charges';
+import { anchorDueDate, isPastGracePeriod } from '@/lib/reports/charges';
 import type { OverviewRow } from '@/lib/payments-overview';
 
 export type RowStatus = PaymentStatus | 'not_due' | 'overdue' | 'inactive';
@@ -27,9 +27,10 @@ export function parseStatusFilter(raw: string | undefined): StatusFilter {
 // otherwise-unpaid row is 'not_due', not 'unpaid' — this is what stops the
 // mid-month view (and reminders) from flagging a current tenant as delinquent.
 //
-// Past the due date a fully-unpaid row escalates to 'overdue' — same rule as
-// chargeStatus in the Billing report ('unpaid' only on the due day itself,
-// 'partial' stays 'partial'), so the two pages never disagree on a tenant.
+// Past the due date plus the grace period a fully-unpaid row escalates to
+// 'overdue' — same rule as chargeStatus in the Billing report ('unpaid' while
+// within OVERDUE_GRACE_DAYS of the due date, 'partial' stays 'partial'), so
+// the two pages never disagree on a tenant.
 export function rowStatus(
   row: OverviewRow,
   paidByTenant: Map<string, number>,
@@ -43,7 +44,7 @@ export function rowStatus(
   const dueDate = anchorDueDate(row.leaseStartDate, period);
   if (asOf < dueDate) return 'not_due';
   const status = computePaymentStatus(paid, rent); // 'partial' | 'unpaid'
-  return status === 'unpaid' && asOf > dueDate ? 'overdue' : status;
+  return status === 'unpaid' && isPastGracePeriod(dueDate, asOf) ? 'overdue' : status;
 }
 
 // Whether a row is a reminder target: rent is due (anchor day reached) and not

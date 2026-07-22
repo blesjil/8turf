@@ -46,6 +46,17 @@ describe('buildOutstanding', () => {
 });
 
 describe('summarizeOutstanding', () => {
+  it('keeps a balance within the grace period in the current bucket', () => {
+    // Due Aug 3, as-of Aug 5 → 2 days past due, last day of the 2-day grace period.
+    const rows = buildOutstanding(
+      [charge({ dueDate: '2026-08-03', outstanding: 50000 })],
+      '2026-08-05',
+    );
+    const summary = summarizeOutstanding(rows);
+    expect(summary.currentOutstanding).toBe(50000);
+    expect(summary.overdueOutstanding).toBe(0);
+  });
+
   it('splits current vs overdue and counts distinct tenants', () => {
     const rows = buildOutstanding(
       [

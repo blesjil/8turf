@@ -37,3 +37,8 @@ health buckets. New "Overdue" option in the status filter; red badge.
 - [x] Verify with `bunx tsc --noEmit`, lint, and full vitest run
 - [x] Live-test in the browser: due date column, Paid / Not yet due / Overdue /
       Inactive badges, and the Overdue filter (June + July 2026 data)
+- [x] Grace period: `OVERDUE_GRACE_DAYS = 2` in `lib/reports/charges.ts` —
+      a fully-unpaid charge stays "Unpaid" through 2 days past due, flips to
+      "Overdue" on day 3; honored by chargeStatus, rowStatus, the Billing
+      overdue count, and the Outstanding current/overdue split (the report's
+      days-overdue column stays the factual day count)

@@ -63,7 +63,16 @@ describe('rowStatus', () => {
     expect(rowStatus(row({ tenantId: 'unpaidTenant' }), paid, PERIOD, '2026-08-01')).toBe('unpaid');
   });
 
-  it('returns overdue when nothing is paid past the due date', () => {
+  it('stays unpaid within the 2-day grace period past the due date', () => {
+    // Due Aug 1, viewed Aug 3 → 2 days past due, last day of grace.
+    expect(rowStatus(row({ tenantId: 'unpaidTenant' }), paid, PERIOD, '2026-08-03')).toBe('unpaid');
+  });
+
+  it('returns overdue when nothing is paid past the due date plus grace', () => {
+    // Aug 4 is the first overdue day for an Aug 1 due date; ASOF (Aug 5) too.
+    expect(rowStatus(row({ tenantId: 'unpaidTenant' }), paid, PERIOD, '2026-08-04')).toBe(
+      'overdue',
+    );
     expect(rowStatus(row({ tenantId: 'unpaidTenant' }), paid, PERIOD, ASOF)).toBe('overdue');
   });
 

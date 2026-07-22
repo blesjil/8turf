@@ -1,4 +1,4 @@
-import { getDaysInMonth, parseISO } from 'date-fns';
+import { addDays, format, getDaysInMonth, parseISO } from 'date-fns';
 import { countsTowardRent, creditForPeriod, isLeaseActiveForPeriod } from '@/lib/payment-status';
 
 // Shared "rent due" primitives for the reports and the Payments Overview.
@@ -18,6 +18,14 @@ export function anchorDueDate(leaseStartDate: string, period: string): string {
   return `${period}-${String(day).padStart(2, '0')}`;
 }
 
+// Tenants get a short grace period past the due date before being flagged:
+// nothing reads as overdue until `asOf` is more than this many days past due.
+export const OVERDUE_GRACE_DAYS = 2;
+
+export function isPastGracePeriod(dueDate: string, asOf: string): boolean {
+  return asOf > format(addDays(parseISO(dueDate), OVERDUE_GRACE_DAYS), 'yyyy-MM-dd');
+}
+
 export type ChargeStatus = 'paid' | 'advance' | 'partial' | 'not_due' | 'unpaid' | 'overdue';
 
 // The status of one derived monthly charge, evaluated at `asOf`:
@@ -26,8 +34,8 @@ export type ChargeStatus = 'paid' | 'advance' | 'partial' | 'not_due' | 'unpaid'
 //   partial  — some, but not all, covered
 //   not_due  — nothing paid and the due date is still in the future (the
 //              mid-month false-"unpaid" fix — no reminder, not outstanding)
-//   unpaid   — nothing paid and due today
-//   overdue  — nothing paid past the due date
+//   unpaid   — nothing paid, due, but still within the grace period
+//   overdue  — nothing paid more than OVERDUE_GRACE_DAYS past the due date
 export function chargeStatus(opts: {
   amount: number;
   creditsApplied: number;
@@ -41,7 +49,7 @@ export function chargeStatus(opts: {
   }
   if (creditsApplied > 0) return 'partial';
   if (asOf < dueDate) return 'not_due';
-  if (asOf > dueDate) return 'overdue';
+  if (isPastGracePeriod(dueDate, asOf)) return 'overdue';
   return 'unpaid';
 }
 

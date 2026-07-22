@@ -56,6 +56,12 @@ describe('summarizeBilling', () => {
     expect(summarizeBilling([charge('unpaid', 100000, 0)], '2026-07-01').overdue).toBe(0);
   });
 
+  it('honors the grace period before counting a bill as overdue', () => {
+    // Due Jul 1: within the 2-day grace period (Jul 3) not overdue, past it (Jul 4) overdue.
+    expect(summarizeBilling([charge('unpaid', 100000, 0)], '2026-07-03').overdue).toBe(0);
+    expect(summarizeBilling([charge('overdue', 100000, 0)], '2026-07-04').overdue).toBe(1);
+  });
+
   it('caps amountPaid at the charge amount (ignores overpayment)', () => {
     const summary = summarizeBilling([charge('paid', 100000, 150000)], ASOF);
     expect(summary.amountPaid).toBe(100000);

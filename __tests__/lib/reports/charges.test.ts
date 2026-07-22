@@ -48,11 +48,15 @@ describe('chargeStatus', () => {
     expect(chargeStatus({ ...base, asOf: '2026-08-05', creditsApplied: 0 })).toBe('not_due');
   });
 
-  it('is unpaid when nothing is paid and it is due today', () => {
+  it('is unpaid when nothing is paid from the due date through the grace period', () => {
     expect(chargeStatus({ ...base, asOf: '2026-08-15', creditsApplied: 0 })).toBe('unpaid');
+    // Last day of the 2-day grace period — still unpaid, not overdue.
+    expect(chargeStatus({ ...base, asOf: '2026-08-17', creditsApplied: 0 })).toBe('unpaid');
   });
 
-  it('is overdue when nothing is paid past the due date', () => {
+  it('is overdue when nothing is paid past the due date plus the grace period', () => {
+    // First day past the grace period.
+    expect(chargeStatus({ ...base, asOf: '2026-08-18', creditsApplied: 0 })).toBe('overdue');
     expect(chargeStatus({ ...base, asOf: '2026-08-20', creditsApplied: 0 })).toBe('overdue');
   });
 
