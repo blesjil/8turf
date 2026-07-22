@@ -7,9 +7,14 @@ import { ownerScope } from '@/lib/access';
 import { query } from '@/lib/db';
 import { formatCents } from '@/lib/money';
 import { formatPeriod } from '@/lib/format-date';
-import { computePaymentStatus } from '@/lib/payment-status';
 import { getPaymentsOverview } from '@/lib/payments-overview';
-import { filterRowsByStatus, parseStatusFilter, summarizePayments } from '@/lib/payments-summary';
+import {
+  filterRowsByStatus,
+  isReminderDue,
+  parseStatusFilter,
+  rowStatus,
+  summarizePayments,
+} from '@/lib/payments-summary';
 import {
   BanknoteIcon,
   Building2Icon,
@@ -44,6 +49,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
 
   const { month, status, page: rawPage } = await searchParams;
   const period = month && /^\d{4}-\d{2}$/.test(month) ? month : format(new Date(), 'yyyy-MM');
+  const today = format(new Date(), 'yyyy-MM-dd');
   const filter = parseStatusFilter(status);
 
   const { activeRows, inactiveRows, paidByTenant } = await getPaymentsOverview(
@@ -54,7 +60,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
 
   // The status filter narrows only the table; the summary cards below always
   // reflect the month's full totals.
-  const filteredActive = filterRowsByStatus(activeRows, paidByTenant, filter);
+  const filteredActive = filterRowsByStatus(activeRows, paidByTenant, filter, period, today);
   const filteredInactive = filter === 'all' || filter === 'inactive' ? inactiveRows : [];
   const allRows = [...filteredActive, ...filteredInactive];
 
@@ -74,13 +80,12 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
     }
   }
 
-  // Remind-all targets every unpaid tenant regardless of the current filter.
-  const unpaidRows = activeRows.filter(
-    (r) => (paidByTenant.get(r.tenantId!) ?? 0) < (r.rentAmount ?? 0),
-  );
+  // Remind-all targets every tenant whose rent is due and unpaid, regardless of
+  // the current filter — never those whose rent is not yet due.
+  const unpaidRows = activeRows.filter((r) => isReminderDue(r, paidByTenant, period, today));
   const unpaidWithContact = unpaidRows.filter((r) => r.tenantEmail || r.tenantPhone).length;
 
-  const summary = summarizePayments(activeRows, inactiveRows, paidByTenant);
+  const summary = summarizePayments(activeRows, inactiveRows, paidByTenant, period, today);
 
   const totalPages = Math.ceil(allRows.length / PAGE_SIZE);
   const page = clampPage(rawPage, totalPages);
@@ -175,9 +180,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                         // Inactive/vacant rows come back with tenant fields nulled.
                         const active = r.tenantId !== null;
                         const paid = active ? (paidByTenant.get(r.tenantId!) ?? 0) : 0;
-                        const status = active
-                          ? computePaymentStatus(paid, r.rentAmount ?? 0)
-                          : 'inactive';
+                        const status = rowStatus(r, paidByTenant, period, today);
                         return (
                           <TableRow key={r.tenantId ?? r.unitId}>
                             <TableCell className='hidden md:table-cell'>{r.propertyName}</TableCell>
@@ -203,7 +206,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                             </TableCell>
                             <TableCell className='text-right'>
                               {active &&
-                                status !== 'paid' &&
+                                isReminderDue(r, paidByTenant, period, today) &&
                                 (r.tenantEmail || r.tenantPhone ? (
                                   <SendReminderButton
                                     tenantId={r.tenantId!}

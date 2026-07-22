@@ -7,8 +7,7 @@ import { auth } from '@/lib/auth';
 import { isAdmin, ownerScope } from '@/lib/access';
 import { query } from '@/lib/db';
 import { getPaymentsOverview } from '@/lib/payments-overview';
-import { summarizePayments } from '@/lib/payments-summary';
-import { computePaymentStatus } from '@/lib/payment-status';
+import { rowStatus, summarizePayments } from '@/lib/payments-summary';
 import { formatCentsCompact } from '@/lib/money';
 import { Button } from '@/components/ui/button';
 import { PropertyList, type PropertyListItem } from '@/components/property-list';
@@ -33,6 +32,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Search
   const admin = isAdmin(session);
   const scope = ownerScope(session);
   const period = format(new Date(), 'yyyy-MM');
+  const today = format(new Date(), 'yyyy-MM-dd');
 
   const [baseProperties, overview] = await Promise.all([
     query<BaseProperty>(
@@ -50,7 +50,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Search
   ]);
 
   const { activeRows, inactiveRows, paidByTenant } = overview;
-  const summary = summarizePayments(activeRows, inactiveRows, paidByTenant);
+  const summary = summarizePayments(activeRows, inactiveRows, paidByTenant, period, today);
 
   // Per-property aggregates from the same month-of math the Payments page uses.
   type Agg = { collected: number; occupied: number; unpaidUnits: number; partialUnits: number };
@@ -66,10 +66,17 @@ export default async function Dashboard({ searchParams }: { searchParams: Search
     const paid = paidByTenant.get(r.tenantId!) ?? 0;
     agg.collected += Math.min(paid, rent);
     agg.occupied += 1;
-    const status = computePaymentStatus(paid, rent);
-    health[status] += 1;
-    if (status === 'unpaid') agg.unpaidUnits += 1;
-    else if (status === 'partial') agg.partialUnits += 1;
+    const status = rowStatus(r, paidByTenant, period, today);
+    // Rent that isn't due yet counts as current (green), never unpaid/partial.
+    if (status === 'partial') {
+      health.partial += 1;
+      agg.partialUnits += 1;
+    } else if (status === 'unpaid') {
+      health.unpaid += 1;
+      agg.unpaidUnits += 1;
+    } else {
+      health.paid += 1;
+    }
   }
 
   const properties: PropertyListItem[] = baseProperties.map((p) => {

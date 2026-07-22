@@ -3,12 +3,14 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
+import { format } from 'date-fns';
 import { auth } from '@/lib/auth';
 import { ownerScope } from '@/lib/access';
 import { query } from '@/lib/db';
 import { sendPaymentReminder, type PaymentReminderDetails } from '@/lib/mail';
 import { sendSmsPaymentReminder } from '@/lib/sms';
 import { getPaymentsOverview, type OverviewRow } from '@/lib/payments-overview';
+import { isReminderDue } from '@/lib/payments-summary';
 import { formatPeriod } from '@/lib/format-date';
 
 export interface ReminderResult {
@@ -111,8 +113,9 @@ export async function sendDueReminder(tenantId: string, period: string): Promise
     return { ok: false, error: 'This tenant has no email address or phone number on file.' };
   }
   const paid = paidByTenant.get(tenantId) ?? 0;
-  if (paid >= (row.rentAmount ?? 0)) {
-    return { ok: false, error: 'This tenant has no outstanding balance for this month.' };
+  const today = format(new Date(), 'yyyy-MM-dd');
+  if (!isReminderDue(row, paidByTenant, period, today)) {
+    return { ok: false, error: 'This tenant has no rent due for this month yet.' };
   }
 
   const outcome = await sendReminder(row, paid, period);
@@ -134,9 +137,8 @@ export async function sendAllDueReminders(period: string): Promise<BulkReminderR
   }
 
   const { activeRows, paidByTenant } = await getPaymentsOverview(period, ownerScope(session));
-  const unpaid = activeRows.filter(
-    (r) => (paidByTenant.get(r.tenantId!) ?? 0) < (r.rentAmount ?? 0),
-  );
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const unpaid = activeRows.filter((r) => isReminderDue(r, paidByTenant, period, today));
 
   let sent = 0;
   let skippedNoContact = 0;
