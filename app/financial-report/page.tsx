@@ -6,7 +6,7 @@ import { auth } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { formatCents } from '@/lib/money';
 import { creditsByPeriod, RENT_COVERING_PAYMENT_TYPES } from '@/lib/payment-status';
-import { PaymentsTabs } from '@/components/payments-tabs';
+import { ReportsNav } from '@/components/reports/reports-nav';
 import { FinancialPeriodPicker } from '@/components/financial-period-picker';
 import { PageContainer } from '@/components/page-container';
 import {
@@ -120,11 +120,7 @@ export default async function FinancialReportPage({
          AND (lease_end_date IS NULL OR lease_end_date >= $3)`,
       [unitIds, windowEnd, windowStart],
     );
-    vacancyLostByUnit = calculateVacancyLostByUnit(
-      rows,
-      leases,
-      reportPeriods(mode, month, year),
-    );
+    vacancyLostByUnit = calculateVacancyLostByUnit(rows, leases, reportPeriods(mode, month, year));
   }
 
   const propertyGroups = buildPropertyGroups(
@@ -138,7 +134,7 @@ export default async function FinancialReportPage({
 
   return (
     <PageContainer>
-      <PaymentsTabs active='financial-report' isAdmin />
+      <ReportsNav />
 
       <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>
         <h1 className='font-heading text-2xl font-semibold tracking-tight'>Financial Report</h1>

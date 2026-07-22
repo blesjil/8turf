@@ -11,6 +11,7 @@ const TABS = [
   { href: '/reports/outstanding', label: 'Outstanding' },
   { href: '/reports/tenant-ledger', label: 'Tenant Ledger' },
   { href: '/reports/occupancy', label: 'Occupancy' },
+  { href: '/financial-report', label: 'Financial Report' },
 ];
 
 export function ReportsNav() {

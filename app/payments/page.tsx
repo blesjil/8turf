@@ -26,7 +26,6 @@ import { PaymentStatusBadge } from '@/components/payment-status-badge';
 import { KpiCard } from '@/components/kpi-card';
 import { MonthPicker } from '@/components/month-picker';
 import { PaymentStatusFilter } from '@/components/payment-status-filter';
-import { PaymentsTabs } from '@/components/payments-tabs';
 import { PageContainer } from '@/components/page-container';
 import { SendReminderButton } from '@/components/send-reminder-button';
 import { RemindAllButton } from '@/components/remind-all-button';
@@ -92,8 +91,6 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
 
   return (
     <PageContainer>
-      <PaymentsTabs active='payments' isAdmin={session.user.role === 'admin'} />
-
       <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>
         <h1 className='font-heading text-2xl font-semibold tracking-tight'>Payments Overview</h1>
         <div className='flex flex-wrap items-center gap-2'>

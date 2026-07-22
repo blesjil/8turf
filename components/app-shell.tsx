@@ -8,7 +8,6 @@ import {
   CreditCardIcon,
   FileBarChartIcon,
   LayoutDashboardIcon,
-  LineChartIcon,
   LogOutIcon,
   MenuIcon,
   ContactRoundIcon,
@@ -51,8 +50,12 @@ export function buildGroups(isAdmin: boolean): NavGroup[] {
         { href: '/payments', label: 'Payments', icon: CreditCardIcon },
         ...(isAdmin
           ? [
-              { href: '/reports', label: 'Reports', icon: FileBarChartIcon, match: ['/reports'] },
-              { href: '/financial-report', label: 'Financial Report', icon: LineChartIcon },
+              {
+                href: '/reports',
+                label: 'Reports',
+                icon: FileBarChartIcon,
+                match: ['/reports', '/financial-report'],
+              },
             ]
           : []),
       ],

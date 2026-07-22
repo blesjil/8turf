@@ -6,12 +6,20 @@ function navHrefs(isAdmin: boolean) {
 }
 
 describe('app shell navigation', () => {
-  it('hides the financial report from non-admin users', () => {
-    expect(navHrefs(false)).not.toContain('/financial-report');
+  it('hides reports from non-admin users', () => {
+    expect(navHrefs(false)).not.toContain('/reports');
   });
 
-  it('shows the financial report to admins', () => {
-    expect(navHrefs(true)).toContain('/financial-report');
+  it('shows reports to admins', () => {
+    expect(navHrefs(true)).toContain('/reports');
+  });
+
+  it('financial report lives under reports, not as its own sidebar item', () => {
+    expect(navHrefs(true)).not.toContain('/financial-report');
+    const reportsItem = buildGroups(true)
+      .flatMap((g) => g.items)
+      .find((i) => i.href === '/reports');
+    expect(reportsItem?.match).toContain('/financial-report');
   });
 
   it('shows maintenance contacts to every signed-in user', () => {
