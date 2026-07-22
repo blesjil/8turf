@@ -56,6 +56,19 @@ export interface LeaseInput {
   rentAmount: number;
   leaseStartDate: string;
   leaseEndDate: string | null;
+  isActive: boolean;
+}
+
+// A unit holds one occupant per month, but overlapping lease ranges (a tenant
+// moving out mid-month as the next moves in) leave several leases "active" for
+// the same month. Collapse them to the real occupant — the current tenant
+// (is_active) wins, then the most recent lease — matching pickOccupant in the
+// Payments Overview so charges never double-count a unit's rent.
+function pickOccupant(leases: LeaseInput[]): LeaseInput {
+  return leases.reduce((best, l) => {
+    if (l.isActive !== best.isActive) return l.isActive ? l : best;
+    return l.leaseStartDate > best.leaseStartDate ? l : best;
+  });
 }
 
 // A rent payment as stored in the ledger (only the fields charge math needs).
@@ -69,7 +82,10 @@ export interface PaymentInput {
 }
 
 // A single derived monthly rent charge — the unit every report is built from.
-export interface Charge extends Omit<LeaseInput, 'leaseStartDate' | 'leaseEndDate' | 'rentAmount'> {
+export interface Charge extends Omit<
+  LeaseInput,
+  'leaseStartDate' | 'leaseEndDate' | 'rentAmount' | 'isActive'
+> {
   period: string;
   dueDate: string;
   amount: number;
@@ -98,11 +114,20 @@ export function deriveCharges(
   }
 
   const charges: Charge[] = [];
-  for (const lease of leases) {
-    const { leaseStartDate, leaseEndDate, rentAmount, ...identity } = lease;
-    const tenantPayments = paymentsByTenant.get(lease.tenantId) ?? [];
-    for (const period of periods) {
-      if (!isLeaseActiveForPeriod(leaseStartDate, leaseEndDate, period)) continue;
+  for (const period of periods) {
+    // One charge per occupied unit: keep leases covering this period, then
+    // collapse overlapping leases on the same unit to a single occupant.
+    const leasesByUnit = new Map<string, LeaseInput[]>();
+    for (const lease of leases) {
+      if (!isLeaseActiveForPeriod(lease.leaseStartDate, lease.leaseEndDate, period)) continue;
+      const list = leasesByUnit.get(lease.unitId);
+      if (list) list.push(lease);
+      else leasesByUnit.set(lease.unitId, [lease]);
+    }
+
+    for (const unitLeases of leasesByUnit.values()) {
+      const { leaseStartDate, rentAmount, ...identity } = pickOccupant(unitLeases);
+      const tenantPayments = paymentsByTenant.get(identity.tenantId) ?? [];
       let creditsApplied = 0;
       let lastPaymentDate: string | null = null;
       for (const p of tenantPayments) {
@@ -113,7 +138,12 @@ export function deriveCharges(
       }
       const dueDate = anchorDueDate(leaseStartDate, period);
       charges.push({
-        ...identity,
+        propertyId: identity.propertyId,
+        propertyName: identity.propertyName,
+        unitId: identity.unitId,
+        unitLabel: identity.unitLabel,
+        tenantId: identity.tenantId,
+        tenantName: identity.tenantName,
         period,
         dueDate,
         amount: rentAmount,

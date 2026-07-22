@@ -9,7 +9,7 @@ export function fetchLeases(scope: string | null): Promise<LeaseInput[]> {
     `SELECT p.id as "propertyId", p.name as "propertyName",
             u.id as "unitId", u.unit_label as "unitLabel",
             t.id as "tenantId", t.name as "tenantName",
-            t.rent_amount as "rentAmount",
+            t.rent_amount as "rentAmount", coalesce(t.is_active, false) as "isActive",
             t.lease_start_date as "leaseStartDate", t.lease_end_date as "leaseEndDate"
      FROM tenants t
      JOIN units u ON u.id = t.unit_id

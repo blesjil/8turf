@@ -73,6 +73,7 @@ describe('deriveCharges', () => {
       rentAmount: 100000,
       leaseStartDate: '2026-07-01',
       leaseEndDate: null,
+      isActive: true,
       ...overrides,
     };
   }
@@ -131,6 +132,25 @@ describe('deriveCharges', () => {
       '2026-07-05',
     );
     expect(charges[0]).toMatchObject({ dueDate: '2026-07-15', status: 'not_due' });
+  });
+
+  it('collapses overlapping leases on one unit to a single occupant charge', () => {
+    const outgoing = lease({
+      tenantId: 'old',
+      tenantName: 'Old',
+      leaseStartDate: '2026-06-01',
+      leaseEndDate: '2026-07-10',
+      isActive: false,
+    });
+    const incoming = lease({
+      tenantId: 'new',
+      tenantName: 'New',
+      leaseStartDate: '2026-07-15',
+      isActive: true,
+    });
+    const charges = deriveCharges([outgoing, incoming], [], ['2026-07'], '2026-07-20');
+    expect(charges).toHaveLength(1); // one unit → one charge, not two
+    expect(charges[0].tenantId).toBe('new'); // active occupant wins
   });
 
   it('splits a multi-month payment across the periods it covers', () => {
