@@ -2,9 +2,17 @@ import { computePaymentStatus, type PaymentStatus } from '@/lib/payment-status';
 import { anchorDueDate } from '@/lib/reports/charges';
 import type { OverviewRow } from '@/lib/payments-overview';
 
-export type RowStatus = PaymentStatus | 'not_due' | 'inactive';
+export type RowStatus = PaymentStatus | 'not_due' | 'overdue' | 'inactive';
 
-export const STATUS_FILTERS = ['all', 'paid', 'partial', 'unpaid', 'not_due', 'inactive'] as const;
+export const STATUS_FILTERS = [
+  'all',
+  'paid',
+  'partial',
+  'unpaid',
+  'overdue',
+  'not_due',
+  'inactive',
+] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number];
 
 export function parseStatusFilter(raw: string | undefined): StatusFilter {
@@ -18,6 +26,10 @@ export function parseStatusFilter(raw: string | undefined): StatusFilter {
 // on a non-1st lease owes nothing until their anchor day. Before that day an
 // otherwise-unpaid row is 'not_due', not 'unpaid' — this is what stops the
 // mid-month view (and reminders) from flagging a current tenant as delinquent.
+//
+// Past the due date a fully-unpaid row escalates to 'overdue' — same rule as
+// chargeStatus in the Billing report ('unpaid' only on the due day itself,
+// 'partial' stays 'partial'), so the two pages never disagree on a tenant.
 export function rowStatus(
   row: OverviewRow,
   paidByTenant: Map<string, number>,
@@ -28,8 +40,10 @@ export function rowStatus(
   const rent = row.rentAmount ?? 0;
   const paid = paidByTenant.get(row.tenantId) ?? 0;
   if (paid >= rent) return 'paid';
-  if (asOf < anchorDueDate(row.leaseStartDate, period)) return 'not_due';
-  return computePaymentStatus(paid, rent); // 'partial' | 'unpaid'
+  const dueDate = anchorDueDate(row.leaseStartDate, period);
+  if (asOf < dueDate) return 'not_due';
+  const status = computePaymentStatus(paid, rent); // 'partial' | 'unpaid'
+  return status === 'unpaid' && asOf > dueDate ? 'overdue' : status;
 }
 
 // Whether a row is a reminder target: rent is due (anchor day reached) and not
@@ -41,7 +55,7 @@ export function isReminderDue(
   asOf: string,
 ): boolean {
   const status = rowStatus(row, paidByTenant, period, asOf);
-  return status === 'unpaid' || status === 'partial';
+  return status === 'unpaid' || status === 'overdue' || status === 'partial';
 }
 
 export function filterRowsByStatus(

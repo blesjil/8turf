@@ -9,6 +9,7 @@ const LABELS: Record<StatusFilter, string> = {
   paid: 'Paid',
   partial: 'Partial',
   unpaid: 'Unpaid',
+  overdue: 'Overdue',
   not_due: 'Not yet due',
   inactive: 'Inactive',
 };

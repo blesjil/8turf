@@ -59,8 +59,16 @@ describe('rowStatus', () => {
     expect(rowStatus(row({ tenantId: 'partialTenant' }), paid, PERIOD, ASOF)).toBe('partial');
   });
 
-  it('returns unpaid when nothing is paid and it is due', () => {
-    expect(rowStatus(row({ tenantId: 'unpaidTenant' }), paid, PERIOD, ASOF)).toBe('unpaid');
+  it('returns unpaid when nothing is paid and today is the due date', () => {
+    expect(rowStatus(row({ tenantId: 'unpaidTenant' }), paid, PERIOD, '2026-08-01')).toBe('unpaid');
+  });
+
+  it('returns overdue when nothing is paid past the due date', () => {
+    expect(rowStatus(row({ tenantId: 'unpaidTenant' }), paid, PERIOD, ASOF)).toBe('overdue');
+  });
+
+  it('keeps partial as partial past the due date (matches Billing chargeStatus)', () => {
+    expect(rowStatus(row({ tenantId: 'partialTenant' }), paid, PERIOD, ASOF)).toBe('partial');
   });
 
   it('returns not_due when the anchor day has not arrived yet', () => {
@@ -99,7 +107,9 @@ describe('rowStatus', () => {
 
 describe('isReminderDue', () => {
   it('is true only for due-and-owing rows', () => {
+    // unpaidTenant reads as overdue at ASOF, unpaid on the due day — both chased.
     expect(isReminderDue(row({ tenantId: 'unpaidTenant' }), paid, PERIOD, ASOF)).toBe(true);
+    expect(isReminderDue(row({ tenantId: 'unpaidTenant' }), paid, PERIOD, '2026-08-01')).toBe(true);
     expect(isReminderDue(row({ tenantId: 'partialTenant' }), paid, PERIOD, ASOF)).toBe(true);
   });
 
@@ -136,9 +146,12 @@ describe('filterRowsByStatus', () => {
     expect(filterRowsByStatus(rows, paid, 'not_due', PERIOD, ASOF).map((r) => r.tenantId)).toEqual([
       'notDueTenant',
     ]);
-    expect(filterRowsByStatus(rows, paid, 'unpaid', PERIOD, ASOF).map((r) => r.tenantId)).toEqual([
+    // At ASOF (past the 1st-of-month due date) the fully-unpaid row is overdue,
+    // so the unpaid filter no longer matches it.
+    expect(filterRowsByStatus(rows, paid, 'overdue', PERIOD, ASOF).map((r) => r.tenantId)).toEqual([
       'unpaidTenant',
     ]);
+    expect(filterRowsByStatus(rows, paid, 'unpaid', PERIOD, ASOF)).toHaveLength(0);
   });
 
   it('inactive filter keeps only vacant rows', () => {
@@ -201,7 +214,15 @@ describe('summarizePayments', () => {
 
 describe('parseStatusFilter', () => {
   it('accepts valid statuses', () => {
-    for (const s of ['all', 'paid', 'partial', 'unpaid', 'not_due', 'inactive'] as const) {
+    for (const s of [
+      'all',
+      'paid',
+      'partial',
+      'unpaid',
+      'overdue',
+      'not_due',
+      'inactive',
+    ] as const) {
       expect(parseStatusFilter(s)).toBe(s);
     }
   });

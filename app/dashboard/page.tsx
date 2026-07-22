@@ -71,7 +71,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Search
     if (status === 'partial') {
       health.partial += 1;
       agg.partialUnits += 1;
-    } else if (status === 'unpaid') {
+    } else if (status === 'unpaid' || status === 'overdue') {
       health.unpaid += 1;
       agg.unpaidUnits += 1;
     } else {

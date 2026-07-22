@@ -6,8 +6,9 @@ import { auth } from '@/lib/auth';
 import { ownerScope } from '@/lib/access';
 import { query } from '@/lib/db';
 import { formatCents } from '@/lib/money';
-import { formatPeriod } from '@/lib/format-date';
+import { formatDate, formatPeriod } from '@/lib/format-date';
 import { getPaymentsOverview } from '@/lib/payments-overview';
+import { anchorDueDate } from '@/lib/reports/charges';
 import {
   filterRowsByStatus,
   isReminderDue,
@@ -164,6 +165,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                         <TableHead className='hidden md:table-cell'>Property</TableHead>
                         <TableHead>Unit</TableHead>
                         <TableHead>Tenant</TableHead>
+                        <TableHead className='hidden sm:table-cell'>Due date</TableHead>
                         <TableHead className='hidden text-right sm:table-cell'>Rent</TableHead>
                         <TableHead className='text-right'>Paid</TableHead>
                         <TableHead>Status</TableHead>
@@ -191,6 +193,11 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                             </TableCell>
                             <TableCell className={r.tenantName ? '' : 'text-muted-foreground'}>
                               {r.tenantName ?? '—'}
+                            </TableCell>
+                            <TableCell className='hidden sm:table-cell'>
+                              {active && r.leaseStartDate
+                                ? formatDate(anchorDueDate(r.leaseStartDate, period))
+                                : '—'}
                             </TableCell>
                             <TableCell className='hidden text-right font-mono tabular-nums sm:table-cell'>
                               {r.rentAmount !== null ? formatCents(r.rentAmount) : '—'}
