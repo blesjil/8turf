@@ -1,4 +1,5 @@
 import { getDaysInMonth, parseISO } from 'date-fns';
+import { countsTowardRent, creditForPeriod, isLeaseActiveForPeriod } from '@/lib/payment-status';
 
 // Shared "rent due" primitives for the reports and the Payments Overview.
 //
@@ -42,4 +43,92 @@ export function chargeStatus(opts: {
   if (asOf < dueDate) return 'not_due';
   if (asOf > dueDate) return 'overdue';
   return 'unpaid';
+}
+
+// One active lease, flattened for charge derivation.
+export interface LeaseInput {
+  propertyId: string;
+  propertyName: string;
+  unitId: string;
+  unitLabel: string;
+  tenantId: string;
+  tenantName: string;
+  rentAmount: number;
+  leaseStartDate: string;
+  leaseEndDate: string | null;
+}
+
+// A rent payment as stored in the ledger (only the fields charge math needs).
+export interface PaymentInput {
+  tenantId: string;
+  amount: number;
+  period_start: string;
+  period_end: string;
+  payment_type: string;
+  paid_date: string;
+}
+
+// A single derived monthly rent charge — the unit every report is built from.
+export interface Charge extends Omit<LeaseInput, 'leaseStartDate' | 'leaseEndDate' | 'rentAmount'> {
+  period: string;
+  dueDate: string;
+  amount: number;
+  creditsApplied: number;
+  outstanding: number;
+  lastPaymentDate: string | null;
+  status: ChargeStatus;
+}
+
+// Derive one charge per active lease per covered period. Rent owed is the
+// lease's rent_amount; credits come from the tenant's rent-covering payments
+// (rental + advance) via the shared coverage split, so the numbers always match
+// the Payments Overview. `asOf` drives the due/overdue/not-yet-due distinction.
+export function deriveCharges(
+  leases: LeaseInput[],
+  payments: PaymentInput[],
+  periods: string[],
+  asOf: string,
+): Charge[] {
+  const paymentsByTenant = new Map<string, PaymentInput[]>();
+  for (const p of payments) {
+    if (!countsTowardRent(p.payment_type)) continue;
+    const list = paymentsByTenant.get(p.tenantId);
+    if (list) list.push(p);
+    else paymentsByTenant.set(p.tenantId, [p]);
+  }
+
+  const charges: Charge[] = [];
+  for (const lease of leases) {
+    const { leaseStartDate, leaseEndDate, rentAmount, ...identity } = lease;
+    const tenantPayments = paymentsByTenant.get(lease.tenantId) ?? [];
+    for (const period of periods) {
+      if (!isLeaseActiveForPeriod(leaseStartDate, leaseEndDate, period)) continue;
+      let creditsApplied = 0;
+      let lastPaymentDate: string | null = null;
+      for (const p of tenantPayments) {
+        const credit = creditForPeriod(p, period);
+        if (credit <= 0) continue;
+        creditsApplied += credit;
+        if (!lastPaymentDate || p.paid_date > lastPaymentDate) lastPaymentDate = p.paid_date;
+      }
+      const dueDate = anchorDueDate(leaseStartDate, period);
+      charges.push({
+        ...identity,
+        period,
+        dueDate,
+        amount: rentAmount,
+        creditsApplied,
+        outstanding: Math.max(0, rentAmount - creditsApplied),
+        lastPaymentDate,
+        status: chargeStatus({
+          amount: rentAmount,
+          creditsApplied,
+          dueDate,
+          asOf,
+          latestPaidDate: lastPaymentDate,
+        }),
+      });
+    }
+  }
+  return charges;
 }

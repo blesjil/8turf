@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   ArchiveIcon,
   CreditCardIcon,
+  FileBarChartIcon,
   LayoutDashboardIcon,
   LineChartIcon,
   LogOutIcon,
@@ -49,7 +50,10 @@ export function buildGroups(isAdmin: boolean): NavGroup[] {
       items: [
         { href: '/payments', label: 'Payments', icon: CreditCardIcon },
         ...(isAdmin
-          ? [{ href: '/financial-report', label: 'Financial Report', icon: LineChartIcon }]
+          ? [
+              { href: '/reports', label: 'Reports', icon: FileBarChartIcon, match: ['/reports'] },
+              { href: '/financial-report', label: 'Financial Report', icon: LineChartIcon },
+            ]
           : []),
       ],
     },

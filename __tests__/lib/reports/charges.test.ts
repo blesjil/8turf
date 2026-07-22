@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { anchorDueDate, chargeStatus } from '@/lib/reports/charges';
+import {
+  anchorDueDate,
+  chargeStatus,
+  deriveCharges,
+  type LeaseInput,
+  type PaymentInput,
+} from '@/lib/reports/charges';
 
 describe('anchorDueDate', () => {
   it('uses the lease start day-of-month within the given period', () => {
@@ -52,5 +58,88 @@ describe('chargeStatus', () => {
 
   it('treats a zero-rent charge as paid (never falsely unpaid)', () => {
     expect(chargeStatus({ ...base, amount: 0, creditsApplied: 0 })).toBe('paid');
+  });
+});
+
+describe('deriveCharges', () => {
+  function lease(overrides: Partial<LeaseInput> = {}): LeaseInput {
+    return {
+      propertyId: 'p1',
+      propertyName: 'Property',
+      unitId: 'u1',
+      unitLabel: '101',
+      tenantId: 't1',
+      tenantName: 'Tenant',
+      rentAmount: 100000,
+      leaseStartDate: '2026-07-01',
+      leaseEndDate: null,
+      ...overrides,
+    };
+  }
+  function payment(overrides: Partial<PaymentInput> = {}): PaymentInput {
+    return {
+      tenantId: 't1',
+      amount: 100000,
+      period_start: '2026-07-01',
+      period_end: '2026-07-31',
+      payment_type: 'rental',
+      paid_date: '2026-07-03',
+      ...overrides,
+    };
+  }
+
+  it('emits one charge per active period, skipping months outside the lease', () => {
+    const charges = deriveCharges(
+      [lease({ leaseStartDate: '2026-08-01' })],
+      [],
+      ['2026-07', '2026-08'],
+      '2026-08-20',
+    );
+    expect(charges.map((c) => c.period)).toEqual(['2026-08']); // July is before the lease
+  });
+
+  it('applies credits from rent-covering payments and sets status', () => {
+    const charges = deriveCharges([lease()], [payment()], ['2026-07'], '2026-07-31');
+    expect(charges[0]).toMatchObject({
+      period: '2026-07',
+      dueDate: '2026-07-01',
+      amount: 100000,
+      creditsApplied: 100000,
+      outstanding: 0,
+      lastPaymentDate: '2026-07-03',
+      status: 'paid',
+    });
+  });
+
+  it('ignores deposits and reservations (non rent-covering)', () => {
+    const charges = deriveCharges(
+      [lease()],
+      [payment({ payment_type: 'deposit' }), payment({ payment_type: 'reservation' })],
+      ['2026-07'],
+      '2026-07-31',
+    );
+    expect(charges[0].creditsApplied).toBe(0);
+    expect(charges[0].outstanding).toBe(100000);
+    expect(charges[0].status).toBe('overdue'); // due Jul 1, unpaid, as-of Jul 31
+  });
+
+  it('marks an unpaid charge not_due before its anchor day', () => {
+    const charges = deriveCharges(
+      [lease({ leaseStartDate: '2026-07-15' })],
+      [],
+      ['2026-07'],
+      '2026-07-05',
+    );
+    expect(charges[0]).toMatchObject({ dueDate: '2026-07-15', status: 'not_due' });
+  });
+
+  it('splits a multi-month payment across the periods it covers', () => {
+    const charges = deriveCharges(
+      [lease()],
+      [payment({ amount: 200000, period_start: '2026-07-01', period_end: '2026-08-31' })],
+      ['2026-07', '2026-08'],
+      '2026-08-20',
+    );
+    expect(charges.map((c) => c.creditsApplied)).toEqual([100000, 100000]);
   });
 });
