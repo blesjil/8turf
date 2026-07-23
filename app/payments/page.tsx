@@ -165,7 +165,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                         <TableHead className='hidden md:table-cell'>Property</TableHead>
                         <TableHead>Unit</TableHead>
                         <TableHead>Tenant</TableHead>
-                        <TableHead className='hidden sm:table-cell'>Due date</TableHead>
+                        <TableHead>Due date</TableHead>
                         <TableHead className='hidden text-right sm:table-cell'>Rent</TableHead>
                         <TableHead className='text-right'>Paid</TableHead>
                         <TableHead>Status</TableHead>
@@ -194,7 +194,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Sea
                             <TableCell className={r.tenantName ? '' : 'text-muted-foreground'}>
                               {r.tenantName ?? '—'}
                             </TableCell>
-                            <TableCell className='hidden sm:table-cell'>
+                            <TableCell>
                               {active && r.leaseStartDate
                                 ? formatDate(anchorDueDate(r.leaseStartDate, period))
                                 : '—'}

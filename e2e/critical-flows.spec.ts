@@ -143,4 +143,14 @@ test('landlord can manage a property from sign-in through rent collection', asyn
       );
     }
   });
+
+  await test.step('payments overview shows the due date on a mobile viewport', async () => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/payments');
+    const row = page.getByRole('row', { name: /Unit A/ });
+    await expect(row.getByRole('cell', { name: formatDate(currentMonthStart) })).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+  });
 });

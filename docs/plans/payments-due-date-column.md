@@ -13,8 +13,9 @@ No data-layer change needed: `OverviewRow` already carries `leaseStartDate`,
 and `anchorDueDate(leaseStartDate, period)` is the exact derivation Billing
 uses. Compute it inline in the page for active rows; vacant rows show "—".
 Format with the shared `formatDate` helper to match the Billing report.
-Column sits between Tenant and Rent, hidden on mobile (`hidden sm:table-cell`)
-like the Rent column to keep the phone layout uncluttered.
+Column sits between Tenant and Rent. Originally hidden on mobile, but per user
+request it now shows at every width (matching Billing); the table's
+`overflow-x-auto` wrapper keeps narrow screens scrollable.
 
 ## Plan (follow-up: Overdue status)
 

@@ -2,7 +2,9 @@ import { expect, test } from '@playwright/test';
 import { E2E_EMAIL, E2E_PASSWORD, E2E_USER_EMAIL, E2E_USER_PASSWORD } from './test-user';
 
 async function signIn(page: import('@playwright/test').Page, email: string, password: string) {
-  await page.goto('/authenticate');
+  // The first streamed response from `next start` intermittently aborts
+  // (net::ERR_ABORTED) before `load`; a single retry settles it.
+  await page.goto('/authenticate').catch(() => page.goto('/authenticate'));
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
