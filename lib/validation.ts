@@ -160,7 +160,7 @@ export const updatePaymentSchema = paymentBaseSchema
   })
   .refine(periodRangeCheck.check, periodRangeCheck.options);
 
-const expenseCategoryField = z.enum(['repair', 'cleaning', 'tax', 'other']);
+const expenseCategoryField = z.enum(['repair', 'cleaning', 'tax', 'pub', 'internet', 'other']);
 const expenseBaseSchema = z.object({
   category: expenseCategoryField,
   amount: z.coerce

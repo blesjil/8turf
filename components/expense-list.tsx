@@ -24,7 +24,7 @@ import { TablePeriodFilter } from '@/components/ui/table-period-filter';
 
 export interface Expense {
   id: string;
-  category: 'repair' | 'cleaning' | 'tax' | 'other';
+  category: 'repair' | 'cleaning' | 'tax' | 'pub' | 'internet' | 'other';
   amount: number;
   expense_date: string;
   remarks: string | null;
@@ -44,6 +44,8 @@ const CATEGORY_LABELS: Record<Expense['category'], string> = {
   repair: 'Repair',
   cleaning: 'Cleaning',
   tax: 'Tax',
+  pub: 'PUB',
+  internet: 'Internet',
   other: 'Other',
 };
 
@@ -66,6 +68,8 @@ function ExpenseFormFields({ state, expense }: { state: ExpenseActionResult; exp
           <option value='repair'>Repair</option>
           <option value='cleaning'>Cleaning</option>
           <option value='tax'>Tax</option>
+          <option value='pub'>PUB</option>
+          <option value='internet'>Internet</option>
           <option value='other'>Other</option>
         </NativeSelect>
         <FieldError messages={state.error?.category} />
