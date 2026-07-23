@@ -8,6 +8,7 @@ const details: PaymentReminderDetails = {
   propertyName: 'Sunrise',
   unitLabel: '2B',
   monthLabel: 'July 2026',
+  dueDate: '2026-07-05',
   rentAmount: 100000,
   amountPaid: 0,
   amountDue: 100000,
@@ -84,12 +85,50 @@ describe('sendSmsPaymentReminder (configured)', () => {
     expect(sentBody().get('number')).toBe(expected);
   });
 
-  it('spells out the peso amount as "Php" (GSM-7 safe) in the body', async () => {
+  it('spells out the peso amount as "Php" without decimals (GSM-7 safe)', async () => {
     const { sendSmsPaymentReminder } = await loadSms({ SEMAPHORE_API_KEY: 'k' });
     await sendSmsPaymentReminder('09171234567', details);
     const message = sentBody().get('message')!;
-    expect(message).toContain('Php 1,000.00');
+    expect(message).toContain('Php 1,000');
+    expect(message).not.toContain('Php 1,000.00');
     expect(message).not.toContain('₱');
+  });
+
+  it('uses the first name, a short due date, and stays within one GSM-7 segment', async () => {
+    const { sendSmsPaymentReminder } = await loadSms({ SEMAPHORE_API_KEY: 'k' });
+    await sendSmsPaymentReminder('09171234567', { ...details, tenantName: 'Ana Dela Cruz' });
+    const message = sentBody().get('message')!;
+    expect(message).toContain('Hi Ana, gentle reminder:');
+    expect(message).not.toContain('Dela Cruz');
+    expect(message).toContain('is due Jul 5');
+    expect(message).not.toContain('—');
+    expect(message.length).toBeLessThanOrEqual(160);
+  });
+
+  // Everything except the name must fit in 130 chars so 30 remain for the name,
+  // keeping the total inside one 160-char GSM-7 segment for any tenant.
+  const worstCase: PaymentReminderDetails = {
+    ...details,
+    monthLabel: 'September 2026',
+    dueDate: '2026-09-15',
+    unitLabel: 'GF-2',
+    amountDue: 10000000, // Php 100,000
+  };
+
+  it('keeps the non-name content within the reserved 130-char budget', async () => {
+    const { sendSmsPaymentReminder } = await loadSms({ SEMAPHORE_API_KEY: 'k' });
+    await sendSmsPaymentReminder('09171234567', { ...worstCase, tenantName: '' });
+    // Empty name isolates the fixed skeleton + non-name variables.
+    expect(sentBody().get('message')!.length).toBeLessThanOrEqual(130);
+  });
+
+  it('caps a 30-char name so the total stays within one segment', async () => {
+    const { sendSmsPaymentReminder } = await loadSms({ SEMAPHORE_API_KEY: 'k' });
+    await sendSmsPaymentReminder('09171234567', { ...worstCase, tenantName: 'X'.repeat(50) });
+    const message = sentBody().get('message')!;
+    expect(message).toContain(`Hi ${'X'.repeat(30)},`);
+    expect(message).not.toContain('X'.repeat(31));
+    expect(message.length).toBeLessThanOrEqual(160);
   });
 
   it('includes the sender name only when configured', async () => {

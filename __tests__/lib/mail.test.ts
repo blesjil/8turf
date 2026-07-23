@@ -25,6 +25,7 @@ const reminder = {
   propertyName: 'Sunrise',
   unitLabel: '2B',
   monthLabel: 'July 2026',
+  dueDate: '2026-07-05',
   rentAmount: 100000,
   amountPaid: 40000,
   amountDue: 60000,

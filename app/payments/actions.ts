@@ -11,6 +11,7 @@ import { sendPaymentReminder, type PaymentReminderDetails } from '@/lib/mail';
 import { sendSmsPaymentReminder } from '@/lib/sms';
 import { getPaymentsOverview, type OverviewRow } from '@/lib/payments-overview';
 import { isReminderDue } from '@/lib/payments-summary';
+import { anchorDueDate } from '@/lib/reports/charges';
 import { formatPeriod } from '@/lib/format-date';
 
 export interface ReminderResult {
@@ -43,11 +44,13 @@ interface SendOutcome {
 // channels actually succeeded.
 async function sendReminder(row: OverviewRow, paid: number, period: string): Promise<SendOutcome> {
   const rentAmount = row.rentAmount ?? 0;
+  const dueDate = row.leaseStartDate ? anchorDueDate(row.leaseStartDate, period) : `${period}-01`;
   const details: PaymentReminderDetails = {
     tenantName: row.tenantName!,
     propertyName: row.propertyName,
     unitLabel: row.unitLabel,
     monthLabel: formatPeriod(period),
+    dueDate,
     rentAmount,
     amountPaid: paid,
     amountDue: rentAmount - paid,

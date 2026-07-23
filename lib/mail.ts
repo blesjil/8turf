@@ -98,6 +98,7 @@ export interface PaymentReminderDetails {
   propertyName: string;
   unitLabel: string;
   monthLabel: string; // e.g. "July 2026"
+  dueDate: string; // YYYY-MM-DD
   rentAmount: number; // integer cents
   amountPaid: number; // integer cents
   amountDue: number; // integer cents
@@ -118,6 +119,7 @@ export async function sendPaymentReminder(
   const rows: [string, string][] = [
     ['Property', `${details.propertyName} — Unit ${details.unitLabel}`],
     ['Month', details.monthLabel],
+    ['Due date', formatDate(details.dueDate)],
     ['Monthly rent', formatCents(details.rentAmount)],
   ];
   if (details.amountPaid > 0) rows.push(['Paid so far', formatCents(details.amountPaid)]);
