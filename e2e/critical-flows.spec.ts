@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { format } from 'date-fns';
+import { formatDate } from '../lib/format-date';
 import { E2E_EMAIL, E2E_PASSWORD } from './test-user';
 
 test('landlord can manage a property from sign-in through rent collection', async ({ page }) => {
@@ -87,11 +88,23 @@ test('landlord can manage a property from sign-in through rent collection', asyn
   });
 
   await test.step('portfolio views reflect the payment', async () => {
+    // Lease starts on the 1st, so the derived due date is the 1st of this month;
+    // Payments Overview and the Billing report must render the same date.
+    const dueDateLabel = formatDate(currentMonthStart);
+
     await page.goto('/payments');
     await expect(page.getByRole('heading', { name: 'Payments Overview' })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'Tenant One' })).toBeVisible();
     await expect(page.getByRole('cell', { name: '₱ 5,000.00' })).toBeVisible();
     await expect(page.getByRole('table').getByText('Partial', { exact: true })).toBeVisible();
+    const paymentsRow = page.getByRole('row', { name: /Unit A/ });
+    await expect(paymentsRow.getByRole('cell', { name: dueDateLabel })).toBeVisible();
+
+    await page.goto('/reports/billing');
+    await expect(page.getByRole('heading', { name: 'Monthly Billing Report' })).toBeVisible();
+    const billingRow = page.getByRole('row', { name: /Unit A/ });
+    await expect(billingRow.getByRole('cell', { name: dueDateLabel })).toBeVisible();
+    await expect(billingRow.getByRole('cell', { name: '₱ 5,000.00' })).toBeVisible();
 
     await page.goto('/dashboard');
     await expect(page.locator('section').getByText('₱ 5K', { exact: true })).toBeVisible();
