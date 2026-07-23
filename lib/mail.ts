@@ -39,14 +39,16 @@ const PAYMENT_TYPE_LABELS: Record<string, string> = {
   reservation: 'Reservation',
 };
 
+// Returns false when the mailer isn't configured, so callers can surface
+// "email not configured" instead of claiming the receipt was sent.
 export async function sendPaymentReceipt(
   to: string,
   details: PaymentReceiptDetails,
-): Promise<void> {
+): Promise<boolean> {
   const transporter = getTransporter();
   if (!transporter) {
     console.warn('GMAIL_USER/GMAIL_APP_PASSWORD not set — skipping payment receipt email');
-    return;
+    return false;
   }
 
   const months = coveredPeriods(details.periodStart, details.periodEnd).map(formatPeriod);
@@ -91,6 +93,7 @@ export async function sendPaymentReceipt(
     text,
     html,
   });
+  return true;
 }
 
 export interface PaymentReminderDetails {

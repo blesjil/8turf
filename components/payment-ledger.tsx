@@ -27,7 +27,7 @@ import {
   recordPayment,
   updatePayment,
   deletePayment,
-  sendPaymentSms,
+  sendPaymentReceiptNotice,
   type PaymentActionResult,
 } from '@/app/properties/[id]/units/[unitId]/actions';
 
@@ -41,7 +41,7 @@ export interface Payment {
   payment_type: 'deposit' | 'advance' | 'reservation' | 'rental';
   method: string | null;
   notes: string | null;
-  sms_sent_at: string | null;
+  receipt_sent_at: string | null;
 }
 
 const TYPE_LABELS: Record<Payment['payment_type'], string> = {
@@ -148,25 +148,33 @@ function PaymentFormFields({
   );
 }
 
-function SendSmsButton({ payment, hasPhone }: { payment: Payment; hasPhone?: boolean }) {
+function RemindButton({
+  payment,
+  hasEmail,
+  hasPhone,
+}: {
+  payment: Payment;
+  hasEmail?: boolean;
+  hasPhone?: boolean;
+}) {
   const [state, formAction, isPending] = useActionState<PaymentActionResult, FormData>(
-    sendPaymentSms,
+    sendPaymentReceiptNotice,
     {},
   );
 
-  if (payment.sms_sent_at) {
+  if (payment.receipt_sent_at) {
     return (
-      <Button type='button' variant='ghost' size='sm' disabled>
-        SMS sent
+      <Button type='button' variant='outline' size='xs' disabled>
+        Sent
       </Button>
     );
   }
 
-  // Only enable sending when the tenant has a mobile number on file.
-  if (!hasPhone) {
+  // Only enable sending when the tenant has an email or mobile number on file.
+  if (!hasEmail && !hasPhone) {
     return (
-      <Button type='button' variant='ghost' size='sm' disabled title='No mobile number on file'>
-        Send SMS
+      <Button type='button' variant='outline' size='xs' disabled title='No email or phone on file'>
+        Remind
       </Button>
     );
   }
@@ -175,8 +183,8 @@ function SendSmsButton({ payment, hasPhone }: { payment: Payment; hasPhone?: boo
     <div className='flex flex-col items-end'>
       <form action={formAction}>
         <input type='hidden' name='id' value={payment.id} />
-        <Button type='submit' variant='ghost' size='sm' disabled={isPending}>
-          {isPending ? 'Sending…' : 'Send SMS'}
+        <Button type='submit' variant='outline' size='xs' disabled={isPending}>
+          {isPending ? 'Sending…' : 'Remind'}
         </Button>
       </form>
       {state.error?.general && <p className='text-xs text-destructive'>{state.error.general}</p>}
@@ -187,10 +195,12 @@ function SendSmsButton({ payment, hasPhone }: { payment: Payment; hasPhone?: boo
 function PaymentRow({
   payment,
   readOnly,
+  hasEmail,
   hasPhone,
 }: {
   payment: Payment;
   readOnly?: boolean;
+  hasEmail?: boolean;
   hasPhone?: boolean;
 }) {
   const [state, formAction, isPending] = useActionState<PaymentActionResult, FormData>(
@@ -239,7 +249,7 @@ function PaymentRow({
       {!readOnly && (
         <TableCell>
           <div className='flex items-center justify-end gap-1'>
-            <SendSmsButton payment={payment} hasPhone={hasPhone} />
+            <RemindButton payment={payment} hasEmail={hasEmail} hasPhone={hasPhone} />
             <Button type='button' variant='ghost' size='sm' onClick={() => setIsEditing(true)}>
               Edit
             </Button>
@@ -274,6 +284,7 @@ export function PaymentLedger({
   leaseStartDate,
   rentAmount,
   readOnly,
+  hasEmail,
   hasPhone,
 }: {
   tenantId: string;
@@ -281,6 +292,7 @@ export function PaymentLedger({
   leaseStartDate?: string;
   rentAmount?: number;
   readOnly?: boolean;
+  hasEmail?: boolean;
   hasPhone?: boolean;
 }) {
   const [state, formAction, isPending] = useActionState<PaymentActionResult, FormData>(
@@ -366,7 +378,13 @@ export function PaymentLedger({
               </TableHeader>
               <TableBody>
                 {paginate(filtered, currentPage).map((p) => (
-                  <PaymentRow key={p.id} payment={p} readOnly={readOnly} hasPhone={hasPhone} />
+                  <PaymentRow
+                    key={p.id}
+                    payment={p}
+                    readOnly={readOnly}
+                    hasEmail={hasEmail}
+                    hasPhone={hasPhone}
+                  />
                 ))}
               </TableBody>
             </Table>

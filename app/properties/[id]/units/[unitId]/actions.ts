@@ -352,25 +352,6 @@ export async function recordPayment(
     ],
   );
 
-  if (tenant.email) {
-    // A receipt failure must never fail or roll back the recorded payment.
-    try {
-      await sendPaymentReceipt(tenant.email, {
-        tenantName: tenant.name,
-        propertyName: tenant.property_name,
-        unitLabel: tenant.unit_label,
-        amount: parsed.data.amount,
-        paidDate: parsed.data.paidDate,
-        periodStart: parsed.data.periodStart,
-        periodEnd: parsed.data.periodEnd,
-        paymentType: parsed.data.paymentType,
-        method: parsed.data.method || null,
-      });
-    } catch (error) {
-      console.error('Failed to send payment receipt email:', error);
-    }
-  }
-
   redirect(`/properties/${tenant.property_id}/units/${tenant.unit_id}`);
 }
 
@@ -380,17 +361,25 @@ async function findAuthorizedPayment(paymentId: string, scope: string | null) {
     tenant_id: string;
     unit_id: string;
     property_id: string;
+    property_name: string;
+    unit_label: string;
     tenant_is_active: boolean;
     tenant_name: string;
+    tenant_email: string | null;
     tenant_phone: string | null;
     amount: number;
     period_start: string;
     period_end: string;
-    sms_sent_at: string | null;
+    paid_date: string;
+    payment_type: string;
+    method: string | null;
+    receipt_sent_at: string | null;
   }>(
-    `SELECT rp.id, rp.tenant_id, rp.unit_id, u.property_id, t.is_active as tenant_is_active,
-            t.name as tenant_name, t.phone as tenant_phone,
-            rp.amount, rp.period_start, rp.period_end, rp.sms_sent_at
+    `SELECT rp.id, rp.tenant_id, rp.unit_id, u.property_id, p.name as property_name,
+            u.unit_label, t.is_active as tenant_is_active,
+            t.name as tenant_name, t.email as tenant_email, t.phone as tenant_phone,
+            rp.amount, rp.period_start, rp.period_end, rp.paid_date, rp.payment_type,
+            rp.method, rp.receipt_sent_at
      FROM rent_payments rp
      JOIN tenants t ON t.id = rp.tenant_id
      JOIN units u ON u.id = t.unit_id
@@ -465,9 +454,10 @@ export async function deletePayment(formData: FormData): Promise<void> {
   redirect(`/properties/${payment.property_id}/units/${payment.unit_id}`);
 }
 
-// Manually sends a "payment received" SMS for one ledger entry. Guarded so it
-// can only ever fire once per entry (sms_sent_at), which also caps the cost.
-export async function sendPaymentSms(
+// Manually sends the "payment received" email + SMS for one ledger entry.
+// Guarded so it can only ever fire once per entry (receipt_sent_at), which
+// also caps the SMS cost. Each channel is attempted independently.
+export async function sendPaymentReceiptNotice(
   _prevState: PaymentActionResult,
   formData: FormData,
 ): Promise<PaymentActionResult> {
@@ -483,30 +473,74 @@ export async function sendPaymentSms(
   if (!payment) {
     return { error: { general: 'Payment not found or access denied.' } };
   }
-  if (payment.sms_sent_at) {
-    return { error: { general: 'SMS already sent.' } };
+  if (payment.receipt_sent_at) {
+    return { error: { general: 'Receipt already sent.' } };
   }
-  if (!payment.tenant_phone) {
-    return { error: { general: 'Tenant has no phone number.' } };
+  if (!payment.tenant_email && !payment.tenant_phone) {
+    return { error: { general: 'Tenant has no email or phone number.' } };
   }
 
-  let sent: boolean;
-  try {
-    sent = await sendSmsPaymentReceipt(payment.tenant_phone, {
-      tenantName: payment.tenant_name,
-      amount: payment.amount,
-      periodStart: payment.period_start,
-      periodEnd: payment.period_end,
-    });
-  } catch (error) {
-    console.error('Failed to send payment SMS:', error);
-    return { error: { general: 'Failed to send SMS. Please try again.' } };
+  let sent = false;
+  let anyFailed = false;
+  let nothingConfigured = true;
+
+  if (payment.tenant_email) {
+    try {
+      const ok = await sendPaymentReceipt(payment.tenant_email, {
+        tenantName: payment.tenant_name,
+        propertyName: payment.property_name,
+        unitLabel: payment.unit_label,
+        amount: payment.amount,
+        paidDate: payment.paid_date,
+        periodStart: payment.period_start,
+        periodEnd: payment.period_end,
+        paymentType: payment.payment_type,
+        method: payment.method,
+      });
+      if (ok) {
+        sent = true;
+        nothingConfigured = false;
+      }
+    } catch (error) {
+      console.error('Failed to send payment receipt email:', error);
+      anyFailed = true;
+      nothingConfigured = false;
+    }
   }
+
+  if (payment.tenant_phone) {
+    try {
+      const ok = await sendSmsPaymentReceipt(payment.tenant_phone, {
+        tenantName: payment.tenant_name,
+        amount: payment.amount,
+        periodStart: payment.period_start,
+        periodEnd: payment.period_end,
+      });
+      if (ok) {
+        sent = true;
+        nothingConfigured = false;
+      }
+    } catch (error) {
+      console.error('Failed to send payment receipt SMS:', error);
+      anyFailed = true;
+      nothingConfigured = false;
+    }
+  }
+
   if (!sent) {
-    return { error: { general: 'SMS is not configured.' } };
+    return {
+      error: {
+        general: nothingConfigured
+          ? 'Email and SMS are not configured.'
+          : 'Failed to send receipt. Please try again.',
+      },
+    };
+  }
+  if (anyFailed) {
+    console.warn(`Payment receipt ${payment.id}: one channel failed, marking as sent anyway.`);
   }
 
-  await query('UPDATE rent_payments SET sms_sent_at = now() WHERE id = $1', [payment.id]);
+  await query('UPDATE rent_payments SET receipt_sent_at = now() WHERE id = $1', [payment.id]);
   redirect(`/properties/${payment.property_id}/units/${payment.unit_id}`);
 }
 
