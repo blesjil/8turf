@@ -148,7 +148,7 @@ function PaymentFormFields({
   );
 }
 
-function SendSmsButton({ payment }: { payment: Payment }) {
+function SendSmsButton({ payment, hasPhone }: { payment: Payment; hasPhone?: boolean }) {
   const [state, formAction, isPending] = useActionState<PaymentActionResult, FormData>(
     sendPaymentSms,
     {},
@@ -158,6 +158,15 @@ function SendSmsButton({ payment }: { payment: Payment }) {
     return (
       <Button type='button' variant='ghost' size='sm' disabled>
         SMS sent
+      </Button>
+    );
+  }
+
+  // Only enable sending when the tenant has a mobile number on file.
+  if (!hasPhone) {
+    return (
+      <Button type='button' variant='ghost' size='sm' disabled title='No mobile number on file'>
+        Send SMS
       </Button>
     );
   }
@@ -175,7 +184,15 @@ function SendSmsButton({ payment }: { payment: Payment }) {
   );
 }
 
-function PaymentRow({ payment, readOnly }: { payment: Payment; readOnly?: boolean }) {
+function PaymentRow({
+  payment,
+  readOnly,
+  hasPhone,
+}: {
+  payment: Payment;
+  readOnly?: boolean;
+  hasPhone?: boolean;
+}) {
   const [state, formAction, isPending] = useActionState<PaymentActionResult, FormData>(
     updatePayment,
     {},
@@ -222,7 +239,7 @@ function PaymentRow({ payment, readOnly }: { payment: Payment; readOnly?: boolea
       {!readOnly && (
         <TableCell>
           <div className='flex items-center justify-end gap-1'>
-            <SendSmsButton payment={payment} />
+            <SendSmsButton payment={payment} hasPhone={hasPhone} />
             <Button type='button' variant='ghost' size='sm' onClick={() => setIsEditing(true)}>
               Edit
             </Button>
@@ -257,12 +274,14 @@ export function PaymentLedger({
   leaseStartDate,
   rentAmount,
   readOnly,
+  hasPhone,
 }: {
   tenantId: string;
   payments: Payment[];
   leaseStartDate?: string;
   rentAmount?: number;
   readOnly?: boolean;
+  hasPhone?: boolean;
 }) {
   const [state, formAction, isPending] = useActionState<PaymentActionResult, FormData>(
     recordPayment,
@@ -347,7 +366,7 @@ export function PaymentLedger({
               </TableHeader>
               <TableBody>
                 {paginate(filtered, currentPage).map((p) => (
-                  <PaymentRow key={p.id} payment={p} readOnly={readOnly} />
+                  <PaymentRow key={p.id} payment={p} readOnly={readOnly} hasPhone={hasPhone} />
                 ))}
               </TableBody>
             </Table>
