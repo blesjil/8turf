@@ -166,3 +166,73 @@ describe('sendSmsPaymentReminder (configured)', () => {
     await expect(sendSmsPaymentReminder('09171234567', details)).rejects.toThrow(/Failed/);
   });
 });
+
+const receipt = {
+  tenantName: 'Ana',
+  amount: 800000, // Php 8,000
+  periodStart: '2026-07-01',
+  periodEnd: '2026-07-31',
+};
+
+describe('sendSmsPaymentReceipt (unconfigured)', () => {
+  it('returns false and does not call the API', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { sendSmsPaymentReceipt } = await loadSms({});
+
+    expect(await sendSmsPaymentReceipt('09171234567', receipt)).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('sendSmsPaymentReceipt (configured)', () => {
+  let fetchMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    fetchMock = vi.fn().mockResolvedValue(okResponse([{ message_id: 1, status: 'Pending' }]));
+    vi.stubGlobal('fetch', fetchMock);
+  });
+
+  function sentBody(): URLSearchParams {
+    return fetchMock.mock.calls[0][1].body as URLSearchParams;
+  }
+
+  it('builds a GSM-7-safe receipt with first name, Php amount, and short date range', async () => {
+    const { sendSmsPaymentReceipt } = await loadSms({ SEMAPHORE_API_KEY: 'k' });
+    expect(
+      await sendSmsPaymentReceipt('09171234567', { ...receipt, tenantName: 'Ana Dela Cruz' }),
+    ).toBe(true);
+    const message = sentBody().get('message')!;
+    expect(message).toContain('Hi Ana, we received your Php 8,000 payment');
+    expect(message).toContain('for Jul 1-Jul 31');
+    expect(message).toContain('Thank you! -8TURF Apartments');
+    expect(message).not.toContain('Dela Cruz');
+    expect(message).not.toContain('₱');
+    expect(message.length).toBeLessThanOrEqual(130);
+  });
+
+  // Non-name content must fit in 130 chars so 30 remain for the name; with a
+  // worst-case amount and a capped 50-char name the whole SMS stays one segment.
+  const worst = {
+    ...receipt,
+    amount: 10000000,
+    periodStart: '2026-09-15',
+    periodEnd: '2026-10-15',
+  };
+
+  it('keeps the non-name content within the reserved 130-char budget', async () => {
+    const { sendSmsPaymentReceipt } = await loadSms({ SEMAPHORE_API_KEY: 'k' });
+    await sendSmsPaymentReceipt('09171234567', { ...worst, tenantName: '' });
+    expect(sentBody().get('message')!.length).toBeLessThanOrEqual(130);
+  });
+
+  it('caps a 50-char name to 30 so the total stays within one segment', async () => {
+    const { sendSmsPaymentReceipt } = await loadSms({ SEMAPHORE_API_KEY: 'k' });
+    await sendSmsPaymentReceipt('09171234567', { ...worst, tenantName: 'X'.repeat(50) });
+    const message = sentBody().get('message')!;
+    expect(message).toContain(`Hi ${'X'.repeat(30)},`);
+    expect(message).not.toContain('X'.repeat(31));
+    expect(message.length).toBeLessThanOrEqual(160);
+  });
+});

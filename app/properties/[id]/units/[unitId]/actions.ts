@@ -7,6 +7,7 @@ import { ownerScope } from '@/lib/access';
 import { query, queryOne } from '@/lib/db';
 import { centsFromFormData } from '@/lib/money';
 import { sendPaymentReceipt } from '@/lib/mail';
+import { sendSmsPaymentReceipt } from '@/lib/sms';
 import { findAuthorizedTenant, findAuthorizedDocument } from '@/lib/tenants';
 import { isDriveConfigured, uploadFileToDrive, deleteDriveFile } from '@/lib/drive';
 import {
@@ -380,8 +381,16 @@ async function findAuthorizedPayment(paymentId: string, scope: string | null) {
     unit_id: string;
     property_id: string;
     tenant_is_active: boolean;
+    tenant_name: string;
+    tenant_phone: string | null;
+    amount: number;
+    period_start: string;
+    period_end: string;
+    sms_sent_at: string | null;
   }>(
-    `SELECT rp.id, rp.tenant_id, rp.unit_id, u.property_id, t.is_active as tenant_is_active
+    `SELECT rp.id, rp.tenant_id, rp.unit_id, u.property_id, t.is_active as tenant_is_active,
+            t.name as tenant_name, t.phone as tenant_phone,
+            rp.amount, rp.period_start, rp.period_end, rp.sms_sent_at
      FROM rent_payments rp
      JOIN tenants t ON t.id = rp.tenant_id
      JOIN units u ON u.id = t.unit_id
@@ -453,6 +462,51 @@ export async function deletePayment(formData: FormData): Promise<void> {
   if (!payment.tenant_is_active) return;
 
   await query('DELETE FROM rent_payments WHERE id = $1', [payment.id]);
+  redirect(`/properties/${payment.property_id}/units/${payment.unit_id}`);
+}
+
+// Manually sends a "payment received" SMS for one ledger entry. Guarded so it
+// can only ever fire once per entry (sms_sent_at), which also caps the cost.
+export async function sendPaymentSms(
+  _prevState: PaymentActionResult,
+  formData: FormData,
+): Promise<PaymentActionResult> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect('/authenticate');
+
+  const id = formData.get('id');
+  if (typeof id !== 'string') {
+    return { error: { general: 'Payment not found or access denied.' } };
+  }
+
+  const payment = await findAuthorizedPayment(id, ownerScope(session));
+  if (!payment) {
+    return { error: { general: 'Payment not found or access denied.' } };
+  }
+  if (payment.sms_sent_at) {
+    return { error: { general: 'SMS already sent.' } };
+  }
+  if (!payment.tenant_phone) {
+    return { error: { general: 'Tenant has no phone number.' } };
+  }
+
+  let sent: boolean;
+  try {
+    sent = await sendSmsPaymentReceipt(payment.tenant_phone, {
+      tenantName: payment.tenant_name,
+      amount: payment.amount,
+      periodStart: payment.period_start,
+      periodEnd: payment.period_end,
+    });
+  } catch (error) {
+    console.error('Failed to send payment SMS:', error);
+    return { error: { general: 'Failed to send SMS. Please try again.' } };
+  }
+  if (!sent) {
+    return { error: { general: 'SMS is not configured.' } };
+  }
+
+  await query('UPDATE rent_payments SET sms_sent_at = now() WHERE id = $1', [payment.id]);
   redirect(`/properties/${payment.property_id}/units/${payment.unit_id}`);
 }
 

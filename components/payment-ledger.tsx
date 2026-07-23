@@ -27,6 +27,7 @@ import {
   recordPayment,
   updatePayment,
   deletePayment,
+  sendPaymentSms,
   type PaymentActionResult,
 } from '@/app/properties/[id]/units/[unitId]/actions';
 
@@ -40,6 +41,7 @@ export interface Payment {
   payment_type: 'deposit' | 'advance' | 'reservation' | 'rental';
   method: string | null;
   notes: string | null;
+  sms_sent_at: string | null;
 }
 
 const TYPE_LABELS: Record<Payment['payment_type'], string> = {
@@ -146,6 +148,33 @@ function PaymentFormFields({
   );
 }
 
+function SendSmsButton({ payment }: { payment: Payment }) {
+  const [state, formAction, isPending] = useActionState<PaymentActionResult, FormData>(
+    sendPaymentSms,
+    {},
+  );
+
+  if (payment.sms_sent_at) {
+    return (
+      <Button type='button' variant='ghost' size='sm' disabled>
+        SMS sent
+      </Button>
+    );
+  }
+
+  return (
+    <div className='flex flex-col items-end'>
+      <form action={formAction}>
+        <input type='hidden' name='id' value={payment.id} />
+        <Button type='submit' variant='ghost' size='sm' disabled={isPending}>
+          {isPending ? 'Sending…' : 'Send SMS'}
+        </Button>
+      </form>
+      {state.error?.general && <p className='text-xs text-destructive'>{state.error.general}</p>}
+    </div>
+  );
+}
+
 function PaymentRow({ payment, readOnly }: { payment: Payment; readOnly?: boolean }) {
   const [state, formAction, isPending] = useActionState<PaymentActionResult, FormData>(
     updatePayment,
@@ -193,6 +222,7 @@ function PaymentRow({ payment, readOnly }: { payment: Payment; readOnly?: boolea
       {!readOnly && (
         <TableCell>
           <div className='flex items-center justify-end gap-1'>
+            <SendSmsButton payment={payment} />
             <Button type='button' variant='ghost' size='sm' onClick={() => setIsEditing(true)}>
               Edit
             </Button>

@@ -85,7 +85,7 @@ export default async function UnitDetail({ params }: { params: Params }) {
   const paymentsByTenant = new Map<string, Payment[]>();
   for (const t of tenantHistory) {
     const tenantPayments = await query<Payment>(
-      `SELECT id, amount, period, period_start, period_end, paid_date, payment_type, method, notes
+      `SELECT id, amount, period, period_start, period_end, paid_date, payment_type, method, notes, sms_sent_at
        FROM rent_payments
        WHERE tenant_id = $1 ORDER BY period_start DESC, period_end DESC, paid_date DESC`,
       [t.id],

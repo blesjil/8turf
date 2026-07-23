@@ -48,30 +48,18 @@ interface SemaphoreMessage {
   status?: string;
 }
 
-// Returns false when Semaphore isn't configured, so callers can surface
-// "SMS not configured" instead of claiming the reminder was sent.
-export async function sendSmsPaymentReminder(
-  phone: string,
-  details: PaymentReminderDetails,
-): Promise<boolean> {
-  if (!semaphoreApiKey) {
-    console.warn('SEMAPHORE_API_KEY not set — skipping payment reminder SMS');
-    return false;
-  }
+// First name only, capped so the variable-length name can't push the fixed
+// message skeleton past one GSM-7 segment. Shared by every SMS builder below.
+const MAX_NAME_CHARS = 30;
+function firstNameForSms(name: string): string {
+  return name.trim().split(/\s+/)[0].slice(0, MAX_NAME_CHARS);
+}
 
-  // The rest of the message fits well within 130 GSM-7 chars, so reserving 30
-  // for the name guarantees the whole SMS stays inside one 160-char segment.
-  // First name only + no property name; the cap defends against unusually long
-  // first names.
-  const MAX_NAME_CHARS = 30;
-  const firstName = details.tenantName.trim().split(/\s+/)[0].slice(0, MAX_NAME_CHARS);
-  const message =
-    `Hi ${firstName}, gentle reminder: your ${formatPhp(details.amountDue)} rent ` +
-    `for ${details.monthLabel} (Unit ${details.unitLabel}) is due ${formatShortDate(details.dueDate)}. ` +
-    'Disregard if paid. -8TURF Apartments';
-
+// Sends an already-built message over Semaphore and validates the response.
+// Assumes the caller has confirmed the API key is set.
+async function postSemaphoreMessage(phone: string, message: string): Promise<true> {
   const body = new URLSearchParams({
-    apikey: semaphoreApiKey,
+    apikey: semaphoreApiKey!,
     number: normalizePhilippinePhone(phone),
     message,
   });
@@ -102,4 +90,52 @@ export async function sendSmsPaymentReminder(
     throw new Error(`Semaphore reported status ${failed.status} for ${failed.recipient}`);
   }
   return true;
+}
+
+// Returns false when Semaphore isn't configured, so callers can surface
+// "SMS not configured" instead of claiming the reminder was sent.
+export async function sendSmsPaymentReminder(
+  phone: string,
+  details: PaymentReminderDetails,
+): Promise<boolean> {
+  if (!semaphoreApiKey) {
+    console.warn('SEMAPHORE_API_KEY not set — skipping payment reminder SMS');
+    return false;
+  }
+
+  // The rest of the message fits well within 130 GSM-7 chars, so reserving 30
+  // for the name (see firstNameForSms) keeps the whole SMS inside one segment.
+  const message =
+    `Hi ${firstNameForSms(details.tenantName)}, gentle reminder: your ${formatPhp(details.amountDue)} rent ` +
+    `for ${details.monthLabel} (Unit ${details.unitLabel}) is due ${formatShortDate(details.dueDate)}. ` +
+    'Disregard if paid. -8TURF Apartments';
+
+  return postSemaphoreMessage(phone, message);
+}
+
+export interface PaymentReceiptSmsDetails {
+  tenantName: string;
+  amount: number; // cents
+  periodStart: string; // YYYY-MM-DD
+  periodEnd: string; // YYYY-MM-DD
+}
+
+// Manual, once-only "payment received" confirmation for a ledger entry.
+// Same GSM-7 discipline as the reminder: "Php" not ₱, short dates, capped name.
+// Returns false when Semaphore isn't configured so the caller can say so.
+export async function sendSmsPaymentReceipt(
+  phone: string,
+  details: PaymentReceiptSmsDetails,
+): Promise<boolean> {
+  if (!semaphoreApiKey) {
+    console.warn('SEMAPHORE_API_KEY not set — skipping payment receipt SMS');
+    return false;
+  }
+
+  const message =
+    `Hi ${firstNameForSms(details.tenantName)}, we received your ${formatPhp(details.amount)} payment ` +
+    `for ${formatShortDate(details.periodStart)}-${formatShortDate(details.periodEnd)}. ` +
+    'Thank you! -8TURF Apartments';
+
+  return postSemaphoreMessage(phone, message);
 }
